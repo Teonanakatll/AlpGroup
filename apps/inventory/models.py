@@ -3,6 +3,8 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
+from apps.sites.models import Site
+
 
 class Category(models.Model):
     name = models.CharField("Название", max_length=100)
@@ -31,6 +33,11 @@ class Tool(models.Model):
     name = models.CharField("Название", max_length=200)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, verbose_name="Категория")
     status = models.CharField("Статус", max_length=20, choices=Status.choices, default=Status.AVAILABLE)
+    # кэш: на каком объекте сейчас; пусто, пока на складе. Меняет только services.py
+    current_site = models.ForeignKey(
+        "sites.Site", null=True, blank=True, on_delete=models.PROTECT,
+        related_name="tools", verbose_name="Текущий объект",
+    )
     note = models.TextField("Примечание", blank=True)
     on_balance_date = models.DateField("Поставлен на баланс", default=timezone.localdate)
     removed_date = models.DateField("Снят с баланса", null=True, blank=True)
@@ -87,12 +94,15 @@ class HandTool(models.Model):
 class BaseMovement(models.Model):
     class Type(models.TextChoices):
         # название типа операции
+        ADDED = "added", "Поставлен на баланс"
         ISSUED = "issued", "Выдан"
         RETURNED = "returned", "Принят"
         WRITTEN_OFF = "written_off", "Списан"
         SERVICING = "servicing", "В ремонте"
         MISSING = "missing", "Не найден"
 
+    # один UUID на одно действие пользователя; у строк обоих журналов из одной операции он общий
+    batch = models.UUIDField("Набор", null=True, blank=True, db_index=True, editable=False)
     type = models.CharField("Операция", max_length=20, choices=Type.choices)
     site = models.ForeignKey(
         "sites.Site", null=True, blank=True, on_delete=models.PROTECT,

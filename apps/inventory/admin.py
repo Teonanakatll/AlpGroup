@@ -9,12 +9,14 @@ class ToolPhotoInline(admin.TabularInline):
 
 @admin.register(Tool)
 class ToolAdmin(admin.ModelAdmin):
-    list_display = ("name", "category", "status")
+    list_display = ("name", "category", "status", "current_site")
+    readonly_fields = ("status", "current_site")
     inlines = [ToolPhotoInline]
 
 @admin.register(HandTool)
-class HandTootAdmin(admin.ModelAdmin):
+class HandToolAdmin(admin.ModelAdmin):
     list_display = ("name", "category", "total", "issued")
+    readonly_fields = ("issued",)
 
 @admin.register(ToolMovement)
 class ToolMovementAdmin(admin.ModelAdmin):

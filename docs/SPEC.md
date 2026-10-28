@@ -45,7 +45,8 @@
 - поставлен на баланс (`added`)
 - выдан (`issued`)
 - принят (`returned`)
-- утерян (`lost`)
+- не найден (`missing`)
+- в ремонте (`servicing`)
 - списан (`written_off`)
 
 - [ ] `ToolMovement` (+ `tool`)
