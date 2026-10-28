@@ -1,0 +1,210 @@
+npm i
+
+list.values()
+
+f[0]._meta.fields
+
+
+python manage.py shell
+friom news_app.models import *
+
+from django.db import connection
+# колекция queries выводит последний запрос к бд на языке sql
+connection.queries
+
+# выводит количество записей
+Post.objects.all().count()
+
+# срез на уровне sql запроса
+Post.objects.all()[:3]
+# 5 запись не включается в queryset
+Post.objects.all()[2:5]
+
+# сортировка по полю
+Post.objects.order_by('pk')
+# обратная
+Post.objects.order_by('-pk')
+Post.objects.all().reverse()
+
+# возвращает экземпляр модели (не queryset)
+Post.objects.get(pk=2)
+
+p = Post.objects.get(pk=1)
+# через обьект модели записи в бд мы получаем доступ
+p.header, p.slug и тд - значения полей записи таблицы post
+p.pk, p.id - идентификаторы записи (первичный ключ)
+p.category_id - идентификатор записи (внешний ключ)
+p.category - обьект класса Category, хранящий данные записи с id=category_id (первичная модель)
+
+# через связанный обьект класса (Category) мы можем обращаться к любому его полю
+# если ранее не обращались к этому сывязанному полю, то django делает дополнительный aql-запрос
+p.category.name
+
+# чтобы из первичной модели получить все связанные с ней записи, для этого у любой первичной записи
+# создаётся свойство <вторичная модель>_set
+c = Category.objects.get(pk=1)
+c.post_set.all()
+
+# фильтры полей
+Post.objects.filter(pk__lte=2)                            # меньше или равно
+Post.objects.filter(pk__lt=2)                             # меньше
+Post.objects.filter(pk__gte=2)                            # больше или равно
+Post.objects.filter(pk__gt=2)                             # больше
+
+Post.objects.get(short__contains="Samsung")               # нахождение строки в текстовом поле С УЧЁТОМ РЕГИСТРА в sqlite действует как icontains
+Post.objects.filter(short__contains="Samsung")            # фильтрация по строке
+Post.objects.filter(short__contains="Samsung").count()
+
+Post.objects.filter(pk__in=[2,5,11,12])                   # позволяет указывать выбираемые значения списком
+Post.objects.filter(pk__in=[2,5,11,12], draft=False)
+Post.objects.filter(category__in=[2,3])                   # одно и тоже
+Post.objects.filter(category_id__in=[2,3])
+
+cats = Category.objects.all()
+Post.objects.filter(cat__in=cats)
+
+Post.objects.filter(article__startswith="Хорошо")         # фильтрация по полю начинающемуся со строки
+Post.objects.filter(article__istartswith="Хорошо")        # без учёта регистра
+
+# остальные фильтры полей:
+exact, iexact, endswith, iendswith, range, date, year, iso_year, month, day, week
+week_day, iso_week_day, quarter, time, hour, minute, second, isnull, regex, iregex
+
+
+                                          класс Q
+
+# служит для формирования условий фильтрации с помощю логических опереторов
+
+                                           &    #  логическое И (приоритет 2)
+                                           |    #  логическое ИЛИ (приоритет 3)
+                                           ~    #  логическое НЕ (приоритет 1)
+
+from django.db.models import Q
+
+Post.objects.filter(Q(pk__lt=5) | Q(category_id=4))     # или то или то условие
+Post.objects.filter(Q(pk__lt=5) & Q(category_id=4))     # и то и то условие
+Post.objects.filter(~Q(pk__lt=5) & Q(category_id=4))    # меняет условие на обратное
+
+
+                                          # методы ORM
+.first()        # возвращает первую запись из выборки
+Post.objects.first()
+Post.objects.filter(pk__get=10).first()
+Post.objects.order_by('pk).first()
+
+.last()         # возвращает последнюю запись из выборки
+
+# связанные с полями хранящими дату
+
+.latest()       # применяется к полям хранящим дату и время, вернёт запись с самой поздней датой, добавленной первой
+Post.objects.latest('time_create')
+.earliest()     # вернёт запись с самой ранней датой, вернёт запись добавленной последней
+Post.objects.order_by('short').earliest('time_create')
+
+.get_previous_by_<поле с датой>(любое условие)   # вернёт предыдущую запись
+p.get_previous_by_time_update(pk__gt=10)
+.get_next_by_<поле с датой>()
+p.get_next_by_time_update()       # вернёт следующию запись
+
+.exists()      # проверка существования записи
+c.post_set.exists()   # вернёт False если нет связанных записей
+.count()
+c.post_set.count()
+
+                                  # фильтрация через поля первичной модели
+                 # ИМЯ ПЕРВИЧНОЙ МОДЕЛИ__ПОЛЕ ПЕРВИЧНОЙ МОДЕЛИ
+
+Post.objects.filter(category__slug='diy')
+Post.objects.filter(category__name='Обзоры')
+# через двойное нижнее подчёркивание можно применить  фильтр
+Post.objects.filter(category__name__contains='ры')
+# можно применить фильтр к полю выборки вторичной записи
+Category.objects.filter(post__short__contains='ли')
+
+.distinct()      # возвращает только уникальные записи
+Catetory.objects.filter(post__short__contains='ли').dictinct()
+
+
+                            # АГРЕГАЦИЯ И АГРЕГИРУЮЩИЕ ФУНКЦИИ
+# агрегация - анализ данных на стороне субд
+from django.db.models import Avg, Max, Min, Sum
+# получение среднего цифрового значения
+Book.objects.aggregate(Avg('price'))              #  = {'prise__avg': 34.35}
+# можно задать имя ключа результирующего словаря явно
+Book.objects.aggregate(average_price=Avg('price'))              #  = {'average_price': 34.35}
+Book.objects.aggregate(Avg('price'), Max('price'), Min('price'))
+# = {'price__avg': 34.35, 'price__max': Decimal('81.20'), 'price__min': Decimal('12.99')}
+Post.objects.aggregate(res=Sum('category_id') - Count('category_id'))  #  = {'res':40}
+Post.objects.filter(pk__gt=4).aggregate(res=Avg('category_id'))
+
+                                              # МЕТОД values()
+# возвращает только указанные поля
+Post.objects.values('short', 'category_id').get(pk=1)
+Post.objects.values('pk', 'category__name', 'short').get(pk=2)
+
+
+                                              # АНОТИРОВАНИЕ
+
+# процесс аннотирования описывается вызовом метода .annotate() к менеджеру или queryset. принимает теже агрегирующие
+# функции. а возвращает метод queryset, обьекты которого будут всё теми же экземплярами класса модели, на кождый
+# обьект будет иметь дополнительные атрибуты. каждый атрибут будет хранить результат соответствующей аггрегации
+# относительно текущего обьекта, НАПРИМЕР:
+.aggregate(Count('postcomment'))  # - подсчитает количество всех комментариев
+.annotate(Count('postcomment'))   # - добавит количество комментариев к каждому посту
+
+# группирует статьи по полю category__name и добавляет количество постав в каждой категории
+Post.objects.values('category__name').annotate(Count('id'))
+
+# добавляет обьектам категории поле post__count с количеством постов в каждой
+c = Category.objects.annotate(Count('post'))
+c[0].post__count
+c = Category.objects.annotate(total=Count('post'))
+c[0].total__count
+# добавляет количество связанных постов и фильтрует по количеству
+c = Category.objects.annotate(total=Count('women')).filter(total__gt=0)
+# чтобы избавиться от дублей в выдаче с функцией Count() он имеет опцию distinct=True
+
+                                           # КЛАСС F
+# чтобы в значение параметра передавать значение полей текущей модели используют класс F
+# можно использовать во view функции для увеличения количества просмотров
+Post.objects.filter(id=1).update(views=F('views')+1)
+# или
+p = Post.objects.get(pk=1)
+p.views = F('views')+1
+p.save()
+
+                                            # ФУНКЦИИ БАЗДАННЫХ
+from django.db.models.functions import Length
+# добавляет к модели поле len с длинной поля article
+ps = Post.objects.annotate(len=Length('short'))
+
+
+pip freeze > 1.txt
+pip uninstall -y -r 1.txt
+
+
+                                    # PAGINATION
+from django.core.paginator import Paginator
+posts = Post.objects.values('pk', 'short')
+p = Paginator(posts, 5)
+p.count          #                    количество статей в обьекте класса Paginator
+p.num_pages      #                    количество страниц
+p.page_range     #  range(1, 6)       итератор с количеством страниц
+p1 = p.page(1)   #                    получаем первую страницу по индексу
+p1.object_list   #  ['','','']
+p1.has_next()    #  True              проверяем существует ли следующая страница
+p1.has_previous()   #  False          предыдущая
+p1.has_other_pages()  #               существуют ли ещё страницы
+p1.next_page_number()  #              номер следующей страницы
+p1.previous_page_number()  #          предыдущей
+
+
+
+#  Counter – инструмент подсчёта неизменяемых объектов. Используйте, если нужно определить количество вхождений или число наиболее (наименее) часто встречающихся элементов.
+#  defaultdict – словарь, умеющий при вызове отсутствующего ключа вместо вызова исключения KeyError записывать значение по умолчанию (работает быстрее, чем метод setdefault()).
+#  OrderedDict – словарь с памятью порядка добавления элементов, умеющий переупорядочивать элементы лучше, чем dict.
+#  ChainMap – контейнер комбинаций словарей с поиском, обобщением ключей и элементов.
+#  namedtuple() – функция-фабрика для создания именованного кортежа. Это один из простейших способов сделать код более ясным: использовать вместо индексов имена.
+#  deque – двусторонняя очередь – список, оптимизированный для вставки и удаления элементов с обоих концов с методом подсчёта вхождений
+#  UserDict, UserList, UserString – не заслуживающие развёрнутого описания обертки над стандартными объектами словарей, списков и строк для беспроблемного наследования (прямое наследование встроенным типам dict, list, str чревато ошибками, связанными с игнорированием переопределения методов).
+Также у модуля collections имеется наследованный модуль коллекции абстрактных базовых классов сollections.abc. Но это тема отдельного разговора.
