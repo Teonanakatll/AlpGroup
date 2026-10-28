@@ -31,9 +31,9 @@ Python 3.12, Django, Django REST Framework. Сейчас SQLite, переход 
 - [x] каркас Django, приложение apps.inventory, rest_framework подключён
 - [ ] requirements.txt
 - [ ] settings: язык ru, часовой пояс Europe/Moscow, MEDIA, .env
-- [ ] модели: Category, Tool, ToolPhoto, HandTool, журналы
-- [ ] приложение sites (Site, WorkType)
-- [ ] админка (статусы и счётчики только для чтения)
+- [x] модели: Category, Tool, ToolPhoto, HandTool, журналы
+- [x] приложение sites (Site, WorkType)
+- [x] админка (статусы и счётчики только для чтения)
 - [ ] PostgreSQL
 - [ ] services.py и selectors.py с тестами
 - [ ] DRF-эндпоинты: доступно к выдаче, числится на объекте, выдать, принять
