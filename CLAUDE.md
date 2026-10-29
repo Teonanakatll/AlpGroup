@@ -44,7 +44,7 @@ Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .e
 - [x] settings: MEDIA_URL и MEDIA_ROOT
 - [x] services.py, общий каркас: пересчёт состояния из журнала (atomic, select_for_update), тесты
 - [x] постановка на баланс (added): Tool +1, HandTool +N к total
-- [ ] выдача набора на объект: один новый batch на операцию, проверки
+- [x] выдача набора на объект: один новый batch на операцию, проверки
 - [ ] приём (returned): с объекта и из ремонта (без объекта)
 - [ ] не найден (missing), списание (written_off), ремонт (servicing) по DECISIONS, раздел 14
 - [ ] отмена записи или набора (только последняя операция по позиции, набор всё или ничего)
