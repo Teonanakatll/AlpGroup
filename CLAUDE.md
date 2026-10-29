@@ -5,7 +5,7 @@
 Владелец проекта давно не писал код (хочет вспомнить Django и DRF): объясняй решения коротко, код давай читаемый, сложные места поясняй.
 
 ## Стек
-Python 3.12, Django, Django REST Framework. Сейчас SQLite, переход на PostgreSQL запланирован до services.py. Позже: адаптивный сайт, Telegram-бот только для оповещений.
+Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .env). Позже: адаптивный сайт, Telegram-бот только для оповещений.
 
 ## Структура
 - config/ — настройки и urls
@@ -25,20 +25,33 @@ Python 3.12, Django, Django REST Framework. Сейчас SQLite, переход 
 - Тесты на services и selectors (pytest-django). Коммиты: одна мысль, префикс feat/fix/refactor/docs/test/chore.
 
 ## Как запускать
-(заполнить: venv, pip install -r requirements.txt, migrate, runserver, pytest)
+1. Создать venv и активировать его, затем `pip install -r requirements.txt`.
+2. Создать `.env` по образцу `.env.example` (параметры PostgreSQL).
+3. `python manage.py migrate`, `python manage.py createsuperuser`.
+4. `python manage.py runserver`.
+5. Тесты: `pytest`.
 
 ## Текущее состояние
-- [x] каркас Django, приложение apps.inventory, rest_framework подключён
-- [ ] requirements.txt
-- [ ] settings: язык ru, часовой пояс Europe/Moscow, MEDIA, .env
-- [x] модели: Category, Tool, ToolPhoto, HandTool, журналы
+Сделано:
+- [x] каркас Django, rest_framework подключён
+- [x] модели: Category, Tool, ToolPhoto, HandTool, журналы (batch, current_site)
 - [x] приложение sites (Site, WorkType)
-- [x] админка (статусы и счётчики только для чтения)
-- [ ] PostgreSQL
-- [ ] services.py и selectors.py с тестами
-- [ ] DRF-эндпоинты: доступно к выдаче, числится на объекте, выдать, принять
-- [ ] формы выдачи и приёма, фронтенд
-- [ ] txt-загрузка, права, отчёты и бэкапы, оповещения
+- [x] админка: статусы и счётчики только для чтения
+- [x] requirements.txt, .env, язык ru, часовой пояс Europe/Moscow
+- [x] PostgreSQL
+
+План (по порядку):
+- [ ] settings: MEDIA_URL и MEDIA_ROOT
+- [ ] services.py, общий каркас: пересчёт состояния из журнала (atomic, select_for_update), тесты
+- [ ] постановка на баланс (added): Tool +1, HandTool +N к total
+- [ ] выдача набора на объект: один новый batch на операцию, проверки
+- [ ] приём (returned): с объекта и из ремонта (без объекта)
+- [ ] не найден (missing), списание (written_off), ремонт (servicing) по DECISIONS, раздел 14
+- [ ] отмена записи или набора (только последняя операция по позиции, набор всё или ничего)
+- [ ] selectors.py с тестами (доступно к выдаче, числится на объекте, история, выдано за период)
+- [ ] админка: закрыть total и журналы, admin action для выдачи и приёма
+- [ ] DRF-эндпоинты, затем формы выдачи и приёма, фронтенд
+- [ ] права, отчёты и бэкапы, оповещения
 
 ## Открытые вопросы
 См. раздел 9 в docs/SPEC.md.
