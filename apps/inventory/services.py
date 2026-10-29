@@ -18,6 +18,7 @@ from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
+from . import selectors
 from .models import (
     BaseMovement, HandTool, HandToolMovement, Tool, ToolMovement,
 )
@@ -284,5 +285,104 @@ def issue_to_site(*, user, site, tools=(), hand_tools=(), taken_by="", note=""):
 
     return _write_set(
         locked, movement_type=MovementType.ISSUED, site=site,
+        user=user, taken_by=taken_by, note=note,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Приём (returned)
+# ---------------------------------------------------------------------------
+
+@transaction.atomic
+def receive_from_site(*, user, site, tools=(), hand_tools=(), taken_by="", note=""):
+    """
+    Принять набор позиций с объекта на склад одной операцией.
+
+    tools      — штучные позиции: [Tool, ...]
+    hand_tools — ручной инструмент с количеством: [(HandTool, 3), ...]
+    taken_by   — кто привёз (текст, по желанию).
+
+    Правила (DECISIONS, разделы 13 и 14):
+    - штучную позицию можно принять, только если она выдана (статус «выдан») и
+      числится именно на этом объекте; «не найденную» принять нельзя;
+    - ручной инструмент принимается общим количеством по объекту: нельзя принять
+      больше, чем на этом объекте числится (считает selectors.hand_tool_on_site);
+    - «всё или ничего» и один новый batch на операцию, как при выдаче.
+
+    Если что-то не найдено при приёмке, это отдельная операция «не найден»
+    (в плане следующим шагом), а не частичный приём этой функцией.
+    Возвращает batch (UUID).
+    """
+    tools = list(tools)
+    hand_tools = list(hand_tools)
+
+    if site is None:
+        raise ServiceError("Не указан объект.")
+    _check_not_empty(tools, hand_tools)
+
+    locked = _lock_positions(tools, hand_tools)
+    errors = locked.errors
+
+    for tool_id in locked.tool_ids:
+        tool = locked.tools.get(tool_id)
+        if tool is None:
+            errors.append(f"Инструмент с id {tool_id} не найден.")
+        elif tool.status != Tool.Status.ISSUED:
+            errors.append(f"«{tool.name}»: нельзя принять, статус «{tool.get_status_display()}».")
+        elif tool.current_site_id != site.pk:
+            errors.append(f"«{tool.name}»: числится не на этом объекте.")
+
+    for hand_id in locked.hand_ids:
+        hand_tool = locked.hand_tools.get(hand_id)
+        quantity = locked.quantities[hand_id]
+        if hand_tool is None:
+            errors.append(f"Ручной инструмент с id {hand_id} не найден.")
+        elif quantity < 1:
+            errors.append(f"«{hand_tool.name}»: количество должно быть не меньше 1.")
+        else:
+            on_site = selectors.hand_tool_on_site(hand_tool, site)
+            if quantity > on_site:
+                errors.append(
+                    f"«{hand_tool.name}»: принимается {quantity}, на объекте числится {on_site}."
+                )
+
+    if errors:
+        raise ServiceError("\n".join(errors))
+
+    return _write_set(
+        locked, movement_type=MovementType.RETURNED, site=site,
+        user=user, taken_by=taken_by, note=note,
+    )
+
+
+@transaction.atomic
+def receive_from_servicing(*, user, tools, taken_by="", note=""):
+    """
+    Принять штучные позиции из ремонта на склад (приём без объекта).
+
+    Ручной инструмент в ремонт не отправляется (DECISIONS, раздел 14), поэтому
+    принимаются только штучные позиции со статусом «в ремонте».
+    Возвращает batch (UUID).
+    """
+    tools = list(tools)
+    _check_not_empty(tools, [])
+
+    locked = _lock_positions(tools, [])
+    errors = locked.errors
+
+    for tool_id in locked.tool_ids:
+        tool = locked.tools.get(tool_id)
+        if tool is None:
+            errors.append(f"Инструмент с id {tool_id} не найден.")
+        elif tool.status != Tool.Status.SERVICING:
+            errors.append(
+                f"«{tool.name}»: нельзя принять из ремонта, статус «{tool.get_status_display()}»."
+            )
+
+    if errors:
+        raise ServiceError("\n".join(errors))
+
+    return _write_set(
+        locked, movement_type=MovementType.RETURNED, site=None,
         user=user, taken_by=taken_by, note=note,
     )
