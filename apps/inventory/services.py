@@ -145,3 +145,96 @@ def add_hand_tool_stock(*, user, hand_tool, quantity, note="", batch=None):
     )
     recalc_hand_tool(hand_tool)
     return hand_tool
+
+
+# ---------------------------------------------------------------------------
+# Выдача набора на объект (issued)
+# ---------------------------------------------------------------------------
+
+def _find_duplicates(ids):
+    """Id, которые встречаются в списке больше одного раза."""
+    return {i for i in ids if ids.count(i) > 1}
+
+
+@transaction.atomic
+def issue_to_site(*, user, site, tools=(), hand_tools=(), taken_by="", note=""):
+    """
+    Выдать набор позиций на объект одной операцией.
+
+    tools      — штучные позиции: [Tool, Tool, ...]
+    hand_tools — ручной инструмент с количеством: [(HandTool, 5), (HandTool, 2), ...]
+
+    Правила (DECISIONS, разделы 13 и 14):
+    - выдать можно только штучную позицию со статусом «на складе»;
+    - ручного инструмента нельзя выдать больше, чем есть в наличии;
+    - «всё или ничего»: если хоть одна позиция не проходит проверку, не выдаётся
+      ничего, и пользователь сразу видит все проблемы, а не по одной;
+    - у всех строк журнала этой операции один общий новый batch.
+
+    Возвращает batch (UUID): по нему потом можно найти набор или отменить его целиком.
+    """
+    tools = list(tools)
+    hand_tools = list(hand_tools)
+
+    if site is None:
+        raise ServiceError("Не указан объект.")
+    if not tools and not hand_tools:
+        raise ServiceError("Не выбрано ни одной позиции.")
+
+    tool_ids = [t.pk for t in tools]
+    hand_ids = [ht.pk for ht, _ in hand_tools]
+    quantities = {ht.pk: qty for ht, qty in hand_tools}
+
+    errors = []
+    if _find_duplicates(tool_ids) or _find_duplicates(hand_ids):
+        errors.append("Одна и та же позиция указана в наборе больше одного раза.")
+
+    # Блокируем строки позиций. Всегда в порядке id и всегда сначала штучные, потом ручные:
+    # если две выдачи пересекаются, они берут блокировки в одном порядке и не повиснут
+    # друг на друге (взаимная блокировка, deadlock).
+    # Состояние читаем из заблокированных строк, а не из переданных объектов: пока
+    # форма была открыта, статус мог измениться.
+    locked_tools = {
+        t.pk: t for t in Tool.objects.select_for_update().filter(pk__in=tool_ids).order_by("pk")
+    }
+    locked_hand = {
+        h.pk: h for h in HandTool.objects.select_for_update().filter(pk__in=hand_ids).order_by("pk")
+    }
+
+    for tool_id in tool_ids:
+        tool = locked_tools.get(tool_id)
+        if tool is None:
+            errors.append(f"Инструмент с id {tool_id} не найден.")
+        elif tool.status != Tool.Status.AVAILABLE:
+            errors.append(f"«{tool.name}»: нельзя выдать, статус «{tool.get_status_display()}».")
+
+    for hand_id in hand_ids:
+        hand_tool = locked_hand.get(hand_id)
+        quantity = quantities[hand_id]
+        if hand_tool is None:
+            errors.append(f"Ручной инструмент с id {hand_id} не найден.")
+        elif quantity < 1:
+            errors.append(f"«{hand_tool.name}»: количество должно быть не меньше 1.")
+        elif quantity > hand_tool.available:
+            errors.append(
+                f"«{hand_tool.name}»: запрошено {quantity}, в наличии {hand_tool.available}."
+            )
+
+    if errors:
+        raise ServiceError("\n".join(errors))
+
+    # Все проверки пройдены: пишем журнал и пересчитываем состояние.
+    batch = new_batch()
+    for tool in locked_tools.values():
+        ToolMovement.objects.create(
+            tool=tool, type=MovementType.ISSUED, site=site, taken_by=taken_by,
+            created_by=user, batch=batch, note=note,
+        )
+        recalc_tool(tool)
+    for hand_tool in locked_hand.values():
+        HandToolMovement.objects.create(
+            hand_tool=hand_tool, type=MovementType.ISSUED, site=site, taken_by=taken_by,
+            quantity=quantities[hand_tool.pk], created_by=user, batch=batch, note=note,
+        )
+        recalc_hand_tool(hand_tool)
+    return batch
