@@ -76,19 +76,34 @@ def recalc_tool(tool):
 
 def recalc_hand_tool(hand_tool):
     """
-    Пересчитать total и issued ручного инструмента по журналу.
+    Пересчитать total и issued ручного инструмента по журналу (DECISIONS, раздел 14).
 
-    Пока учитываются added, issued и returned. «Не найден» и «списание» для
-    ручного инструмента добавим в пункте плана про missing/written_off.
+    total  = приход − не найдено − списано: это то, чем реально можно снабдить людей;
+    issued = выдано − принято − не найдено − списано на объекте.
+    «Не найден» и «списан» уменьшают и total, и issued, если позиция числилась на объекте
+    (запись с объектом). Списание со склада (запись без объекта) уменьшает только total.
+    Сами записи остаются в журнале, отчёты по потерям и списаниям строятся по нему.
+
     Вызывать только внутри transaction.atomic и после select_for_update.
     """
     rows = hand_tool.movements.filter(is_cancelled=False)
 
-    def qty(movement_type):
-        return rows.filter(type=movement_type).aggregate(s=Sum("quantity"))["s"] or 0
+    def qty(movement_type, only_with_site=False):
+        selected = rows.filter(type=movement_type)
+        if only_with_site:
+            selected = selected.filter(site__isnull=False)
+        return selected.aggregate(s=Sum("quantity"))["s"] or 0
 
-    hand_tool.total = qty(MovementType.ADDED)
-    hand_tool.issued = qty(MovementType.ISSUED) - qty(MovementType.RETURNED)
+    missing = qty(MovementType.MISSING)
+    written_off = qty(MovementType.WRITTEN_OFF)
+
+    hand_tool.total = qty(MovementType.ADDED) - missing - written_off
+    hand_tool.issued = (
+        qty(MovementType.ISSUED)
+        - qty(MovementType.RETURNED)
+        - missing                                   # потеряно всегда на объекте
+        - qty(MovementType.WRITTEN_OFF, only_with_site=True)
+    )
     # Если журнал даст issued > total или отрицательное число, БД отклонит сохранение
     # (CheckConstraint и PositiveIntegerField): ошибка в данных не пройдёт молча.
     hand_tool.save(update_fields=["total", "issued"])

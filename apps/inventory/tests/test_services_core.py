@@ -120,3 +120,57 @@ def test_recalc_hand_tool_ignores_cancelled(user, hand_tool, site):
     services.recalc_hand_tool(hand_tool)
 
     assert hand_tool.issued == 0
+
+
+# --- ручной инструмент: потеря и списание не входят в total ----------------
+
+def test_recalc_hand_tool_missing_reduces_total_and_issued(user, hand_tool, site):
+    services.add_hand_tool_stock(user=user, hand_tool=hand_tool, quantity=10)
+    HandToolMovement.objects.create(
+        hand_tool=hand_tool, type=Type.ISSUED, site=site, quantity=6, created_by=user)
+    HandToolMovement.objects.create(
+        hand_tool=hand_tool, type=Type.MISSING, site=site, quantity=2, created_by=user)
+
+    services.recalc_hand_tool(hand_tool)
+
+    # было 10 на балансе, 2 потеряно: осталось 8; на объекте было 6, стало 4
+    assert (hand_tool.total, hand_tool.issued, hand_tool.available) == (8, 4, 4)
+
+
+def test_recalc_hand_tool_write_off_from_site(user, hand_tool, site):
+    services.add_hand_tool_stock(user=user, hand_tool=hand_tool, quantity=10)
+    HandToolMovement.objects.create(
+        hand_tool=hand_tool, type=Type.ISSUED, site=site, quantity=6, created_by=user)
+    HandToolMovement.objects.create(
+        hand_tool=hand_tool, type=Type.WRITTEN_OFF, site=site, quantity=1, created_by=user)
+
+    services.recalc_hand_tool(hand_tool)
+
+    assert (hand_tool.total, hand_tool.issued, hand_tool.available) == (9, 5, 4)
+
+
+def test_recalc_hand_tool_write_off_from_warehouse(user, hand_tool, site):
+    services.add_hand_tool_stock(user=user, hand_tool=hand_tool, quantity=10)
+    HandToolMovement.objects.create(
+        hand_tool=hand_tool, type=Type.ISSUED, site=site, quantity=6, created_by=user)
+    HandToolMovement.objects.create(
+        hand_tool=hand_tool, type=Type.WRITTEN_OFF, site=None, quantity=3, created_by=user)
+
+    services.recalc_hand_tool(hand_tool)
+
+    # списали со склада: total меньше, на объекте по-прежнему 6
+    assert (hand_tool.total, hand_tool.issued, hand_tool.available) == (7, 6, 1)
+
+
+def test_recalc_hand_tool_ignores_cancelled_loss(user, hand_tool, site):
+    services.add_hand_tool_stock(user=user, hand_tool=hand_tool, quantity=10)
+    HandToolMovement.objects.create(
+        hand_tool=hand_tool, type=Type.ISSUED, site=site, quantity=6, created_by=user)
+    lost = HandToolMovement.objects.create(
+        hand_tool=hand_tool, type=Type.MISSING, site=site, quantity=2, created_by=user)
+    lost.is_cancelled = True
+    lost.save()
+
+    services.recalc_hand_tool(hand_tool)
+
+    assert (hand_tool.total, hand_tool.issued) == (10, 6)
