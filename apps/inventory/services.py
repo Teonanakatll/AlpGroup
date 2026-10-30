@@ -427,3 +427,96 @@ def receive_from_servicing(*, user, tools, taken_by="", note=""):
         locked, movement_type=MovementType.RETURNED, site=None,
         user=user, taken_by=taken_by, note=note,
     )
+
+
+# ---------------------------------------------------------------------------
+# Не найден, списание, ремонт (DECISIONS, раздел 14)
+# ---------------------------------------------------------------------------
+
+@transaction.atomic
+def mark_missing(*, user, site, tools=(), hand_tools=(), taken_by="", note=""):
+    """
+    Отметить позиции не найденными на объекте.
+
+    Это возможно только для того, что числится на этом объекте (выдано и не принято):
+    штучная позиция должна быть выдана на этот объект, ручного инструмента нельзя
+    потерять больше, чем там числится. Запись остаётся в журнале, из total ручного
+    инструмента потерянное вычитается (см. recalc_hand_tool).
+    Возвращает batch (UUID).
+    """
+    tools = list(tools)
+    hand_tools = list(hand_tools)
+
+    if site is None:
+        raise ServiceError("Не указан объект.")
+    _check_not_empty(tools, hand_tools)
+
+    locked = _lock_positions(tools, hand_tools)
+    _check_tools_at(locked, site, "отметить не найденным")
+    _check_hand_quantities(locked, site)
+
+    if locked.errors:
+        raise ServiceError("\n".join(locked.errors))
+
+    return _write_set(
+        locked, movement_type=MovementType.MISSING, site=site,
+        user=user, taken_by=taken_by, note=note,
+    )
+
+
+@transaction.atomic
+def write_off(*, user, site=None, tools=(), hand_tools=(), note=""):
+    """
+    Списать позиции.
+
+    site не указан — списание со склада: штучная позиция «на складе» или «в ремонте»,
+                     ручного инструмента не больше, чем в наличии на складе;
+    site указан    — списание с объекта: штучная позиция выдана на этом объекте,
+                     ручного инструмента не больше, чем там числится.
+    Списать «не найденную» позицию пока нельзя (DECISIONS, раздел 14).
+    Возвращает batch (UUID).
+    """
+    tools = list(tools)
+    hand_tools = list(hand_tools)
+    _check_not_empty(tools, hand_tools)
+
+    locked = _lock_positions(tools, hand_tools)
+    _check_tools_at(
+        locked, site, "списать",
+        warehouse_statuses=(Tool.Status.AVAILABLE, Tool.Status.SERVICING),
+    )
+    _check_hand_quantities(locked, site)
+
+    if locked.errors:
+        raise ServiceError("\n".join(locked.errors))
+
+    return _write_set(
+        locked, movement_type=MovementType.WRITTEN_OFF, site=site,
+        user=user, taken_by="", note=note,
+    )
+
+
+@transaction.atomic
+def send_to_servicing(*, user, tools, site=None, taken_by="", note=""):
+    """
+    Отправить штучные позиции в ремонт.
+
+    site не указан — со склада (статус «на складе»);
+    site указан    — с объекта (позиция выдана на этом объекте).
+    Ручной инструмент в ремонт не отправляется (DECISIONS, раздел 14).
+    Возврат из ремонта это receive_from_servicing.
+    Возвращает batch (UUID).
+    """
+    tools = list(tools)
+    _check_not_empty(tools, [])
+
+    locked = _lock_positions(tools, [])
+    _check_tools_at(locked, site, "отправить в ремонт", warehouse_statuses=(Tool.Status.AVAILABLE,))
+
+    if locked.errors:
+        raise ServiceError("\n".join(locked.errors))
+
+    return _write_set(
+        locked, movement_type=MovementType.SERVICING, site=site,
+        user=user, taken_by=taken_by, note=note,
+    )
