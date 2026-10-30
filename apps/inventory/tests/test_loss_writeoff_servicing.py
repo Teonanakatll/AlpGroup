@@ -300,13 +300,16 @@ def test_cannot_send_servicing_tool_to_servicing_again(user, tool):
     assert ToolMovement.objects.filter(tool=tool, type=Type.SERVICING).count() == 1
 
 
-def test_send_to_servicing_all_or_nothing(user, tool, issued_tool):
-    # tool на складе, issued_tool на объекте: без объекта вторую отправить нельзя.
-    with pytest.raises(services.ServiceError):
-        services.send_to_servicing(user=user, tools=[tool, issued_tool])
+def test_send_to_servicing_all_or_nothing(user, category, issued_tool):
+    # issued_tool выдан на объект, а warehouse_tool лежит на складе (отдельная позиция).
+    # Без указания объекта выданную отправить нельзя, значит не уйдёт ни одна.
+    warehouse_tool = services.register_tool(user=user, name="Дрель", category=category)
 
-    tool.refresh_from_db()
-    assert tool.status == Tool.Status.AVAILABLE
+    with pytest.raises(services.ServiceError):
+        services.send_to_servicing(user=user, tools=[warehouse_tool, issued_tool])
+
+    warehouse_tool.refresh_from_db()
+    assert warehouse_tool.status == Tool.Status.AVAILABLE
     assert not ToolMovement.objects.filter(type=Type.SERVICING).exists()
 
 
