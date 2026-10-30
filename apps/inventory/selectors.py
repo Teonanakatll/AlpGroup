@@ -85,3 +85,40 @@ def hand_tools_on_site(site):
     quantities = {row["hand_tool"]: row["on_site"] for row in rows}
     hand_tools = HandTool.objects.filter(pk__in=quantities).select_related("category").order_by("name")
     return [(hand_tool, quantities[hand_tool.pk]) for hand_tool in hand_tools]
+
+
+# ---------------------------------------------------------------------------
+# История и отчёты по журналу
+# ---------------------------------------------------------------------------
+
+def tool_history(tool, include_cancelled=True):
+    """
+    История штучной позиции: все операции, новые сверху.
+    Отменённые по умолчанию показываются (у них is_cancelled=True): так видно, что было.
+    """
+    rows = tool.movements.select_related("site", "created_by").order_by("-created_at", "-pk")
+    return rows if include_cancelled else rows.filter(is_cancelled=False)
+
+
+def hand_tool_history(hand_tool, include_cancelled=True):
+    """История ручного инструмента: все операции, новые сверху."""
+    rows = hand_tool.movements.select_related("site", "created_by").order_by("-created_at", "-pk")
+    return rows if include_cancelled else rows.filter(is_cancelled=False)
+
+
+def issued_in_period(date_from, date_to, site=None):
+    """
+    Выдачи за период (обе даты включительно, по местному времени), без отменённых.
+    Если указан site, то только на этот объект («выдано на конкретный объект за период»).
+
+    Возвращает пару запросов (строки ToolMovement, строки HandToolMovement): у видов учёта
+    разные журналы (DECISIONS, раздел 3), склеивать их для общего отчёта будет вызывающий код.
+    """
+    def pick(model):
+        rows = model.objects.filter(
+            type=MovementType.ISSUED, is_cancelled=False,
+            created_at__date__gte=date_from, created_at__date__lte=date_to,
+        ).select_related("site", "created_by").order_by("-created_at", "-pk")
+        return rows if site is None else rows.filter(site=site)
+
+    return pick(ToolMovement), pick(HandToolMovement)
