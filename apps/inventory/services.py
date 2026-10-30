@@ -469,11 +469,13 @@ def write_off(*, user, site=None, tools=(), hand_tools=(), note=""):
     """
     Списать позиции.
 
-    site не указан — списание со склада: штучная позиция «на складе» или «в ремонте»,
-                     ручного инструмента не больше, чем в наличии на складе;
+    site не указан — списание со склада: штучная позиция «на складе», «в ремонте» или
+                     «не найден» (потерянное можно списать), ручного инструмента не больше,
+                     чем в наличии на складе;
     site указан    — списание с объекта: штучная позиция выдана на этом объекте,
                      ручного инструмента не больше, чем там числится.
-    Списать «не найденную» позицию пока нельзя (DECISIONS, раздел 14).
+    Потерянный ручной инструмент списывать не нужно и нельзя: он уже вычтен из total
+    при отметке «не найден», в наличии и на объекте его нет (DECISIONS, раздел 14).
     Возвращает batch (UUID).
     """
     tools = list(tools)
@@ -483,7 +485,7 @@ def write_off(*, user, site=None, tools=(), hand_tools=(), note=""):
     locked = _lock_positions(tools, hand_tools)
     _check_tools_at(
         locked, site, "списать",
-        warehouse_statuses=(Tool.Status.AVAILABLE, Tool.Status.SERVICING),
+        warehouse_statuses=(Tool.Status.AVAILABLE, Tool.Status.SERVICING, Tool.Status.MISSING),
     )
     _check_hand_quantities(locked, site)
 

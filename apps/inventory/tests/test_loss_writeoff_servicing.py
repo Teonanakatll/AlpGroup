@@ -150,14 +150,38 @@ def test_cannot_write_off_available_tool_as_site(user, tool, site):
     assert tool.status == Tool.Status.AVAILABLE
 
 
-def test_cannot_write_off_missing_tool(user, issued_tool, site):
+def test_missing_tool_can_be_written_off(user, issued_tool, site):
+    # Потерянное закрывается списанием: «не найден» затем «списан».
+    services.mark_missing(user=user, site=site, tools=[issued_tool])
+
+    services.write_off(user=user, tools=[issued_tool], note="потерян, закрыли")
+
+    issued_tool.refresh_from_db()
+    assert issued_tool.status == Tool.Status.WRITTEN_OFF
+    assert issued_tool.current_site is None
+    assert ToolMovement.objects.filter(tool=issued_tool, type=Type.WRITTEN_OFF).count() == 1
+
+
+def test_missing_tool_cannot_be_issued(user, issued_tool, site, other_site):
     services.mark_missing(user=user, site=site, tools=[issued_tool])
 
     with pytest.raises(services.ServiceError):
-        services.write_off(user=user, tools=[issued_tool])
+        services.issue_to_site(user=user, site=other_site, tools=[issued_tool])
 
     issued_tool.refresh_from_db()
     assert issued_tool.status == Tool.Status.MISSING
+
+
+def test_lost_hand_tools_cannot_be_written_off_again(user, issued_hand_tool, site):
+    # На балансе 10, на объекте 6; 2 потеряли: total 8, на складе 4, на объекте 4.
+    services.mark_missing(user=user, site=site, hand_tools=[(issued_hand_tool, 2)])
+
+    # Со склада можно списать только то, что там реально лежит (4), потерянные 2 уже вычтены.
+    with pytest.raises(services.ServiceError):
+        services.write_off(user=user, hand_tools=[(issued_hand_tool, 5)])
+
+    issued_hand_tool.refresh_from_db()
+    assert (issued_hand_tool.total, issued_hand_tool.issued) == (8, 4)
 
 
 def test_cannot_write_off_twice(user, tool):
