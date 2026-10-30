@@ -230,6 +230,54 @@ def _check_not_empty(tools, hand_tools):
         raise ServiceError("Не выбрано ни одной позиции.")
 
 
+def _check_tools_at(locked, site, action, warehouse_statuses=()):
+    """
+    Проверить штучные позиции набора перед операцией; ошибки дописываются в locked.errors.
+
+    site указан  — позиция должна быть выдана и числиться именно на этом объекте;
+    site не указан — позиция должна быть на складе, статус из warehouse_statuses.
+    action — глагол для текста ошибки: «принять», «списать» и т.п.
+    """
+    for tool_id in locked.tool_ids:
+        tool = locked.tools.get(tool_id)
+        if tool is None:
+            locked.errors.append(f"Инструмент с id {tool_id} не найден.")
+        elif site is None:
+            if tool.status not in warehouse_statuses:
+                locked.errors.append(
+                    f"«{tool.name}»: нельзя {action}, статус «{tool.get_status_display()}»."
+                )
+        elif tool.status != Tool.Status.ISSUED:
+            locked.errors.append(
+                f"«{tool.name}»: нельзя {action}, статус «{tool.get_status_display()}»."
+            )
+        elif tool.current_site_id != site.pk:
+            locked.errors.append(f"«{tool.name}»: числится не на этом объекте.")
+
+
+def _check_hand_quantities(locked, site):
+    """
+    Проверить количество ручного инструмента; ошибки дописываются в locked.errors.
+
+    site указан  — нельзя взять больше, чем числится на этом объекте (selectors);
+    site не указан — нельзя взять больше, чем лежит на складе (available).
+    """
+    for hand_id in locked.hand_ids:
+        hand_tool = locked.hand_tools.get(hand_id)
+        quantity = locked.quantities[hand_id]
+        if hand_tool is None:
+            locked.errors.append(f"Ручной инструмент с id {hand_id} не найден.")
+        elif quantity < 1:
+            locked.errors.append(f"«{hand_tool.name}»: количество должно быть не меньше 1.")
+        else:
+            limit = hand_tool.available if site is None else selectors.hand_tool_on_site(hand_tool, site)
+            place = "на складе" if site is None else "на объекте"
+            if quantity > limit:
+                locked.errors.append(
+                    f"«{hand_tool.name}»: запрошено {quantity}, {place} числится {limit}."
+                )
+
+
 # ---------------------------------------------------------------------------
 # Выдача набора на объект (issued)
 # ---------------------------------------------------------------------------
@@ -321,33 +369,11 @@ def receive_from_site(*, user, site, tools=(), hand_tools=(), taken_by="", note=
     _check_not_empty(tools, hand_tools)
 
     locked = _lock_positions(tools, hand_tools)
-    errors = locked.errors
+    _check_tools_at(locked, site, "принять")
+    _check_hand_quantities(locked, site)
 
-    for tool_id in locked.tool_ids:
-        tool = locked.tools.get(tool_id)
-        if tool is None:
-            errors.append(f"Инструмент с id {tool_id} не найден.")
-        elif tool.status != Tool.Status.ISSUED:
-            errors.append(f"«{tool.name}»: нельзя принять, статус «{tool.get_status_display()}».")
-        elif tool.current_site_id != site.pk:
-            errors.append(f"«{tool.name}»: числится не на этом объекте.")
-
-    for hand_id in locked.hand_ids:
-        hand_tool = locked.hand_tools.get(hand_id)
-        quantity = locked.quantities[hand_id]
-        if hand_tool is None:
-            errors.append(f"Ручной инструмент с id {hand_id} не найден.")
-        elif quantity < 1:
-            errors.append(f"«{hand_tool.name}»: количество должно быть не меньше 1.")
-        else:
-            on_site = selectors.hand_tool_on_site(hand_tool, site)
-            if quantity > on_site:
-                errors.append(
-                    f"«{hand_tool.name}»: принимается {quantity}, на объекте числится {on_site}."
-                )
-
-    if errors:
-        raise ServiceError("\n".join(errors))
+    if locked.errors:
+        raise ServiceError("\n".join(locked.errors))
 
     return _write_set(
         locked, movement_type=MovementType.RETURNED, site=site,
