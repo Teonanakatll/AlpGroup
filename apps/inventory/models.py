@@ -114,6 +114,13 @@ class BaseMovement(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, verbose_name="Кто внёс",
     )
     is_cancelled = models.BooleanField("Отменена", default=False)
+    # Кто и когда отменил; заполняет только services.py при отмене.
+    # related_name="+": обратная связь не нужна, а без него имя совпало бы с created_by.
+    cancelled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT,
+        related_name="+", verbose_name="Кто отменил",
+    )
+    cancelled_at = models.DateTimeField("Когда отменена", null=True, blank=True)
     note = models.CharField("Примечание", max_length=300, blank=True)
 
     class Meta:
