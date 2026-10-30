@@ -522,3 +522,103 @@ def send_to_servicing(*, user, tools, site=None, taken_by="", note=""):
         locked, movement_type=MovementType.SERVICING, site=site,
         user=user, taken_by=taken_by, note=note,
     )
+
+
+# ---------------------------------------------------------------------------
+# Отмена (DECISIONS, разделы 6 и 13)
+# ---------------------------------------------------------------------------
+
+def _cancel(tool_row_ids, hand_row_ids):
+    """
+    Отменить строки журнала: пометить is_cancelled и пересчитать состояние позиций.
+
+    Строки журнала не удаляются и не правятся (журнал только дописывается), меняется
+    только флаг. Состояние позиции после этого не откатывается обратной арифметикой,
+    а пересчитывается по оставшимся действующим записям.
+
+    Правила (DECISIONS, раздел 13):
+    - отменить можно только последнюю действующую операцию по позиции;
+    - постановку на баланс (added) отменять нельзя: ошибки прихода исправляются
+      отдельно (инвентаризация, позже);
+    - всё или ничего: если хоть одну строку отменить нельзя, не отменяется ни одна.
+    Вызывать только внутри transaction.atomic.
+    """
+    # Сначала блокируем позиции этих строк (порядок как везде: по id, штучные, потом ручные),
+    # потом заново читаем строки: пока мы ждали блокировку, кто-то мог их отменить.
+    tool_ids = sorted(set(
+        ToolMovement.objects.filter(pk__in=tool_row_ids).values_list("tool_id", flat=True)
+    ))
+    hand_ids = sorted(set(
+        HandToolMovement.objects.filter(pk__in=hand_row_ids).values_list("hand_tool_id", flat=True)
+    ))
+    tools = {
+        t.pk: t for t in Tool.objects.select_for_update().filter(pk__in=tool_ids).order_by("pk")
+    }
+    hand_tools = {
+        h.pk: h for h in HandTool.objects.select_for_update().filter(pk__in=hand_ids).order_by("pk")
+    }
+
+    tool_rows = list(ToolMovement.objects.filter(pk__in=tool_row_ids, is_cancelled=False))
+    hand_rows = list(HandToolMovement.objects.filter(pk__in=hand_row_ids, is_cancelled=False))
+    if not tool_rows and not hand_rows:
+        raise ServiceError("Нечего отменять: записи уже отменены.")
+
+    errors = []
+    for row in tool_rows:
+        name = tools[row.tool_id].name
+        if row.type == MovementType.ADDED:
+            errors.append(f"«{name}»: постановку на баланс отменять нельзя.")
+        elif ToolMovement.objects.filter(
+            tool_id=row.tool_id, is_cancelled=False, pk__gt=row.pk,
+        ).exists():
+            errors.append(
+                f"«{name}»: после этой операции были другие, отменить можно только последнюю."
+            )
+    for row in hand_rows:
+        name = hand_tools[row.hand_tool_id].name
+        if row.type == MovementType.ADDED:
+            errors.append(f"«{name}»: постановку на баланс отменять нельзя.")
+        elif HandToolMovement.objects.filter(
+            hand_tool_id=row.hand_tool_id, is_cancelled=False, pk__gt=row.pk,
+        ).exists():
+            errors.append(
+                f"«{name}»: после этой операции были другие, отменить можно только последнюю."
+            )
+    if errors:
+        raise ServiceError("\n".join(errors))
+
+    ToolMovement.objects.filter(pk__in=[r.pk for r in tool_rows]).update(is_cancelled=True)
+    HandToolMovement.objects.filter(pk__in=[r.pk for r in hand_rows]).update(is_cancelled=True)
+
+    for tool in tools.values():
+        recalc_tool(tool)
+    for hand_tool in hand_tools.values():
+        recalc_hand_tool(hand_tool)
+
+
+@transaction.atomic
+def cancel_batch(*, user, batch):
+    """
+    Отменить набор целиком: все строки обоих журналов с этим batch.
+
+    Если хоть по одной позиции набора уже были другие операции, не отменяется ничего.
+    """
+    tool_row_ids = list(ToolMovement.objects.filter(batch=batch).values_list("pk", flat=True))
+    hand_row_ids = list(HandToolMovement.objects.filter(batch=batch).values_list("pk", flat=True))
+    if not tool_row_ids and not hand_row_ids:
+        raise ServiceError("Набор не найден.")
+    _cancel(tool_row_ids, hand_row_ids)
+
+
+@transaction.atomic
+def cancel_movement(*, user, movement):
+    """
+    Отменить одну запись журнала (ToolMovement или HandToolMovement), например
+    одну позицию, ошибочно попавшую в набор. Остальные строки набора не трогаются.
+    """
+    if isinstance(movement, ToolMovement):
+        _cancel([movement.pk], [])
+    elif isinstance(movement, HandToolMovement):
+        _cancel([], [movement.pk])
+    else:
+        raise ServiceError("Неизвестный тип записи журнала.")
