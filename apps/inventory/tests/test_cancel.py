@@ -2,6 +2,7 @@
 import uuid
 
 import pytest
+from django.utils import timezone
 
 from apps.inventory import selectors, services
 from apps.inventory.models import (
@@ -283,3 +284,36 @@ def test_cancelling_rest_of_partially_cancelled_batch_is_ok(user, category, site
 
     second.refresh_from_db()
     assert second.status == Tool.Status.AVAILABLE
+
+
+# --- кто и когда отменил ---------------------------------------------------
+
+def test_cancel_records_who_and_when(user, tool, site):
+    batch = services.issue_to_site(user=user, site=site, tools=[tool])
+    before = timezone.now()
+
+    services.cancel_batch(user=user, batch=batch)
+
+    row = ToolMovement.objects.get(tool=tool, type=Type.ISSUED)
+    assert row.cancelled_by == user
+    assert before <= row.cancelled_at <= timezone.now()
+
+
+def test_cancel_movement_records_who_and_when_for_hand_tool(user, stocked_hand_tool, site):
+    services.issue_to_site(user=user, site=site, hand_tools=[(stocked_hand_tool, 4)])
+    row = HandToolMovement.objects.get(hand_tool=stocked_hand_tool, type=Type.ISSUED)
+
+    services.cancel_movement(user=user, movement=row)
+
+    row.refresh_from_db()
+    assert row.cancelled_by == user
+    assert row.cancelled_at is not None
+
+
+def test_active_movements_have_no_cancel_info(user, tool, site):
+    services.issue_to_site(user=user, site=site, tools=[tool])
+
+    row = ToolMovement.objects.get(tool=tool, type=Type.ISSUED)
+
+    assert row.cancelled_by is None
+    assert row.cancelled_at is None

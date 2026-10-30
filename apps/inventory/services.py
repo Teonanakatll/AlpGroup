@@ -528,7 +528,7 @@ def send_to_servicing(*, user, tools, site=None, taken_by="", note=""):
 # Отмена (DECISIONS, разделы 6 и 13)
 # ---------------------------------------------------------------------------
 
-def _cancel(tool_row_ids, hand_row_ids):
+def _cancel(user, tool_row_ids, hand_row_ids):
     """
     Отменить строки журнала: пометить is_cancelled и пересчитать состояние позиций.
 
@@ -587,8 +587,10 @@ def _cancel(tool_row_ids, hand_row_ids):
     if errors:
         raise ServiceError("\n".join(errors))
 
-    ToolMovement.objects.filter(pk__in=[r.pk for r in tool_rows]).update(is_cancelled=True)
-    HandToolMovement.objects.filter(pk__in=[r.pk for r in hand_rows]).update(is_cancelled=True)
+    # Кто и когда отменил, запоминаем вместе с флагом.
+    mark = {"is_cancelled": True, "cancelled_by": user, "cancelled_at": timezone.now()}
+    ToolMovement.objects.filter(pk__in=[r.pk for r in tool_rows]).update(**mark)
+    HandToolMovement.objects.filter(pk__in=[r.pk for r in hand_rows]).update(**mark)
 
     for tool in tools.values():
         recalc_tool(tool)
@@ -607,7 +609,7 @@ def cancel_batch(*, user, batch):
     hand_row_ids = list(HandToolMovement.objects.filter(batch=batch).values_list("pk", flat=True))
     if not tool_row_ids and not hand_row_ids:
         raise ServiceError("Набор не найден.")
-    _cancel(tool_row_ids, hand_row_ids)
+    _cancel(user, tool_row_ids, hand_row_ids)
 
 
 @transaction.atomic
@@ -617,8 +619,8 @@ def cancel_movement(*, user, movement):
     одну позицию, ошибочно попавшую в набор. Остальные строки набора не трогаются.
     """
     if isinstance(movement, ToolMovement):
-        _cancel([movement.pk], [])
+        _cancel(user, [movement.pk], [])
     elif isinstance(movement, HandToolMovement):
-        _cancel([], [movement.pk])
+        _cancel(user, [], [movement.pk])
     else:
         raise ServiceError("Неизвестный тип записи журнала.")
