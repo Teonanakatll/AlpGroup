@@ -4,7 +4,7 @@
  *  - подсветка карточки под курсором
  *  - числа «набегают» от нуля
  *  - всплывающие сообщения (window.toast), сообщения Django показываются так же
- *  - плавный скролл колесом мыши (инерция, как у Lenis / Locomotive Scroll)
+ *  - плавный скролл (библиотека Lenis, на ней построен Locomotive Scroll v5)
  *  - меню на телефоне, клавиша "/" ставит курсор в поиск
  */
 (function () {
@@ -33,44 +33,19 @@
     card.style.setProperty("--my", (event.clientY - rect.top) + "px");
   }, { passive: true });
 
-  // ---- Плавный скролл колесом -------------------------------------------
-  // Тот же принцип, что у Lenis (на нём построен Locomotive Scroll v5): колесо двигает не страницу,
-  // а «цель», а страница плавно догоняет её. Тачпады и телефоны не трогаем (у них своя инерция),
-  // так же как внутренние прокручиваемые блоки и режим «уменьшить движение».
+  // ---- Плавный скролл (Lenis) -------------------------------------------
+  // Lenis подключается в base.html с CDN. Если он не загрузился (нет интернета), страница
+  // просто прокручивается обычным образом. На телефонах Lenis сам оставляет родную прокрутку.
   (function smoothScroll() {
-    if (reduceMotion) return;
-    var target = window.scrollY, current = target, running = false, ease = 0.11;
-
-    function limit(value) {
-      return Math.max(0, Math.min(value, document.documentElement.scrollHeight - window.innerHeight));
-    }
-    function scrollableInside(node) {            // внутри блока со своей прокруткой колесо не перехватываем
-      for (; node && node !== document.body; node = node.parentElement) {
-        var overflow = getComputedStyle(node).overflowY;
-        if ((overflow === "auto" || overflow === "scroll") && node.scrollHeight > node.clientHeight) return true;
-      }
-      return false;
-    }
-    function frame() {
-      current += (target - current) * ease;
-      if (Math.abs(target - current) < 0.4) { current = target; running = false; }
-      window.scrollTo(0, current);
-      if (running) requestAnimationFrame(frame);
-    }
-
-    window.addEventListener("wheel", function (event) {
-      if (event.defaultPrevented || event.ctrlKey || event.deltaX !== 0 && Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
-      if (document.body.classList.contains("nav-open") || scrollableInside(event.target)) return;
-      if (event.deltaMode === 0 && Math.abs(event.deltaY) < 40) return;     // мелкие шаги тачпада: уже плавно
-      event.preventDefault();
-      if (!running) { target = current = window.scrollY; }
-      var step = event.deltaMode === 1 ? event.deltaY * 32 : event.deltaY;
-      target = limit(target + step);
-      if (!running) { running = true; requestAnimationFrame(frame); }
-    }, { passive: false });
-
-    // Прокрутили иначе (клавиши, полоса, якорь): цель берём из реального положения
-    window.addEventListener("scroll", function () { if (!running) { target = current = window.scrollY; } }, { passive: true });
+    if (reduceMotion || typeof window.Lenis === "undefined") return;
+    var lenis = new window.Lenis({ lerp: 0.1 });       // lerp: чем меньше, тем плавнее и «тяжелее»
+    window.lenis = lenis;
+    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+    requestAnimationFrame(raf);
+    // Пока открыто меню на телефоне, страница под ним не прокручивается
+    new MutationObserver(function () {
+      if (document.body.classList.contains("nav-open")) lenis.stop(); else lenis.start();
+    }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   })();
 
   // ---- Счётчики ---------------------------------------------------------

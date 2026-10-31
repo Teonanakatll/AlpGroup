@@ -140,6 +140,12 @@ html { scrollbar-width: thin; scrollbar-color: rgb(var(--accent-rgb) / .45) tran
 ::-webkit-scrollbar-thumb { background: rgb(var(--accent-rgb) / .35); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-thumb:hover { background: rgb(var(--accent-rgb) / .7); background-clip: padding-box; }
 
+/* Обязательные стили Lenis (из документации библиотеки) */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+
 /* ---------- Панели и карточки ---------- */
 .panel, .card {
   position: relative;
@@ -170,7 +176,7 @@ html { scrollbar-width: thin; scrollbar-color: rgb(var(--accent-rgb) / .45) tran
 }
 .card::after {                        /* подсветка под курсором */
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: radial-gradient(93px circle at var(--mx, 50%) var(--my, 50%), rgb(var(--accent-rgb) / .42), transparent 72%);
+  background: radial-gradient(46px circle at var(--mx, 50%) var(--my, 50%), rgb(var(--accent-rgb) / .42), transparent 72%);
   opacity: 0; transition: opacity .5s var(--ease-soft);
 }
 .card:hover, .card:focus-within {
