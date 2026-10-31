@@ -566,7 +566,7 @@ input:focus, select:focus, textarea:focus {
 /* ---------- Операции: форма выдачи и приёма ---------- */
 .op-form { display: flex; flex-direction: column; gap: 18px; }
 #positions { display: flex; flex-direction: column; gap: 14px; }
-.op-head { display: grid; grid-template-columns: 1.2fr 1fr 1.4fr; gap: 16px; padding: 18px; }
+.op-head { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; padding: 18px; }
 .field-error { font-size: 13px; color: rgb(var(--red-rgb)); }
 .form-error ul { margin: 6px 0 0 18px; }
 .pick-head { max-width: 420px; }
@@ -596,16 +596,35 @@ label.pick { cursor: pointer; }
 .pick .icon-tile .icon { width: 21px; height: 21px; }
 .pick .item-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .pick .item-name, .pick .item-meta { display: block; }
-.qty { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-.qty input { width: 90px; text-align: center; }
-.qty-of { font-size: 13px; color: var(--text-dim); white-space: nowrap; }
+/* Количество ручного инструмента: цифра между двумя большими зелёными стрелками, рядом с названием */
+.pick--qty .item-main { flex: 0 1 260px; }
+.qty { display: flex; align-items: center; gap: 4px; margin-left: 8px; }
+.qty input {
+  width: 64px; padding: 6px 2px; text-align: center; border-radius: 12px;
+  font-size: 26px; font-weight: 700; line-height: 1.2; color: var(--accent);
+  text-shadow: 0 0 14px rgb(var(--accent-rgb) / .55);
+  -moz-appearance: textfield; appearance: textfield;
+}
+.qty input::-webkit-outer-spin-button, .qty input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.qty input::placeholder { color: rgb(var(--accent-rgb) / .35); text-shadow: none; }
+.qty-btn {
+  width: 46px; height: 46px; flex: none; display: grid; place-items: center; padding: 0; cursor: pointer;
+  border: 0; border-radius: 14px; color: var(--accent); background: rgb(var(--accent-rgb) / .1);
+  transition: transform .45s var(--ease-soft), background .45s var(--ease-soft), box-shadow .5s var(--ease-soft), color .4s var(--ease-soft), opacity .4s var(--ease-soft);
+}
+.qty-btn .icon { width: 30px; height: 30px; stroke-width: 2.6; filter: drop-shadow(0 0 4px rgb(var(--accent-rgb) / .6)); }
+.qty-btn:hover { transform: scale(1.14); background: rgb(var(--accent-rgb) / .22); box-shadow: 0 0 20px rgb(var(--accent-rgb) / .55); color: #d6ff6b; }
+.qty-btn:active { transform: scale(.92); }
+.qty-btn:disabled { opacity: .25; cursor: default; transform: none; box-shadow: none; background: transparent; }
+.qty-of { margin-left: 8px; font-size: 13px; color: var(--text-dim); white-space: nowrap; }
 .op-bar { position: sticky; bottom: 16px; z-index: 5; background: var(--card-bg-solid); display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; }
 .op-count { color: var(--text-dim); }
 .op-count b { color: var(--text); font-size: 18px; }
 .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
 .btn:disabled::after { display: none; }
 @media (max-width: 900px) { .op-head { grid-template-columns: 1fr; } }
-@media (max-width: 520px) { .qty-of { display: none; } .qty input { width: 72px; } }
+@media (max-width: 700px) { .pick--qty { flex-wrap: wrap; } .pick--qty .item-main { flex: 1 1 140px; } }
+@media (max-width: 520px) { .qty-of { display: none; } .qty-btn { width: 42px; height: 42px; } .qty input { width: 52px; } }
 
 /* ---------- 4. Анимации ---------- */
 .reveal { animation: reveal .8s var(--ease) both; animation-delay: calc(var(--i, 0) * 80ms); }

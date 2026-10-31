@@ -203,3 +203,65 @@ def test_receive_more_than_on_site_is_rejected(admin_client, user, stocked_hand_
     assert "Операция не выполнена" in response.content.decode()
     stocked_hand_tool.refresh_from_db()
     assert stocked_hand_tool.issued == 4
+
+
+# ---------------------------------------------------------------------------
+# Новый объект прямо в форме выдачи
+# ---------------------------------------------------------------------------
+
+def test_issue_form_offers_new_site_field(admin_client, tool):
+    html = admin_client.get("/operations/issue/").content.decode()
+
+    assert 'name="new_site"' in html and "Название нового объекта" in html
+
+
+def test_issue_creates_new_site_with_issue(admin_client, tool):
+    response = admin_client.post("/operations/issue/", {"new_site": "  Лемон   Гарден ", "tools": [tool.pk]})
+
+    assert response.status_code == 302
+    created = Site.objects.get(name="Лемон Гарден")            # лишние пробелы убраны
+    tool.refresh_from_db()
+    assert tool.status == "issued" and tool.current_site == created
+    assert "(новый объект)" in admin_client.get("/operations/issue/").content.decode()
+
+
+def test_issue_reuses_existing_site_by_name(admin_client, tool, site):
+    admin_client.post("/operations/issue/", {"new_site": f"  {site.name}  ", "tools": [tool.pk]})
+
+    assert Site.objects.count() == 1                           # дубль не создан
+    tool.refresh_from_db()
+    assert tool.current_site == site
+
+
+def test_new_site_wins_over_selected_one(admin_client, tool, site):
+    admin_client.post("/operations/issue/", {"site": site.pk, "new_site": "Шартава 7", "tools": [tool.pk]})
+
+    tool.refresh_from_db()
+    assert tool.current_site.name == "Шартава 7"
+
+
+def test_failed_issue_does_not_leave_new_site(admin_client, user, tool, site):
+    services.issue_to_site(user=user, site=site, tools=[tool])      # позиция уже выдана: выдача откажет
+
+    response = admin_client.post("/operations/issue/", {"new_site": "Центрополис", "tools": [tool.pk]})
+
+    assert response.status_code == 200
+    assert not Site.objects.filter(name="Центрополис").exists()    # объект откатился вместе с выдачей
+    assert "Центрополис" in response.content.decode()              # а введённое название в форме осталось
+
+
+def test_issue_needs_site_or_new_site(admin_client, tool):
+    response = admin_client.post("/operations/issue/", {"tools": [tool.pk]})
+
+    assert response.status_code == 200
+    assert "Выберите объект или введите новый" in response.content.decode()
+
+
+# ---------------------------------------------------------------------------
+# Количество ручного инструмента: стрелки
+# ---------------------------------------------------------------------------
+
+def test_hand_tool_row_has_stepper_arrows(admin_client, stocked_hand_tool):
+    html = admin_client.get("/operations/issue/").content.decode()
+
+    assert html.count('data-qty-step="-1"') == 1 and html.count('data-qty-step="1"') == 1

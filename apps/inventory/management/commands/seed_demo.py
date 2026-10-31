@@ -1,5 +1,5 @@
 """
-Загрузка тестовых данных: 25 электроинструментов (штучно) и 25 ручных (количеством).
+Загрузка тестовых данных: 25 электроинструментов (штучно), 25 ручных (количеством) и 5 объектов.
 
 Запуск:
     python manage.py seed_demo               # от имени первого суперпользователя
@@ -18,6 +18,7 @@ from django.db import transaction
 
 from apps.inventory import services
 from apps.inventory.models import Category, HandTool, Tool
+from apps.sites import services as site_services
 
 ELECTRO_CATEGORY = "Электроинструмент"
 HAND_CATEGORY = "Ручной инструмент"
@@ -78,11 +79,13 @@ HAND_TOOLS = [
     "Киянка резиновая",
 ]
 
+SITES = ["Лемон Гарден", "Центрополис", "Такаишвили", "Зелёный дом", "Шартава 7"]
+
 MIN_QUANTITY, MAX_QUANTITY = 5, 15
 
 
 class Command(BaseCommand):
-    help = "Загрузить тестовые данные: 25 электроинструментов и 25 ручных (5-15 шт.)."
+    help = "Загрузить тестовые данные: 25 электроинструментов, 25 ручных (5-15 шт.) и 5 объектов."
 
     def add_arguments(self, parser):
         parser.add_argument("--user", help="логин того, кто «вносит» данные (по умолчанию первый суперпользователь)")
@@ -115,9 +118,12 @@ class Command(BaseCommand):
                 services.add_hand_tool_stock(user=author, hand_tool=hand_tool, quantity=quantity)
                 new_hand += 1
 
+            new_sites = sum(site_services.get_or_create_site(name)[1] for name in SITES)
+
         self.stdout.write(self.style.SUCCESS(
             f"Готово: штучных добавлено {new_tools} из {len(ELECTRO_TOOLS)}, "
-            f"ручных добавлено {new_hand} из {len(HAND_TOOLS)} (остальные уже были)."
+            f"ручных добавлено {new_hand} из {len(HAND_TOOLS)}, "
+            f"объектов добавлено {new_sites} из {len(SITES)} (остальные уже были)."
         ))
 
     def _author(self, username):

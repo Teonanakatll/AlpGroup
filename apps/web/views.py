@@ -4,14 +4,17 @@
 """
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
 from apps.inventory import selectors, services
-from apps.inventory.forms import ReceiveFromSiteForm, SiteOperationForm
+from apps.inventory.forms import ReceiveFromSiteForm
 from apps.inventory.models import Tool
+from apps.sites import services as site_services
 from apps.sites.models import Site
 
+from .forms import IssueForm
 from .positions import Positions, parse_positions
 
 # Как показывать тип операции: иконка из набора (_icons.html) и цвет (класс tone-*).
@@ -106,29 +109,39 @@ def operations(request):
 
 @login_required
 def issue(request):
-    """Выдача набора на объект: выбрать объект и позиции, нажать «Выдать»."""
+    """
+    Выдача набора на объект: выбрать объект (или ввести новый) и позиции, нажать «Выдать».
+    Новый объект создаётся в одной транзакции с выдачей: при отказе выдачи он не остаётся.
+    """
     positions, errors = Positions(), []
     if request.method == "POST":
-        form = SiteOperationForm(request.POST)
+        form = IssueForm(request.POST)
         positions = parse_positions(request.POST)
         errors = list(positions.errors)
         if form.is_valid() and not errors:
+            data = form.cleaned_data
             try:
-                services.issue_to_site(
-                    user=request.user, site=form.cleaned_data["site"],
-                    tools=positions.tools, hand_tools=positions.hand_tools,
-                    taken_by=form.cleaned_data["taken_by"], note=form.cleaned_data["note"],
-                )
+                with transaction.atomic():
+                    if data["new_site"]:
+                        site, created = site_services.get_or_create_site(data["new_site"])
+                    else:
+                        site, created = data["site"], False
+                    services.issue_to_site(
+                        user=request.user, site=site,
+                        tools=positions.tools, hand_tools=positions.hand_tools,
+                        taken_by=data["taken_by"], note=data["note"],
+                    )
             except services.ServiceError as error:
                 errors = str(error).splitlines()     # по строке на каждую проблемную позицию
             else:
+                new_note = " (новый объект)" if created else ""
                 messages.success(
                     request,
-                    f"Выдано на «{form.cleaned_data['site']}»: {_count_text(positions.tools, positions.hand_tools)}.",
+                    f"Выдано на «{site}»{new_note}: {_count_text(positions.tools, positions.hand_tools)}.",
                 )
                 return redirect("web:issue")
     else:
-        form = SiteOperationForm()
+        form = IssueForm()
     form.fields["site"].empty_label = "Выберите объект…"
     context = _operation_context(request, mode="issue", form=form, positions=positions, site=None, errors=errors)
     return render(request, "web/operation.html", context)

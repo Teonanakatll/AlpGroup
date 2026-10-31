@@ -135,6 +135,11 @@
         var max = parseInt(qty.max, 10), value = parseInt(qty.value, 10);
         if (!isNaN(value) && !isNaN(max) && value > max) { qty.value = max; value = max; }
         on = !isNaN(value) && value > 0;
+        // Стрелки выключаются на границах: ниже нуля и выше остатка не уйти
+        row.querySelectorAll("[data-qty-step]").forEach(function (button) {
+          var current = isNaN(value) ? 0 : value;
+          button.disabled = button.dataset.qtyStep < 0 ? current <= 0 : (!isNaN(max) && current >= max);
+        });
       }
       row.classList.toggle("is-selected", on);
       if (on) count += 1;
@@ -161,6 +166,15 @@
     if (event.target.matches("[data-site-select]") && !window.htmx) {
       window.location.search = "?site=" + encodeURIComponent(event.target.value);
     }
+  });
+  document.addEventListener("click", function (event) {        // стрелки у количества
+    var button = event.target.closest("[data-qty-step]");
+    if (!button) return;
+    var input = button.parentElement.querySelector('input[type="number"]');
+    var max = parseInt(input.max, 10), value = parseInt(input.value, 10) || 0;
+    value = Math.max(0, Math.min(isNaN(max) ? Infinity : max, value + parseInt(button.dataset.qtyStep, 10)));
+    input.value = value;
+    updatePicks();
   });
   document.addEventListener("keydown", function (event) {      // Enter в фильтре не отправляет форму
     if (event.key === "Enter" && event.target.matches("[data-pick-filter]")) event.preventDefault();

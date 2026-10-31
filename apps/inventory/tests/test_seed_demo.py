@@ -1,9 +1,10 @@
-"""Команда seed_demo: 25 + 25 позиций, количества 5-15, повторный запуск без дублей."""
+"""Команда seed_demo: 25 + 25 позиций и 5 объектов, количества 5-15, повторный запуск без дублей."""
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from apps.inventory.models import HandTool, HandToolMovement, Tool, ToolMovement
+from apps.sites.models import Site
 
 
 def test_seed_creates_25_and_25(admin_user):
@@ -43,6 +44,17 @@ def test_seed_is_reproducible_with_seed(admin_user):
     call_command("seed_demo", seed=7)
 
     assert dict(HandTool.objects.values_list("name", "total")) == first
+
+
+def test_seed_creates_five_sites_without_duplicates(admin_user):
+    Site.objects.create(name="Центрополис")       # такой объект уже был
+
+    call_command("seed_demo", seed=1)
+    call_command("seed_demo", seed=1)
+
+    assert sorted(Site.objects.values_list("name", flat=True)) == sorted(
+        ["Лемон Гарден", "Центрополис", "Такаишвили", "Зелёный дом", "Шартава 7"]
+    )
 
 
 def test_seed_needs_a_user(db):
