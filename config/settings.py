@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'apps.staff',
     'apps.sites',
     'apps.web',
-    'apps.web',
 
     'rest_framework',
     'django_extensions'
