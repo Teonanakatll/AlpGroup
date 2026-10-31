@@ -82,3 +82,45 @@ class HandToolMovementSerializer(_MovementSerializer):
     class Meta:
         model = HandToolMovement
         fields = _MovementSerializer.common_fields + ("quantity",)
+
+
+# ---------------------------------------------------------------------------
+# Входные данные операций (выдача, приём). Только разбор и проверка формата JSON;
+# правила учёта проверяет services.py.
+# ---------------------------------------------------------------------------
+
+class HandToolItemSerializer(serializers.Serializer):
+    """Одна строка ручного инструмента в наборе: что и сколько."""
+    hand_tool = serializers.PrimaryKeyRelatedField(queryset=HandTool.objects.all())
+    quantity = serializers.IntegerField(min_value=1)
+
+
+class _OperationSerializer(serializers.Serializer):
+    taken_by = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
+    note = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
+
+
+class SiteOperationSerializer(_OperationSerializer):
+    """
+    Выдача на объект и приём с объекта. Пример тела запроса:
+    {"site": 1, "tools": [3, 4], "hand_tools": [{"hand_tool": 7, "quantity": 5}], "note": ""}
+    """
+    site = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all())
+    tools = serializers.PrimaryKeyRelatedField(queryset=Tool.objects.all(), many=True, required=False)
+    hand_tools = HandToolItemSerializer(many=True, required=False)
+
+    def service_kwargs(self):
+        """Данные в том виде, как их ждут функции services.py."""
+        data = self.validated_data
+        return {
+            "site": data["site"],
+            "tools": data.get("tools", []),
+            "hand_tools": [(item["hand_tool"], item["quantity"]) for item in data.get("hand_tools", [])],
+            "taken_by": data["taken_by"],
+            "note": data["note"],
+        }
+
+
+class ReceiveFromServicingSerializer(_OperationSerializer):
+    """Приём штучных позиций из ремонта: {"tools": [3, 4]}."""
+    tools = serializers.PrimaryKeyRelatedField(queryset=Tool.objects.all(), many=True)

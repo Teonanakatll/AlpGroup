@@ -1,6 +1,7 @@
 """
-API только для чтения. Вьюхи тонкие: берут данные из моделей и selectors.py и отдают JSON.
-Ничего не меняют, поэтому ReadOnly* (запросы POST, PUT, DELETE вернут 405).
+API. Вьюхи тонкие: чтение идёт через модели и selectors.py, операции через services.py.
+Справочники и списки только для чтения (POST, PUT, DELETE вернут 405); менять данные
+можно только операциями ниже (выдача, приём).
 """
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -9,11 +10,12 @@ from rest_framework.views import APIView
 
 from apps.sites.models import Site
 
-from . import selectors
+from . import selectors, services
 from .models import Category, HandTool, Tool
 from .serializers import (
     CategorySerializer, HandToolMovementSerializer, HandToolSerializer,
-    OnSiteHandToolSerializer, SiteSerializer, ToolMovementSerializer, ToolSerializer,
+    OnSiteHandToolSerializer, ReceiveFromServicingSerializer, SiteOperationSerializer,
+    SiteSerializer, ToolMovementSerializer, ToolSerializer,
 )
 
 
@@ -95,3 +97,64 @@ class AvailableView(APIView):
             "tools": ToolSerializer(selectors.available_tools(), many=True).data,
             "hand_tools": HandToolSerializer(selectors.available_hand_tools(), many=True).data,
         })
+
+
+# ---------------------------------------------------------------------------
+# Операции (меняют данные, всё через services.py)
+# ---------------------------------------------------------------------------
+
+class OperationView(APIView):
+    """
+    Общий ход операции: проверить JSON, вызвать service, вернуть batch.
+
+    Два вида отказа, оба с кодом 400:
+    - неверный формат (нет объекта, количество 0, такого id нет): {"site": ["..."], ...};
+    - правила учёта (инструмент уже выдан, не хватает на складе):
+      {"detail": "Операция отклонена.", "errors": ["строка на каждую проблему", ...]}.
+    Успех: 201 и {"batch": "<uuid>"}; по batch набор потом можно найти или отменить.
+    """
+    serializer_class = None
+
+    def perform(self, user, serializer):
+        """Вызвать нужный service. Определяется в наследниках."""
+        raise NotImplementedError
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            batch = self.perform(request.user, serializer)
+        except services.ServiceError as error:
+            # В тексте ошибки по строке на каждую проблемную позицию (всё или ничего).
+            return Response(
+                {"detail": "Операция отклонена.", "errors": str(error).splitlines()},
+                status=400,
+            )
+        return Response({"batch": batch}, status=201)
+
+
+class IssueView(OperationView):
+    """Выдать набор на объект."""
+    serializer_class = SiteOperationSerializer
+
+    def perform(self, user, serializer):
+        return services.issue_to_site(user=user, **serializer.service_kwargs())
+
+
+class ReceiveView(OperationView):
+    """Принять набор с объекта на склад."""
+    serializer_class = SiteOperationSerializer
+
+    def perform(self, user, serializer):
+        return services.receive_from_site(user=user, **serializer.service_kwargs())
+
+
+class ReceiveFromServicingView(OperationView):
+    """Принять штучные позиции из ремонта на склад."""
+    serializer_class = ReceiveFromServicingSerializer
+
+    def perform(self, user, serializer):
+        data = serializer.validated_data
+        return services.receive_from_servicing(
+            user=user, tools=data["tools"], taken_by=data["taken_by"], note=data["note"],
+        )

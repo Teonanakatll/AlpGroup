@@ -6,6 +6,8 @@ Router сам делает адреса для списка и одной зап
   /api/tools/<id>/       одна позиция
   /api/tools/<id>/history/   её история
 Так же для hand-tools, sites и categories; плюс /api/sites/<id>/on-site/ и /api/available/.
+
+Операции (POST): /api/issue/, /api/receive/, /api/receive-from-servicing/.
 """
 from django.urls import path
 from rest_framework.routers import DefaultRouter
@@ -20,5 +22,8 @@ router.register("categories", views.CategoryViewSet, basename="category")
 
 urlpatterns = [
     path("available/", views.AvailableView.as_view(), name="available"),
+    path("issue/", views.IssueView.as_view(), name="issue"),
+    path("receive/", views.ReceiveView.as_view(), name="receive"),
+    path("receive-from-servicing/", views.ReceiveFromServicingView.as_view(), name="receive-from-servicing"),
     *router.urls,
 ]
