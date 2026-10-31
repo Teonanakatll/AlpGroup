@@ -21,12 +21,17 @@
     <section class="grid-items">
       {% for tool in tools %}
         <article class="card item reveal" data-status="{{ tool.status }}" style="--i:{% if forloop.counter0 < 10 %}{{ forloop.counter0|add:2 }}{% else %}12{% endif %}">
-          <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-box"/></svg></span>
+          {% if tool.main_photos %}
+            <img class="item-photo" src="{{ tool.main_photos.0.image.url }}" alt="{{ tool.name }}" loading="lazy" width="52" height="52">
+          {% else %}
+            <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-box"/></svg></span>
+          {% endif %}
           <div class="item-main">
             <div class="item-name">{{ tool.name }}</div>
             <div class="item-meta">{{ tool.category }}{% if tool.current_site %} · {{ tool.current_site }}{% endif %}</div>
           </div>
           <span class="pill pill--{{ tool.status }}">{{ tool.get_status_display }}</span>
+          <div class="item-extra"></div>   {# место под доп. информацию справа #}
         </article>
       {% endfor %}
     </section>
@@ -42,13 +47,13 @@
             <div class="item-name">{{ hand.name }}</div>
             <div class="item-meta">{{ hand.category }}</div>
           </div>
+          <span class="pill{% if not hand.available %} pill--empty{% endif %}">{{ hand.available }} на складе</span>
           <div class="item-meter">
             <div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="{{ hand.total }}" aria-valuenow="{{ hand.issued }}" aria-label="Выдано">
               <i style="--v:{% widthratio hand.issued hand.total 100 %}"></i>
             </div>
             <div class="meter-caption"><span>Выдано <b>{{ hand.issued }}</b></span><span>Всего <b>{{ hand.total }}</b></span></div>
           </div>
-          <span class="pill{% if not hand.available %} pill--empty{% endif %}">{{ hand.available }} на складе</span>
         </article>
       {% endfor %}
     </section>

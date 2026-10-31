@@ -4,7 +4,10 @@
 admin_client (pytest-django) это клиент, уже вошедший как суперпользователь.
 Проверяем, что нужные данные доходят до страницы; вид и анимации проверяются глазами.
 """
+from django.core.files.uploadedfile import SimpleUploadedFile
+
 from apps.inventory import selectors, services
+from apps.inventory.models import ToolPhoto
 
 
 def page(client, url):
@@ -132,6 +135,29 @@ def test_inventory_status_filter_hides_hand_tools(admin_client, user, tool, stoc
 
     assert "Перфоратор" in html
     assert "Молоток" not in html            # у ручного инструмента статусов нет
+
+
+# Минимальный корректный GIF 1x1: настоящая картинка для ImageField без внешних файлов.
+TINY_GIF = (b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00"
+            b",\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;")
+
+
+def test_inventory_shows_main_photo_instead_of_icon(admin_client, tool, settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path                      # файлы теста не попадают в настоящую media/
+    ToolPhoto.objects.create(tool=tool, image=SimpleUploadedFile("a.gif", TINY_GIF), is_main=True)
+    ToolPhoto.objects.create(tool=tool, image=SimpleUploadedFile("b.gif", TINY_GIF))   # не главное
+
+    html = page(admin_client, "/inventory/")
+
+    assert html.count('class="item-photo"') == 1        # только главное фото
+    assert "/media/tools/" in html
+
+
+def test_inventory_without_photo_keeps_icon(admin_client, tool):
+    html = page(admin_client, "/inventory/")
+
+    assert 'class="item-photo"' not in html
+    assert "#i-box" in html
 
 
 def test_inventory_unknown_status_is_ignored(admin_client, tool):

@@ -1,9 +1,9 @@
 """
 Выборки (только чтение, ничего не меняют). Считаются по журналу, а не по кэшу в моделях.
 """
-from django.db.models import Case, Count, F, IntegerField, Sum, Value, When
+from django.db.models import Case, Count, F, IntegerField, Prefetch, Sum, Value, When
 
-from .models import BaseMovement, HandTool, HandToolMovement, Tool, ToolMovement
+from .models import BaseMovement, HandTool, HandToolMovement, Tool, ToolMovement, ToolPhoto
 
 MovementType = BaseMovement.Type
 
@@ -216,7 +216,10 @@ def search_inventory(query="", status=""):
     status относится только к штучным позициям. У ручного инструмента статусов нет
     (DECISIONS, раздел 14), поэтому при выбранном статусе ручной инструмент не показывается.
     """
-    tools = Tool.objects.select_related("category", "current_site").order_by("name")
+    # Главное фото берём одним дополнительным запросом на всю страницу (а не по запросу на позицию).
+    # В шаблоне: tool.main_photos (список из 0 или 1 фото).
+    main_photo = Prefetch("photos", queryset=ToolPhoto.objects.filter(is_main=True), to_attr="main_photos")
+    tools = Tool.objects.select_related("category", "current_site").prefetch_related(main_photo).order_by("name")
     hand_tools = HandTool.objects.select_related("category").order_by("name")
     if query:
         tools = tools.filter(name__icontains=query)
