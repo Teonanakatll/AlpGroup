@@ -626,12 +626,13 @@ input:focus, select:focus, textarea:focus {
   .stats { grid-template-columns: 1fr; }
 }
 
-/* ---------- 6. «Уменьшить движение» в настройках системы ---------- */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important; scroll-behavior: auto !important;
-  }
-  .reveal { animation: none; opacity: 1; }
-  .card:hover, .item:hover { transform: none; }
+/* ---------- 6. Режим «меньше движения» ----------
+   Включается только явно: localStorage.setItem("motion", "reduced") в консоли браузера
+   (вернуть: localStorage.removeItem("motion")). Флаг системы prefers-reduced-motion не учитываем:
+   в Windows при выключенных анимациях он делал сайт «мёртвым» (DECISIONS, раздел 18). */
+:root[data-motion="reduced"] *, :root[data-motion="reduced"] *::before, :root[data-motion="reduced"] *::after {
+  animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+  transition-duration: .01ms !important; scroll-behavior: auto !important;
 }
+:root[data-motion="reduced"] .reveal { animation: none; opacity: 1; }
+:root[data-motion="reduced"] .card:hover, :root[data-motion="reduced"] .item:hover { transform: none; }

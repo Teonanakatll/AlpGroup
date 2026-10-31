@@ -11,7 +11,7 @@
   "use strict";
 
   var root = document.documentElement;
-  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var reduceMotion = root.dataset.motion === "reduced";   // только по явному выбору, не по флагу системы
 
   // ---- Тема -------------------------------------------------------------
   function setTheme(name) {
