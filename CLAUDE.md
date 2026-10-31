@@ -30,6 +30,7 @@ Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .e
 3. `python manage.py migrate`, `python manage.py createsuperuser`.
 4. `python manage.py runserver`.
 5. Тесты: `pytest`.
+6. Тестовые данные (25 штучных и 25 ручных позиций): `python manage.py seed_demo` (повторный запуск ничего не дублирует).
 
 ## Текущее состояние
 Сделано:
