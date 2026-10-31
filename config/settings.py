@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'apps.inventory',
     'apps.staff',
     'apps.sites',
+    'apps.web',
+    'apps.web',
 
     'rest_framework',
     'django_extensions'
@@ -134,6 +136,17 @@ STATIC_URL = 'static/'
 # Загружаемые файлы (фото инструмента). Папка media/ в .gitignore
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# Вход на сайт пока через форму входа админки (только сотрудники с флагом is_staff);
+# своя страница входа и права появятся вместе с пунктом плана «права».
+LOGIN_URL = 'admin:login'
+
+
+# Вход на сайт: страница входа и куда вести после входа и выхода (имена из apps/web/urls.py)
+LOGIN_URL = 'web:login'
+LOGIN_REDIRECT_URL = 'web:home'
+LOGOUT_REDIRECT_URL = 'web:login'
 
 
 # Django REST Framework

@@ -1,0 +1,45 @@
+{% load static %}<!doctype html>
+<html lang="ru" data-theme="summit">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AlpGroup{% endblock %}</title>
+  <script>
+    /* Тема применяется до отрисовки страницы, чтобы не было мигания */
+    try {
+      var saved = localStorage.getItem("theme");
+      if (saved === "summit" || saved === "nexora") document.documentElement.dataset.theme = saved;
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="{% static 'web/css/app.css' %}">
+  <script src="{% static 'web/js/app.js' %}" defer></script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <div class="bg" aria-hidden="true"></div>
+  {% include "web/_icons.html" %}
+
+  {% block shell %}
+  <div class="shell">
+    {% include "web/_sidebar.html" %}
+    <div class="main">
+      {% include "web/_topbar.html" %}
+      <main class="content">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  <div class="scrim"></div>
+  {% endblock %}
+
+  {# Сообщения Django (messages.success и т.д.) показываются всплывающими плашками #}
+  <div class="toasts" id="toasts" aria-live="polite">
+    {% for message in messages %}
+      <div class="toast toast--{{ message.level_tag }}" role="status">
+        <span class="toast-icon"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span>
+        <span class="toast-text">{{ message }}</span>
+        <button type="button" class="toast-close" data-toast-close aria-label="Закрыть"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </div>
+    {% endfor %}
+  </div>
+</body>
+</html>

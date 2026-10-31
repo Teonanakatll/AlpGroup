@@ -1,0 +1,39 @@
+{% extends "web/base.html" %}
+{% load static %}
+{% block title %}Вход · AlpGroup{% endblock %}
+
+{# Страница входа без меню: подменяем весь блок shell #}
+{% block shell %}
+<main class="auth">
+  <form class="panel auth-card reveal" method="post">
+    {% csrf_token %}
+    <a class="brand" href="{% url 'web:home' %}" aria-label="AlpGroup">
+      <img src="{% static 'web/img/logo-alp-dark.png' %}" width="186" height="58" alt="ALP GROUP">
+    </a>
+    <div>
+      <h1 style="font-size: 26px; font-weight: 700; letter-spacing: -.02em;">Вход</h1>
+      <p class="muted">Учёт инструмента и снаряжения</p>
+    </div>
+
+    {% if form.errors %}
+      <div class="form-error" role="alert">Неверный логин или пароль.</div>
+    {% endif %}
+
+    <div class="form-stack">
+      <div class="field">
+        <label for="id_username">Логин</label>
+        <input type="text" name="username" id="id_username" value="{{ form.username.value|default:'' }}" autofocus autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="id_password">Пароль</label>
+        <input type="password" name="password" id="id_password" autocomplete="current-password" required>
+      </div>
+    </div>
+
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn btn-primary" type="submit">
+      Войти <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+    </button>
+  </form>
+</main>
+{% endblock %}

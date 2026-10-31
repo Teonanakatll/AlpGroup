@@ -1,0 +1,18 @@
+<header class="topbar">
+  <button class="icon-btn burger" type="button" data-nav-toggle aria-label="Меню">
+    <svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg>
+  </button>
+
+  <form class="search" action="{% url 'web:inventory' %}" method="get" role="search">
+    <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+    <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Поиск инструмента…" autocomplete="off" aria-label="Поиск">
+    <span class="kbd" aria-hidden="true">/</span>
+  </form>
+
+  <div class="top-actions">
+    <button class="icon-btn theme-toggle" type="button" data-theme-toggle title="Сменить тему оформления" aria-label="Сменить тему оформления">
+      <svg class="icon i-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+      <svg class="icon i-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+    </button>
+  </div>
+</header>

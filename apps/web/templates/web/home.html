@@ -1,0 +1,140 @@
+{% extends "web/base.html" %}
+{% block title %}Главная · AlpGroup{% endblock %}
+
+{% block content %}
+  <section class="hero reveal">
+    <span class="eyebrow"><i></i>Здравствуйте, {{ request.user.get_username }}</span>
+    <h1>Порядок на земле — <span class="accent-text">безопасность на высоте</span></h1>
+    <p>Учёт инструмента и снаряжения: выдача на объекты, приём, ремонт и история в одном месте.</p>
+    <a class="btn btn-primary" href="{% url 'web:inventory' %}">
+      Перейти к работе <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+    </a>
+  </section>
+
+  <section class="stats" aria-label="Сводка по складу">
+    <article class="card stat reveal" style="--i:1">
+      <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-box"/></svg></span>
+      <div>
+        <div class="stat-value" data-count="{{ summary.warehouse }}">{{ summary.warehouse }}</div>
+        <div class="stat-label">На складе</div>
+      </div>
+    </article>
+
+    <article class="card stat reveal" style="--i:2">
+      <span class="icon-tile tone-violet"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></span>
+      <div>
+        <div class="stat-value" data-count="{{ summary.issued }}">{{ summary.issued }}</div>
+        <div class="stat-label">Выдано на объекты</div>
+      </div>
+    </article>
+
+    <article class="card stat reveal" style="--i:3">
+      <span class="icon-tile tone-orange"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
+      <div>
+        <div class="stat-value" data-count="{{ summary.servicing }}">{{ summary.servicing }}</div>
+        <div class="stat-label">В ремонте</div>
+      </div>
+    </article>
+
+    <article class="card stat reveal" style="--i:4">
+      <div class="ring" style="--pct:{{ summary.ready_percent }}">
+        <svg viewBox="0 0 44 44" aria-hidden="true">
+          <circle class="ring-bg" cx="22" cy="22" r="18" pathLength="100"/>
+          <circle class="ring-fg" cx="22" cy="22" r="18" pathLength="100"/>
+        </svg>
+        <span class="ring-icon"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span>
+      </div>
+      <div>
+        <div class="stat-value"><span data-count="{{ summary.ready_percent }}">{{ summary.ready_percent }}</span><small>%</small></div>
+        <div class="stat-label">Парк в строю</div>
+      </div>
+    </article>
+  </section>
+
+  <section class="cols">
+    <div class="card block reveal" style="--i:5">
+      <div class="block-head">
+        <h2>Недавние операции</h2>
+        {% if request.user.is_staff %}
+          <a class="link-more" href="{% url 'admin:inventory_toolmovement_changelist' %}">Журнал <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+        {% endif %}
+      </div>
+      {% if recent %}
+        <ul class="rows">
+          {% for op in recent %}
+            <li class="row{% if op.is_cancelled %} is-cancelled{% endif %}">
+              <span class="icon-tile {{ op.tone }}"><svg class="icon" aria-hidden="true"><use href="#i-{{ op.icon }}"/></svg></span>
+              <div class="row-main">
+                <div class="row-title">{{ op.type_display }} · {{ op.name }}{% if op.quantity %} × {{ op.quantity }}{% endif %}{% if op.is_cancelled %} <span class="tag-cancel">отменена</span>{% endif %}</div>
+                <div class="row-sub">{% if op.site %}{{ op.site }}{% else %}Склад{% endif %}{% if op.taken_by %} · {{ op.taken_by }}{% endif %}</div>
+              </div>
+              <span class="row-end">{{ op.created_at|timesince }} назад</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">Операций пока нет.</p>
+      {% endif %}
+    </div>
+
+    <div class="stack">
+    <div class="card block reveal" style="--i:6">
+      <div class="block-head"><h2>Требует внимания</h2></div>
+      {% if attention %}
+        <ul class="rows">
+          {% for tool in attention %}
+            <li>
+              <a class="row" href="{% url 'web:inventory' %}?status={{ tool.status }}">
+                <span class="icon-tile {% if tool.status == 'missing' %}tone-red{% else %}tone-orange{% endif %}"><svg class="icon" aria-hidden="true"><use href="#i-{% if tool.status == 'missing' %}alert{% else %}wrench{% endif %}"/></svg></span>
+                <div class="row-main">
+                  <div class="row-title">{{ tool.name }}</div>
+                  <div class="row-sub">{{ tool.get_status_display }}{% if tool.current_site %} · {{ tool.current_site }}{% endif %}</div>
+                </div>
+                <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty ok"><svg class="icon glow" aria-hidden="true"><use href="#i-check-circle"/></svg>Всё в порядке: потерь и ремонта нет.</p>
+      {% endif %}
+    </div>
+
+    <div class="card block reveal" style="--i:7">
+      <div class="block-head"><h2>Быстрый доступ</h2></div>
+      <ul class="rows">
+        <li>
+          <a class="row" href="{% url 'web:inventory' %}">
+            <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg></span>
+            <div class="row-main"><div class="row-title">Инвентарь</div><div class="row-sub">Весь инструмент и снаряжение</div></div>
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+          </a>
+        </li>
+        <li>
+          <a class="row" href="{% url 'web:inventory' %}?status=issued">
+            <span class="icon-tile tone-violet"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></span>
+            <div class="row-main"><div class="row-title">Что сейчас на объектах</div><div class="row-sub">Выданный инструмент</div></div>
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+          </a>
+        </li>
+        <li>
+          <a class="row" href="{% url 'web:inventory' %}?status=servicing">
+            <span class="icon-tile tone-orange"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
+            <div class="row-main"><div class="row-title">В ремонте</div><div class="row-sub">Что ждём из сервиса</div></div>
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+          </a>
+        </li>
+        {% if request.user.is_staff %}
+          <li>
+            <a class="row" href="{% url 'admin:index' %}">
+              <span class="icon-tile tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span>
+              <div class="row-main"><div class="row-title">Админка</div><div class="row-sub">Операции выдачи и приёма пока здесь</div></div>
+              <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+    </div>
+  </section>
+{% endblock %}

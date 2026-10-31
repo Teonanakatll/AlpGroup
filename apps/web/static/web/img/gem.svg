@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 -10 400 320" preserveAspectRatio="xMaxYMid meet">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d6ff6b"/>
+      <stop offset="1" stop-color="#5fbf00"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b2a12"/>
+      <stop offset="1" stop-color="#060a05"/>
+    </linearGradient>
+    <linearGradient id="g3" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#86e000"/>
+      <stop offset="1" stop-color="#0d1a06"/>
+    </linearGradient>
+    <radialGradient id="halo" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#9dff00" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#9dff00" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>
+  </defs>
+  <circle cx="280" cy="150" r="140" fill="url(#halo)">
+    <animate attributeName="r" values="130;150;130" dur="5s" repeatCount="indefinite"/>
+  </circle>
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0 0; 0 -8; 0 0" dur="6s" repeatCount="indefinite"/>
+    <polygon fill="url(#g2)" points="280,40 360,100 340,190 280,250 210,200 200,100"/>
+    <polygon fill="url(#g1)" points="280,40 360,100 280,130"/>
+    <polygon fill="url(#g3)" points="360,100 340,190 280,130"/>
+    <polygon fill="#0a1006" points="280,130 340,190 280,250 210,200"/>
+    <polygon fill="#16240d" points="200,100 280,130 210,200"/>
+    <polygon fill="#9dff00" fill-opacity=".35" points="280,40 200,100 280,130"/>
+    <polyline fill="none" stroke="#d6ff6b" stroke-opacity=".8" stroke-width="1.5" stroke-linejoin="round"
+              points="200,100 280,40 360,100 340,190 280,250 210,200 200,100"/>
+    <polyline fill="none" stroke="#d6ff6b" stroke-opacity=".5" stroke-width="1"
+              points="280,40 280,130 340,190 280,250 280,130 210,200"/>
+    <polygon fill="#ffffff" fill-opacity=".18" points="280,40 360,100 280,130" filter="url(#soft)"/>
+  </g>
+</svg>

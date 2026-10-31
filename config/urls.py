@@ -22,6 +22,8 @@ from django.urls import include, path
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('apps.inventory.urls')),
+    path('', include('apps.web.urls')),
+    path('', include('apps.web.urls')),
 ]
 
 # В режиме разработки Django сам отдаёт загруженные файлы; на сервере это делает nginx

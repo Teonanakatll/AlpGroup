@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 340" preserveAspectRatio="xMaxYMax slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a0e1c" stop-opacity="0"/>
+      <stop offset=".55" stop-color="#3a2a52" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ff8a4a" stop-opacity=".55"/>
+    </linearGradient>
+    <radialGradient id="dusk" cx=".6" cy=".78" r=".55">
+      <stop offset="0" stop-color="#ffb066" stop-opacity=".75"/>
+      <stop offset=".5" stop-color="#d4577a" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#d4577a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="faceL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b2236"/>
+      <stop offset="1" stop-color="#090c14"/>
+    </linearGradient>
+    <linearGradient id="faceR" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a3350"/>
+      <stop offset="1" stop-color="#0d1120"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe0a8"/>
+      <stop offset=".5" stop-color="#ff9a3c"/>
+      <stop offset="1" stop-color="#ff6a2a" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="far" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2744"/>
+      <stop offset="1" stop-color="#0c0f1a"/>
+    </linearGradient>
+    <linearGradient id="fog" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b9a8ff" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#d9c9ff" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#b9a8ff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="blur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+
+  <rect width="900" height="340" fill="url(#sky)"/>
+  <rect width="900" height="340" fill="url(#dusk)"/>
+
+  <!-- дальний хребет -->
+  <polygon fill="url(#far)" points="330,340 330,236 380,206 418,226 470,176 520,214 566,190 620,228 676,196 730,232 790,206 850,236 900,222 900,340"/>
+
+  <!-- главная вершина: две грани -->
+  <polygon fill="url(#faceL)" points="300,340 410,226 470,176 540,86 588,70 560,150 600,206 548,340"/>
+  <polygon fill="url(#faceR)" points="588,70 640,152 700,200 760,262 820,340 548,340 600,206 560,150"/>
+  <!-- блики на гранях -->
+  <polygon fill="#ffffff" fill-opacity=".05" points="588,70 640,152 600,206 560,150"/>
+  <polygon fill="#ff9a3c" fill-opacity=".10" points="540,86 588,70 560,150 520,170"/>
+
+  <!-- светящийся контур (подсветка заката) -->
+  <polyline fill="none" stroke="url(#rim)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"
+            points="410,226 470,176 540,86 588,70 640,152 700,200 760,262"/>
+  <polyline fill="none" stroke="#ffcf8a" stroke-opacity=".55" stroke-width="1" stroke-linejoin="round"
+            points="540,86 560,150 600,206"/>
+
+  <!-- ближний хребет -->
+  <polygon fill="#070a12" points="0,340 0,300 60,270 120,292 190,250 260,284 330,262 400,296 470,276 540,304 620,282 700,310 780,290 900,318 900,340"/>
+
+  <!-- туман: медленно плывёт -->
+  <g filter="url(#blur)">
+    <ellipse cx="440" cy="270" rx="220" ry="22" fill="url(#fog)">
+      <animateTransform attributeName="transform" type="translate" values="-40 0; 60 0; -40 0" dur="22s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="700" cy="236" rx="190" ry="18" fill="url(#fog)">
+      <animateTransform attributeName="transform" type="translate" values="50 0; -50 0; 50 0" dur="28s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="250" cy="300" rx="240" ry="20" fill="url(#fog)">
+      <animateTransform attributeName="transform" type="translate" values="0 0; 80 0; 0 0" dur="34s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>
+
+  <!-- флаг на вершине и пульсирующий маяк -->
+  <line x1="588" y1="70" x2="588" y2="46" stroke="#ffd9a0" stroke-width="1.6" stroke-linecap="round"/>
+  <polygon fill="#ff7a2a" points="588,46 606,52 588,58">
+    <animate attributeName="points" values="588,46 606,52 588,58; 588,46 603,50 588,58; 588,46 606,52 588,58" dur="3s" repeatCount="indefinite"/>
+  </polygon>
+  <circle cx="588" cy="68" r="5" fill="#ffb066" filter="url(#glow)">
+    <animate attributeName="r" values="4;9;4" dur="2.6s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values=".9;.25;.9" dur="2.6s" repeatCount="indefinite"/>
+  </circle>
+</svg>
