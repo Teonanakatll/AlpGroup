@@ -1,7 +1,7 @@
 """
 Выборки (только чтение, ничего не меняют). Считаются по журналу, а не по кэшу в моделях.
 """
-from django.db.models import Case, F, IntegerField, Sum, Value, When
+from django.db.models import Case, Count, F, IntegerField, Sum, Value, When
 
 from .models import BaseMovement, HandTool, HandToolMovement, Tool, ToolMovement
 
@@ -122,3 +122,106 @@ def issued_in_period(date_from, date_to, site=None):
         return rows if site is None else rows.filter(site=site)
 
     return pick(ToolMovement), pick(HandToolMovement)
+
+
+# ---------------------------------------------------------------------------
+# Сводка для главной страницы
+# ---------------------------------------------------------------------------
+
+def stock_summary():
+    """
+    Сводка по складу для главной страницы. Считается из кэша статусов и счётчиков в моделях.
+
+    warehouse (+ _tools, _hand) — на складе: штучные «на складе» и ручной инструмент
+                                  в наличии (total − issued);
+    issued    (+ _tools, _hand) — выдано на объекты;
+    servicing — штучные в ремонте;
+    missing   — штучные «не найден» (потерянный ручной инструмент уже вычтен из total);
+    ready_percent — доля инструмента «в строю» (на складе или на объектах) среди всего,
+                    что числится на балансе: не в ремонте и не потеряно, в процентах.
+                    Списанное не считается вообще. Если считать нечего, то 100.
+    """
+    by_status = {
+        row["status"]: row["n"]
+        for row in Tool.objects.order_by().values("status").annotate(n=Count("pk"))
+    }
+    hand = HandTool.objects.aggregate(total=Sum("total"), issued=Sum("issued"))
+    hand_total = hand["total"] or 0
+
+    warehouse_tools = by_status.get(Tool.Status.AVAILABLE, 0)
+    warehouse_hand = hand_total - (hand["issued"] or 0)
+    issued_tools = by_status.get(Tool.Status.ISSUED, 0)
+    issued_hand = hand["issued"] or 0
+    servicing = by_status.get(Tool.Status.SERVICING, 0)
+    missing = by_status.get(Tool.Status.MISSING, 0)
+
+    warehouse = warehouse_tools + warehouse_hand
+    issued = issued_tools + issued_hand
+    on_balance = warehouse + issued + servicing + missing
+    return {
+        "warehouse": warehouse,
+        "warehouse_tools": warehouse_tools,
+        "warehouse_hand": warehouse_hand,
+        "issued": issued,
+        "issued_tools": issued_tools,
+        "issued_hand": issued_hand,
+        "servicing": servicing,
+        "missing": missing,
+        "ready_percent": round(100 * (warehouse + issued) / on_balance) if on_balance else 100,
+    }
+
+
+def recent_movements(limit=6):
+    """
+    Последние операции по обоим журналам, новые сверху.
+
+    Отменённые тоже возвращаются, с is_cancelled=True: страница показывает их приглушёнными,
+    чтобы было видно, что было. Результат — список словарей (у журналов разные поля:
+    tool или hand_tool, а странице нужно одно и то же): type, type_display, name,
+    quantity (None у штучных), site (название или None), taken_by, created_at, is_cancelled.
+    """
+    tool_rows = ToolMovement.objects.select_related("tool", "site").order_by("-created_at", "-pk")[:limit]
+    hand_rows = HandToolMovement.objects.select_related("hand_tool", "site").order_by("-created_at", "-pk")[:limit]
+
+    def row_dict(row, name, quantity):
+        return {
+            "type": row.type, "type_display": row.get_type_display(), "name": name,
+            "quantity": quantity, "site": row.site.name if row.site else None,
+            "taken_by": row.taken_by, "created_at": row.created_at, "is_cancelled": row.is_cancelled,
+        }
+
+    items = [row_dict(r, r.tool.name, None) for r in tool_rows]
+    items += [row_dict(r, r.hand_tool.name, r.quantity) for r in hand_rows]
+    items.sort(key=lambda item: item["created_at"], reverse=True)
+    return items[:limit]
+
+
+def tools_needing_attention(limit=None):
+    """
+    Штучные позиции, которые требуют внимания: «не найден» (сначала) и «в ремонте».
+    Для блока на главной странице; limit по умолчанию без ограничения.
+    """
+    rows = (
+        Tool.objects.filter(status__in=[Tool.Status.MISSING, Tool.Status.SERVICING])
+        .select_related("category", "current_site")
+        .order_by(Case(When(status=Tool.Status.MISSING, then=0), default=1, output_field=IntegerField()), "name")
+    )
+    return rows[:limit] if limit else rows
+
+
+def search_inventory(query="", status=""):
+    """
+    Инвентарь для страницы: пара (штучные, ручные), по названию без учёта регистра.
+
+    status относится только к штучным позициям. У ручного инструмента статусов нет
+    (DECISIONS, раздел 14), поэтому при выбранном статусе ручной инструмент не показывается.
+    """
+    tools = Tool.objects.select_related("category", "current_site").order_by("name")
+    hand_tools = HandTool.objects.select_related("category").order_by("name")
+    if query:
+        tools = tools.filter(name__icontains=query)
+        hand_tools = hand_tools.filter(name__icontains=query)
+    if status:
+        tools = tools.filter(status=status)
+        hand_tools = hand_tools.none()
+    return tools, hand_tools
