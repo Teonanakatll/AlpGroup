@@ -133,6 +133,13 @@ img, svg { display: block; max-width: 100%; }
 .main { min-width: 0; display: flex; flex-direction: column; gap: 22px; }
 .content { display: flex; flex-direction: column; gap: 22px; padding-bottom: 24px; }
 
+/* ---------- Полоса прокрутки: тонкая, тёмная, с лаймовым бегунком ---------- */
+html { scrollbar-width: thin; scrollbar-color: rgb(var(--accent-rgb) / .45) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgb(var(--accent-rgb) / .35); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--accent-rgb) / .7); background-clip: padding-box; }
+
 /* ---------- Панели и карточки ---------- */
 .panel, .card {
   position: relative;
@@ -467,9 +474,12 @@ img, svg { display: block; max-width: 100%; }
 .item:hover { transform: translateY(-2px); }
 .item .icon-tile { width: 44px; height: 44px; border-radius: 14px; }
 .item .icon-tile .icon { width: 22px; height: 22px; }
-.item-main { flex: 1; min-width: 0; }
+.item-main { flex: 0 1 260px; min-width: 0; }          /* статус стоит рядом с названием */
+.item-extra { flex: 1; }
+.item-photo { width: 52px; height: 52px; flex: none; object-fit: cover; border-radius: 14px; border: 1px solid rgb(var(--accent-rgb) / .35); box-shadow: 0 0 18px rgb(var(--accent-rgb) / .15); transition: transform .6s var(--ease-soft), box-shadow .55s var(--ease-soft); }
+.item:hover .item-photo { transform: scale(1.06); box-shadow: 0 0 26px rgb(var(--accent-rgb) / .4); }
 .item-name { font-weight: 600; font-size: 16px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.item-meter { flex: none; width: min(300px, 34%); display: flex; flex-direction: column; gap: 6px; }
+.item-meter { flex: none; margin-left: auto; width: min(300px, 34%); display: flex; flex-direction: column; gap: 6px; }
 .item > .pill { flex: none; min-width: 132px; justify-content: center; }
 .item-meta { font-size: 13px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -591,6 +601,8 @@ input:focus, select:focus, textarea:focus {
 @media (max-width: 700px) {
   .item { flex-wrap: wrap; gap: 12px 14px; }
   .item-meter { order: 3; width: 100%; }
+  .item-main { flex: 1 1 0; }
+  .item-extra { display: none; }
   .item > .pill { min-width: 0; }
   .item-name, .item-meta { white-space: normal; }
 }
