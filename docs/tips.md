@@ -1,7 +1,8 @@
-git checkout main                         # убедись, что ты на main
-git fetch origin                          # скачать новые ветки с GitHub
-git merge origin/claude/decisions-14      # влить мои правки в main
-git push    
+git checkout main
+git fetch origin
+git merge origin/claude/,,,
+pytest
+git push origin main      # только если тесты зелёные
 
 
 python manage.py seed_demo
