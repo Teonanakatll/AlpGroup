@@ -85,7 +85,7 @@ class HandToolMovementSerializer(_MovementSerializer):
 
 
 # ---------------------------------------------------------------------------
-# Входные данные операций (выдача, приём). Только разбор и проверка формата JSON;
+# Входные данные операций. Только разбор и проверка формата JSON;
 # правила учёта проверяет services.py.
 # ---------------------------------------------------------------------------
 
@@ -95,32 +95,67 @@ class HandToolItemSerializer(serializers.Serializer):
     quantity = serializers.IntegerField(min_value=1)
 
 
-class _OperationSerializer(serializers.Serializer):
-    taken_by = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
-    note = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
-
-
-class SiteOperationSerializer(_OperationSerializer):
-    """
-    Выдача на объект и приём с объекта. Пример тела запроса:
-    {"site": 1, "tools": [3, 4], "hand_tools": [{"hand_tool": 7, "quantity": 5}], "note": ""}
-    """
-    site = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all())
+class _PositionsSerializer(serializers.Serializer):
+    """Набор позиций операции: штучные по id и ручной инструмент с количеством."""
     tools = serializers.PrimaryKeyRelatedField(queryset=Tool.objects.all(), many=True, required=False)
     hand_tools = HandToolItemSerializer(many=True, required=False)
+    note = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
 
-    def service_kwargs(self):
-        """Данные в том виде, как их ждут функции services.py."""
+    def positions_kwargs(self):
+        """Позиции и примечание в том виде, как их ждут функции services.py."""
         data = self.validated_data
         return {
-            "site": data["site"],
             "tools": data.get("tools", []),
             "hand_tools": [(item["hand_tool"], item["quantity"]) for item in data.get("hand_tools", [])],
-            "taken_by": data["taken_by"],
             "note": data["note"],
         }
 
 
-class ReceiveFromServicingSerializer(_OperationSerializer):
-    """Приём штучных позиций из ремонта: {"tools": [3, 4]}."""
+class SiteOperationSerializer(_PositionsSerializer):
+    """
+    Выдача, приём с объекта, «не найден»: операции на объекте. Пример тела запроса:
+    {"site": 1, "tools": [3, 4], "hand_tools": [{"hand_tool": 7, "quantity": 5}], "note": ""}
+    """
+    site = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all())
+    taken_by = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
+
+    def service_kwargs(self):
+        data = self.validated_data
+        return {**self.positions_kwargs(), "site": data["site"], "taken_by": data["taken_by"]}
+
+
+class WriteOffSerializer(_PositionsSerializer):
+    """
+    Списание. Без site (или с "site": null) это списание со склада, с site списание с объекта.
+    """
+    site = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all(), required=False, allow_null=True)
+
+    def service_kwargs(self):
+        return {**self.positions_kwargs(), "site": self.validated_data.get("site")}
+
+
+class _ToolsOnlySerializer(serializers.Serializer):
+    """Операции только над штучным инструментом (ремонт): {"tools": [3, 4]}."""
     tools = serializers.PrimaryKeyRelatedField(queryset=Tool.objects.all(), many=True)
+    taken_by = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
+    note = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
+
+
+class ReceiveFromServicingSerializer(_ToolsOnlySerializer):
+    """Приём штучных позиций из ремонта на склад."""
+
+
+class ServicingSerializer(_ToolsOnlySerializer):
+    """Отправка в ремонт. Без site со склада, с site с объекта."""
+    site = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all(), required=False, allow_null=True)
+
+
+class CancelBatchSerializer(serializers.Serializer):
+    """Отмена набора целиком: {"batch": "<uuid>"}."""
+    batch = serializers.UUIDField()
+
+
+class CancelMovementSerializer(serializers.Serializer):
+    """Отмена одной строки журнала: {"kind": "tool" или "hand_tool", "id": 15}."""
+    kind = serializers.ChoiceField(choices=["tool", "hand_tool"])
+    id = serializers.IntegerField(min_value=1)

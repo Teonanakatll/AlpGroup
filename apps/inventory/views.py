@@ -1,9 +1,10 @@
 """
 API. Вьюхи тонкие: чтение идёт через модели и selectors.py, операции через services.py.
 Справочники и списки только для чтения (POST, PUT, DELETE вернут 405); менять данные
-можно только операциями ниже (выдача, приём).
+можно только операциями ниже (выдача, приём, потери, списание, ремонт, отмена).
 """
 from rest_framework import viewsets
+from rest_framework.generics import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,11 +12,12 @@ from rest_framework.views import APIView
 from apps.sites.models import Site
 
 from . import selectors, services
-from .models import Category, HandTool, Tool
+from .models import Category, HandTool, HandToolMovement, Tool, ToolMovement
 from .serializers import (
-    CategorySerializer, HandToolMovementSerializer, HandToolSerializer,
-    OnSiteHandToolSerializer, ReceiveFromServicingSerializer, SiteOperationSerializer,
-    SiteSerializer, ToolMovementSerializer, ToolSerializer,
+    CancelBatchSerializer, CancelMovementSerializer, CategorySerializer,
+    HandToolMovementSerializer, HandToolSerializer, OnSiteHandToolSerializer,
+    ReceiveFromServicingSerializer, ServicingSerializer, SiteOperationSerializer,
+    SiteSerializer, ToolMovementSerializer, ToolSerializer, WriteOffSerializer,
 )
 
 
@@ -105,32 +107,34 @@ class AvailableView(APIView):
 
 class OperationView(APIView):
     """
-    Общий ход операции: проверить JSON, вызвать service, вернуть batch.
+    Общий ход операции: проверить JSON, вызвать service, вернуть результат.
 
     Два вида отказа, оба с кодом 400:
     - неверный формат (нет объекта, количество 0, такого id нет): {"site": ["..."], ...};
     - правила учёта (инструмент уже выдан, не хватает на складе):
       {"detail": "Операция отклонена.", "errors": ["строка на каждую проблему", ...]}.
-    Успех: 201 и {"batch": "<uuid>"}; по batch набор потом можно найти или отменить.
+    Успех: perform() возвращает тело ответа. Для операций над набором это {"batch": "<uuid>"}:
+    по нему набор потом можно найти или отменить.
     """
     serializer_class = None
+    success_status = 201
 
     def perform(self, user, serializer):
-        """Вызвать нужный service. Определяется в наследниках."""
+        """Вызвать нужный service и вернуть тело ответа (словарь). Определяется в наследниках."""
         raise NotImplementedError
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            batch = self.perform(request.user, serializer)
+            body = self.perform(request.user, serializer)
         except services.ServiceError as error:
             # В тексте ошибки по строке на каждую проблемную позицию (всё или ничего).
             return Response(
                 {"detail": "Операция отклонена.", "errors": str(error).splitlines()},
                 status=400,
             )
-        return Response({"batch": batch}, status=201)
+        return Response(body, status=self.success_status)
 
 
 class IssueView(OperationView):
@@ -138,7 +142,7 @@ class IssueView(OperationView):
     serializer_class = SiteOperationSerializer
 
     def perform(self, user, serializer):
-        return services.issue_to_site(user=user, **serializer.service_kwargs())
+        return {"batch": services.issue_to_site(user=user, **serializer.service_kwargs())}
 
 
 class ReceiveView(OperationView):
@@ -146,7 +150,7 @@ class ReceiveView(OperationView):
     serializer_class = SiteOperationSerializer
 
     def perform(self, user, serializer):
-        return services.receive_from_site(user=user, **serializer.service_kwargs())
+        return {"batch": services.receive_from_site(user=user, **serializer.service_kwargs())}
 
 
 class ReceiveFromServicingView(OperationView):
@@ -155,6 +159,60 @@ class ReceiveFromServicingView(OperationView):
 
     def perform(self, user, serializer):
         data = serializer.validated_data
-        return services.receive_from_servicing(
+        batch = services.receive_from_servicing(
             user=user, tools=data["tools"], taken_by=data["taken_by"], note=data["note"],
         )
+        return {"batch": batch}
+
+
+class MissingView(OperationView):
+    """Отметить позиции не найденными на объекте."""
+    serializer_class = SiteOperationSerializer
+
+    def perform(self, user, serializer):
+        return {"batch": services.mark_missing(user=user, **serializer.service_kwargs())}
+
+
+class WriteOffView(OperationView):
+    """Списать позиции со склада (без site) или с объекта (с site)."""
+    serializer_class = WriteOffSerializer
+
+    def perform(self, user, serializer):
+        return {"batch": services.write_off(user=user, **serializer.service_kwargs())}
+
+
+class ServicingView(OperationView):
+    """Отправить штучные позиции в ремонт со склада (без site) или с объекта (с site)."""
+    serializer_class = ServicingSerializer
+
+    def perform(self, user, serializer):
+        data = serializer.validated_data
+        batch = services.send_to_servicing(
+            user=user, tools=data["tools"], site=data.get("site"),
+            taken_by=data["taken_by"], note=data["note"],
+        )
+        return {"batch": batch}
+
+
+class CancelBatchView(OperationView):
+    """Отменить набор целиком (всё или ничего)."""
+    serializer_class = CancelBatchSerializer
+    success_status = 200
+
+    def perform(self, user, serializer):
+        batch = serializer.validated_data["batch"]
+        services.cancel_batch(user=user, batch=batch)
+        return {"batch": batch, "cancelled": True}
+
+
+class CancelMovementView(OperationView):
+    """Отменить одну строку журнала; остальные строки её набора не трогаются."""
+    serializer_class = CancelMovementSerializer
+    success_status = 200
+
+    def perform(self, user, serializer):
+        data = serializer.validated_data
+        model = ToolMovement if data["kind"] == "tool" else HandToolMovement
+        movement = get_object_or_404(model, pk=data["id"])  # нет такой строки: ответ 404
+        services.cancel_movement(user=user, movement=movement)
+        return {"kind": data["kind"], "id": movement.pk, "cancelled": True}
