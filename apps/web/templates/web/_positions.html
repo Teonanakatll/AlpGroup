@@ -1,0 +1,50 @@
+{# Блок позиций. Для приёма его подменяет HTMX при смене объекта (поэтому он отдельный файл). #}
+<div id="positions">
+  {% if tools or hand_rows %}
+    <div class="pick-head">
+      <input type="search" data-pick-filter placeholder="Фильтр по названию…" autocomplete="off" aria-label="Фильтр по названию">
+    </div>
+
+    {% if tools %}
+      <h2 class="section-title">Штучный инструмент <span>{{ tools|length }}</span></h2>
+      <div class="pick-list">
+        {% for tool in tools %}
+          <label class="pick" data-name="{{ tool.name|lower }}">
+            <input type="checkbox" name="tools" value="{{ tool.pk }}"{% if tool.pk in selected_tools %} checked{% endif %}>
+            <span class="pick-check"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span>
+            <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-box"/></svg></span>
+            <span class="item-main">
+              <span class="item-name">{{ tool.name }}</span>
+              <span class="item-meta">{{ tool.category }}</span>
+            </span>
+          </label>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if hand_rows %}
+      <h2 class="section-title">Ручной инструмент <span>{{ hand_rows|length }}</span></h2>
+      <div class="pick-list">
+        {% for row in hand_rows %}
+          <div class="pick" data-name="{{ row.hand.name|lower }}">
+            <span class="icon-tile tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
+            <span class="item-main">
+              <span class="item-name">{{ row.hand.name }}</span>
+              <span class="item-meta">{{ row.hand.category }} · {% if mode == "issue" %}на складе{% else %}на объекте{% endif %} {{ row.max }}</span>
+            </span>
+            <span class="qty">
+              <input type="number" name="qty_{{ row.hand.pk }}" min="0" max="{{ row.max }}" value="{{ row.qty }}" placeholder="0" inputmode="numeric" aria-label="Количество: {{ row.hand.name }}">
+              <span class="qty-of">из {{ row.max }}</span>
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="panel empty">
+      {% if mode == "issue" %}На складе сейчас нечего выдавать.
+      {% elif site %}На объекте «{{ site }}» ничего не числится.
+      {% else %}Выберите объект, чтобы увидеть, что на нём числится.{% endif %}
+    </div>
+  {% endif %}
+</div>

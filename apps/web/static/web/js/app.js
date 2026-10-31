@@ -118,9 +118,59 @@
     if (event.key === "Escape") document.body.classList.remove("nav-open");
   });
 
+  // ---- Формы выдачи и приёма -------------------------------------------
+  // Подсвечивает выбранные строки, считает выбранное, не даёт ввести больше максимума,
+  // фильтрует список по названию. Вызывается и после того, как HTMX подменил блок позиций.
+  function updatePicks() {
+    var form = document.querySelector(".op-form");
+    if (!form) return;
+    var count = 0;
+    form.querySelectorAll(".pick").forEach(function (row) {
+      var box = row.querySelector('input[type="checkbox"]');
+      var qty = row.querySelector('input[type="number"]');
+      var on = false;
+      if (box) {
+        on = box.checked;
+      } else if (qty) {
+        var max = parseInt(qty.max, 10), value = parseInt(qty.value, 10);
+        if (!isNaN(value) && !isNaN(max) && value > max) { qty.value = max; value = max; }
+        on = !isNaN(value) && value > 0;
+      }
+      row.classList.toggle("is-selected", on);
+      if (on) count += 1;
+    });
+    form.querySelectorAll("[data-pick-count]").forEach(function (el) { el.textContent = count; });
+    var submit = form.querySelector("[data-pick-submit]");
+    if (submit) submit.disabled = count === 0;
+  }
+
+  function filterPicks(input) {
+    var query = input.value.trim().toLowerCase();
+    input.closest(".op-form").querySelectorAll(".pick").forEach(function (row) {
+      row.classList.toggle("is-hidden", query !== "" && row.dataset.name.indexOf(query) === -1);
+    });
+  }
+
+  document.addEventListener("input", function (event) {
+    if (event.target.matches("[data-pick-filter]")) filterPicks(event.target);
+    else if (event.target.closest(".pick")) updatePicks();
+  });
+  document.addEventListener("change", function (event) {
+    if (event.target.closest(".pick")) updatePicks();
+    // Без HTMX (не загрузился с CDN) список для объекта берём обычным переходом
+    if (event.target.matches("[data-site-select]") && !window.htmx) {
+      window.location.search = "?site=" + encodeURIComponent(event.target.value);
+    }
+  });
+  document.addEventListener("keydown", function (event) {      // Enter в фильтре не отправляет форму
+    if (event.key === "Enter" && event.target.matches("[data-pick-filter]")) event.preventDefault();
+  });
+  document.addEventListener("htmx:afterSwap", updatePicks);
+
   // ---- Старт ------------------------------------------------------------
   document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll("[data-count]").forEach(countUp);
+    updatePicks();
     document.querySelectorAll("#toasts .toast").forEach(arm);   // сообщения от Django
   });
 })();

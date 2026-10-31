@@ -391,12 +391,12 @@ html.lenis, html.lenis body { height: auto; }
   transition: filter .6s var(--ease-soft);
 }
 .stat .icon-tile .icon { animation: float 5s ease-in-out infinite, glow-pulse 3.2s ease-in-out infinite; }  /* только у крупных цифр */
-.stat:hover .icon-tile, .item:hover .icon-tile, .row:hover .icon-tile {
+.stat:hover .icon-tile, .item:hover .icon-tile, .row:hover .icon-tile, .pick:hover .icon-tile {
   transform: scale(1.1) rotate(-5deg); box-shadow: inset 0 0 18px rgb(var(--tone) / .25), 0 0 34px rgb(var(--tone) / .5);
 }
 /* Большой блок со списком (.block) сам иконки не трогает: оживает только строка под курсором */
 .stat:hover .icon-tile .icon { animation: float 5s ease-in-out infinite, glow-pulse 1.2s ease-in-out infinite; }
-.item:hover .icon-tile .icon, .row:hover .icon-tile .icon { animation: float 3.2s ease-in-out infinite, glow-pulse 1.6s ease-in-out infinite; }
+.item:hover .icon-tile .icon, .row:hover .icon-tile .icon, .pick:hover .icon-tile .icon { animation: float 3.2s ease-in-out infinite, glow-pulse 1.6s ease-in-out infinite; }
 .tone-violet { --tone: var(--violet-rgb); }
 .tone-orange { --tone: var(--orange-rgb); }
 .tone-blue { --tone: var(--blue-rgb); }
@@ -518,7 +518,7 @@ html.lenis, html.lenis body { height: auto; }
 /* ---------- Формы и вход ---------- */
 .field { display: flex; flex-direction: column; gap: 8px; }
 .field label { font-size: 13px; color: var(--text-dim); }
-input[type="text"], input[type="password"], input[type="search"], select, textarea {
+input[type="text"], input[type="password"], input[type="search"], input[type="number"], select, textarea {
   width: 100%; padding: 13px 15px; border-radius: 13px; color: var(--text); font: inherit;
   background: rgb(255 255 255 / .05); border: 1px solid var(--card-border); outline: 0;
   transition: border-color .45s var(--ease-soft), box-shadow .5s var(--ease-soft), background .45s var(--ease-soft);
@@ -562,6 +562,50 @@ input:focus, select:focus, textarea:focus {
   background: rgb(var(--tone)); box-shadow: 0 0 10px rgb(var(--tone));
   transform-origin: left; animation: timer var(--ttl) linear forwards;
 }
+
+/* ---------- Операции: форма выдачи и приёма ---------- */
+.op-form { display: flex; flex-direction: column; gap: 18px; }
+#positions { display: flex; flex-direction: column; gap: 14px; }
+.op-head { display: grid; grid-template-columns: 1.2fr 1fr 1.4fr; gap: 16px; padding: 18px; }
+.field-error { font-size: 13px; color: rgb(var(--red-rgb)); }
+.form-error ul { margin: 6px 0 0 18px; }
+.pick-head { max-width: 420px; }
+.pick-list { display: flex; flex-direction: column; gap: 10px; }
+.pick {
+  position: relative; display: flex; align-items: center; gap: 14px; padding: 10px 14px; border-radius: 16px;
+  background: rgb(255 255 255 / .03); border: 1px solid var(--card-border);
+  transition: transform .5s var(--ease-soft), border-color .45s var(--ease-soft), background .45s var(--ease-soft), box-shadow .5s var(--ease-soft);
+}
+label.pick { cursor: pointer; }
+.pick:hover {
+  border-color: rgb(var(--accent-rgb) / .55); background: rgb(var(--accent-rgb) / .06);
+  box-shadow: 0 0 10px 1px rgb(var(--accent-rgb) / .5), 0 0 24px rgb(var(--accent-rgb) / .13);
+}
+.pick.is-selected { border-color: rgb(var(--accent-rgb) / .6); background: rgb(var(--accent-rgb) / .08); }
+.pick.is-hidden { display: none; }
+.pick input[type="checkbox"] { position: absolute; opacity: 0; pointer-events: none; }
+.pick-check {
+  width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 7px;
+  border: 1.5px solid rgb(255 255 255 / .28); color: transparent;
+  transition: background .4s var(--ease-soft), border-color .4s var(--ease-soft), color .4s var(--ease-soft), box-shadow .45s var(--ease-soft);
+}
+.pick-check .icon { width: 14px; height: 14px; }
+.pick.is-selected .pick-check { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); box-shadow: 0 0 14px rgb(var(--accent-rgb) / .6); }
+.pick input:focus-visible ~ .pick-check { outline: 2px solid rgb(var(--accent-rgb) / .8); outline-offset: 2px; }
+.pick .icon-tile { width: 42px; height: 42px; border-radius: 14px; }
+.pick .icon-tile .icon { width: 21px; height: 21px; }
+.pick .item-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.pick .item-name, .pick .item-meta { display: block; }
+.qty { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.qty input { width: 90px; text-align: center; }
+.qty-of { font-size: 13px; color: var(--text-dim); white-space: nowrap; }
+.op-bar { position: sticky; bottom: 16px; z-index: 5; background: var(--card-bg-solid); display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; }
+.op-count { color: var(--text-dim); }
+.op-count b { color: var(--text); font-size: 18px; }
+.btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn:disabled::after { display: none; }
+@media (max-width: 900px) { .op-head { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .qty-of { display: none; } .qty input { width: 72px; } }
 
 /* ---------- 4. Анимации ---------- */
 .reveal { animation: reveal .8s var(--ease) both; animation-delay: calc(var(--i, 0) * 80ms); }

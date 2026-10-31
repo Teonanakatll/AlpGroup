@@ -9,6 +9,9 @@ app_name = "web"
 urlpatterns = [
     path("", views.home, name="home"),
     path("inventory/", views.inventory, name="inventory"),
+    path("operations/", views.operations, name="operations"),
+    path("operations/issue/", views.issue, name="issue"),
+    path("operations/receive/", views.receive, name="receive"),
     path(
         "login/",
         auth_views.LoginView.as_view(template_name="web/login.html", redirect_authenticated_user=True),

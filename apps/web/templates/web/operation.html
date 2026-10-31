@@ -1,0 +1,50 @@
+{% extends "web/base.html" %}
+{% block title %}{% if mode == "issue" %}Выдача{% else %}Приём{% endif %} · AlpGroup{% endblock %}
+
+{% block content %}
+  <div class="page-head reveal">
+    <div>
+      <h1>{% if mode == "issue" %}Выдача на объект{% else %}Приём с объекта{% endif %}</h1>
+      <p class="muted">
+        {% if mode == "issue" %}Отметьте штучный инструмент и укажите количество ручного, затем выберите объект.
+        {% else %}Выберите объект: покажем всё, что на нём числится.{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <nav class="toolbar reveal" style="--i:1" aria-label="Вид операции">
+    <a class="chip {% if mode == 'issue' %}is-active{% endif %}" href="{% url 'web:issue' %}">Выдача</a>
+    <a class="chip {% if mode == 'receive' %}is-active{% endif %}" href="{% url 'web:receive' %}">Приём</a>
+  </nav>
+
+  <form method="post" class="op-form reveal" style="--i:2" novalidate>
+    {% csrf_token %}
+
+    {% if errors %}
+      <div class="form-error" role="alert">
+        <b>Операция не выполнена, ничего не записано:</b>
+        <ul>{% for line in errors %}<li>{{ line }}</li>{% endfor %}</ul>
+      </div>
+    {% endif %}
+
+    <div class="panel op-head">
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+
+    {% include "web/_positions.html" %}
+
+    <div class="op-bar panel">
+      <span class="op-count">Выбрано: <b data-pick-count>0</b></span>
+      <button class="btn btn-primary" type="submit" data-pick-submit disabled>
+        {% if mode == "issue" %}Выдать{% else %}Принять{% endif %}
+        <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+      </button>
+    </div>
+  </form>
+{% endblock %}
