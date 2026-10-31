@@ -38,7 +38,12 @@
   // просто прокручивается обычным образом. На телефонах Lenis сам оставляет родную прокрутку.
   (function smoothScroll() {
     if (reduceMotion || typeof window.Lenis === "undefined") return;
-    var lenis = new window.Lenis({ lerp: 0.1 });       // lerp: чем меньше, тем плавнее и «тяжелее»
+    // duration: сколько длится «скольжение» после щелчка колеса (секунды); больше значит плавнее и дольше.
+    var lenis = new window.Lenis({
+      duration: 1.6,
+      easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },   // быстрый старт, долгое затухание
+      wheelMultiplier: 1,
+    });
     window.lenis = lenis;
     function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
     requestAnimationFrame(raf);
