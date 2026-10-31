@@ -33,9 +33,9 @@
               <span class="item-meta">{{ row.hand.category }} · {% if mode == "issue" %}на складе{% else %}на объекте{% endif %} {{ row.max }}</span>
             </span>
             <span class="qty">
-              <button type="button" class="qty-btn" data-qty-step="-1" aria-label="Меньше"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
+              <button type="button" class="qty-btn" data-qty-step="-1" aria-label="Меньше"><svg class="icon" aria-hidden="true"><use href="#i-tri-left"/></svg></button>
               <input type="number" name="qty_{{ row.hand.pk }}" min="0" max="{{ row.max }}" value="{{ row.qty }}" placeholder="0" inputmode="numeric" aria-label="Количество: {{ row.hand.name }}">
-              <button type="button" class="qty-btn" data-qty-step="1" aria-label="Больше"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+              <button type="button" class="qty-btn" data-qty-step="1" aria-label="Больше"><svg class="icon" aria-hidden="true"><use href="#i-tri-right"/></svg></button>
               <span class="qty-of">из {{ row.max }}</span>
             </span>
           </div>
