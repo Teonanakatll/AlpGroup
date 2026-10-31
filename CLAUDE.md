@@ -5,12 +5,13 @@
 Владелец проекта давно не писал код (хочет вспомнить Django и DRF): объясняй решения коротко, код давай читаемый, сложные места поясняй.
 
 ## Стек
-Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .env). Позже: адаптивный сайт, Telegram-бот только для оповещений.
+Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .env). Сайт: шаблоны Django (apps/web), позже HTMX для форм; Telegram-бот только для оповещений.
 
 ## Структура
 - config/ — настройки и urls
 - apps/inventory/ — Category, Tool, ToolPhoto, HandTool, BaseMovement (abstract), ToolMovement, HandToolMovement
 - apps/sites/ — Site, WorkType (минимальный справочник)
+- apps/web/ — сайт: страницы, шаблоны, стили (app.css, темы summit и nexora на переменных), иконки, логотип
 - в каждом приложении services.py (изменения), selectors.py (выборки), tests/
 
 ## Ключевые правила (подробности в DECISIONS.md)
@@ -28,7 +29,7 @@ Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .e
 1. Создать venv и активировать его, затем `pip install -r requirements.txt`.
 2. Создать `.env` по образцу `.env.example` (параметры PostgreSQL).
 3. `python manage.py migrate`, `python manage.py createsuperuser`.
-4. `python manage.py runserver`.
+4. `python manage.py runserver`, сайт на http://127.0.0.1:8000/ (вход тем же логином, что в админке), админка на /admin/, API на /api/.
 5. Тесты: `pytest`.
 6. Тестовые данные (25 штучных и 25 ручных позиций): `python manage.py seed_demo` (повторный запуск ничего не дублирует).
 
@@ -52,8 +53,8 @@ Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .e
 - [x] selectors.py с тестами (доступно к выдаче, числится на объекте, история, выдано за период)
 - [x] админка: закрыть total и журналы, admin action для выдачи и приёма
 - [x] DRF-эндпоинты только для чтения (списки, история, доступно к выдаче, на объекте)
-- [ ] DRF-операции: выдача и приём (POST /api/issue/, /api/receive/, /api/receive-from-servicing/) сделаны, дальше отмена, не найден, списание, ремонт
-- [ ] формы выдачи и приёма, фронтенд
+- [x] DRF-операции: выдача, приём, не найден, списание, ремонт, отмена (POST /api/issue/, receive/, receive-from-servicing/, missing/, write-off/, servicing/, cancel-batch/, cancel-movement/)
+- [ ] сайт: каркас, вход, главная, инвентарь и темы сделаны (отметить после проверки тестами); дальше формы выдачи и приёма (Django + HTMX), отмена в интерфейсе
 - [ ] права, отчёты и бэкапы, оповещения
 
 ## Открытые вопросы
