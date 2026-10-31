@@ -1,8 +1,11 @@
 """Выборки для главной страницы: сводка склада, последние операции, требует внимания."""
+import pytest
+
 from apps.inventory import selectors, services
 from apps.inventory.models import HandTool, Tool
 
 
+@pytest.mark.django_db
 def test_summary_of_empty_warehouse():
     summary = selectors.stock_summary()
 
