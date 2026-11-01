@@ -1,13 +1,15 @@
 {% extends "web/base.html" %}
 {% load static %}
 {% block title %}Главная · AlpGroup{% endblock %}
-{% block head_extra %}<script src="{% static 'web/js/hero.js' %}" defer></script>{% endblock %}
+{% block head_extra %}<script src="{% static 'web/js/hero.js' %}" defer></script><script src="{% static 'web/js/scene-fx.js' %}" defer></script>{% endblock %}
 
 {% block content %}
   <section class="hero reveal" data-parallax>
     {# Фото горы на заднем плане: двигается за курсором совсем чуть-чуть (hero.js) #}
     <div class="scene" aria-hidden="true">
-      <img class="layer" data-depth="0.5" src="{% static 'web/img/hero/matterhorn.webp' %}" alt="">
+      <img class="layer layer-photo" data-depth="0.5" src="{% static 'web/img/hero/matterhorn.webp' %}" alt="">
+      {# То же фото в WebGL: под курсором вода и RGB-сдвиг (scene-fx.js). Нет WebGL: остаётся картинка выше #}
+      <canvas class="layer layer-fx" data-depth="0.5" width="1024" height="1536"></canvas>
     </div>
     {# Средний слой: текст и кнопка двигаются чуть сильнее фона #}
     <div class="hero-mid" data-depth="0.9">
