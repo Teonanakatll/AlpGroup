@@ -9,17 +9,20 @@
     <div class="scene" aria-hidden="true">
       <img class="layer" data-depth="0.5" src="{% static 'web/img/hero/matterhorn.webp' %}" alt="">
     </div>
-    {# Самый близкий слой: логотип с бликами от курсора (WebGL; без него остаётся обычная картинка) #}
-    <div class="logo3d" data-depth="1">
-      <img class="logo3d-img" src="{% static 'web/img/logo-alp-3d.png' %}" width="360" height="105" alt="ALP GROUP">
+    {# Средний слой: текст и кнопка двигаются чуть сильнее фона #}
+    <div class="hero-mid" data-depth="0.9">
+      <span class="eyebrow"><i></i>Здравствуйте, {{ request.user.get_username }}</span>
+      <h1>Порядок на земле — <span class="accent-text">безопасность на высоте</span></h1>
+      <p>Учёт инструмента и снаряжения: выдача на объекты, приём, ремонт и история в одном месте.</p>
+      <a class="btn btn-primary" href="{% url 'web:inventory' %}">
+        Перейти к работе <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+      </a>
+    </div>
+    {# Ближний слой: большой логотип поверх горы, блики от курсора и сами по себе (logo3d.js) #}
+    <div class="logo3d logo3d-hero" data-depth="2.2" data-sweep="6.5">
+      <img class="logo3d-img" src="{% static 'web/img/logo-alp-3d.png' %}" width="400" height="116" alt="ALP GROUP">
       <canvas class="logo3d-canvas" aria-hidden="true"></canvas>
     </div>
-    <span class="eyebrow"><i></i>Здравствуйте, {{ request.user.get_username }}</span>
-    <h1>Порядок на земле — <span class="accent-text">безопасность на высоте</span></h1>
-    <p>Учёт инструмента и снаряжения: выдача на объекты, приём, ремонт и история в одном месте.</p>
-    <a class="btn btn-primary" href="{% url 'web:inventory' %}">
-      Перейти к работе <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow-right"/></svg>
-    </a>
   </section>
 
   <section class="stats" aria-label="Сводка по складу">

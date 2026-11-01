@@ -8,7 +8,10 @@
   <form class="panel auth-card reveal" method="post">
     {% csrf_token %}
     <a class="brand" href="{% url 'web:home' %}" aria-label="AlpGroup">
-      <img src="{% static 'web/img/logo-alp.png' %}" width="186" height="54" alt="ALP GROUP">
+      <span class="logo3d logo3d-sm" data-sweep="13" data-phase="3">
+      <img class="logo3d-img" src="{% static 'web/img/logo-alp.png' %}" width="186" height="54" alt="ALP GROUP">
+      <canvas class="logo3d-canvas" aria-hidden="true"></canvas>
+    </span>
     </a>
     <div>
       <h1 style="font-size: 26px; font-weight: 700; letter-spacing: -.02em;">Вход</h1>

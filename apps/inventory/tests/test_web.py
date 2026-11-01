@@ -83,13 +83,19 @@ def test_home_hero_has_parallax_layers_and_logo(admin_client):
 
     assert "data-parallax" in html and "web/js/hero.js" in html
     assert "web/img/hero/matterhorn.webp" in html
-    assert "logo3d-canvas" in html and "logo-alp-3d.png" in html
+    assert "logo3d-hero" in html and "logo-alp-3d.png" in html and "hero-mid" in html
+
+
+def test_small_logo_is_shader_logo_on_every_page(client, admin_client):
+    assert "web/js/logo3d.js" in page(admin_client, "/")
+    assert "logo3d-sm" in page(admin_client, "/inventory/")      # меню
+    assert "logo3d-sm" in page(client, "/login/")                # вход
 
 
 def test_hero_static_files_exist():
     from pathlib import Path
     static = Path(__file__).resolve().parents[2] / "web" / "static" / "web"
-    for name in ("js/hero.js", "img/logo-alp.png", "img/logo-alp-3d.png",
+    for name in ("js/hero.js", "js/logo3d.js", "img/logo-alp.png", "img/logo-alp-3d.png",
                  "img/hero/matterhorn.webp"):
         assert (static / name).is_file(), name
 

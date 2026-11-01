@@ -388,7 +388,11 @@ html.lenis, html.lenis body { height: auto; }
 [data-theme="nexora"] .scene { display: none; }                /* у Nexora на этом месте кристалл */
 
 /* Логотип: картинка и поверх неё канвас с бликами; оба с одной раскладкой */
-.logo3d { filter: drop-shadow(0 0 22px rgba(255,255,255,.10)); position: relative; width: min(360px, 78%); align-self: flex-start; will-change: transform; transform-style: preserve-3d; }
+.logo3d { position: relative; display: block; will-change: transform; }
+.logo3d-hero { position: absolute; z-index: 2; right: 6%; top: 15%; width: min(400px, 34%); filter: drop-shadow(0 6px 22px rgba(0,0,0,.55)); }
+.logo3d-sm { width: 100%; max-width: 186px; transition: filter .65s var(--ease-soft), transform .65s var(--ease-soft); }
+.brand:hover .logo3d-sm { filter: drop-shadow(0 0 14px rgb(255 140 50 / .55)); transform: scale(1.03); }
+.hero-mid { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; max-width: 560px; will-change: transform; }
 .logo3d-img { display: block; width: 100%; height: auto; transition: opacity .5s var(--ease-soft); }
 .logo3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .5s var(--ease-soft); pointer-events: none; }
 .logo3d.is-gl .logo3d-canvas { opacity: 1; }
@@ -763,7 +767,7 @@ label.pick { cursor: pointer; }
   .nav-open .scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgb(0 0 0 / .6); animation: reveal .3s ease both; }
   .hero { padding: 26px 22px; min-height: 380px; }
   .scene { width: 100%; opacity: .5; -webkit-mask-image: none; mask-image: none; }
-  .logo3d { width: min(260px, 70%); }
+  .logo3d-hero { right: 5%; top: 6%; width: min(220px, 52%); }
   .hero::after { background: linear-gradient(90deg, rgb(5 7 10 / .95) 0%, rgb(5 7 10 / .7) 100%); }
   :root { --card-blur: 8px; }        /* слабым телефонам тяжело большое размытие */
 }

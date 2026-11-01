@@ -1,7 +1,10 @@
 {% load static %}
 <aside class="sidebar">
   <a class="brand" href="{% url 'web:home' %}" aria-label="AlpGroup, на главную">
-    <img src="{% static 'web/img/logo-alp.png' %}" width="186" height="54" alt="ALP GROUP">
+    <span class="logo3d logo3d-sm" data-sweep="13" data-phase="3">
+      <img class="logo3d-img" src="{% static 'web/img/logo-alp.png' %}" width="186" height="54" alt="ALP GROUP">
+      <canvas class="logo3d-canvas" aria-hidden="true"></canvas>
+    </span>
   </a>
 
   <nav class="nav" aria-label="Основное меню">
