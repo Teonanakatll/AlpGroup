@@ -525,9 +525,56 @@ input[type="text"], input[type="password"], input[type="search"], input[type="nu
 }
 input:hover, select:hover, textarea:hover { border-color: rgb(var(--accent-rgb) / .4); }
 input:focus, select:focus, textarea:focus {
-  border-color: var(--outline-hover); background: rgb(255 255 255 / .07);
-  box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / .13), 0 0 26px rgb(var(--accent-rgb) / .2);
+  border-color: var(--accent); background: rgb(255 255 255 / .07);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .2), 0 0 14px 1px rgb(var(--accent-rgb) / .6), 0 0 34px rgb(var(--accent-rgb) / .28);
 }
+/* Заполненное поле (класс ставит скрипт): спокойное зелёное свечение, чтобы сразу было видно, что уже введено */
+input.is-filled, .dd-btn.is-filled {
+  border-color: rgb(var(--accent-rgb) / .5);
+  box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / .16), 0 0 16px rgb(var(--accent-rgb) / .16);
+}
+input.is-filled:focus { border-color: var(--accent); }
+select { appearance: none; }
+select option { background: #0e1410; color: #e9f0e6; }       /* на случай, если скрипт не загрузился */
+
+/* ---------- Свой выпадающий список (скрипт заменяет им обычный select) ---------- */
+.dd { position: relative; }
+.dd-native { display: none; }
+.dd-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 13px 15px; border-radius: 13px; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+  background: rgb(255 255 255 / .05); border: 1px solid var(--card-border); outline: 0;
+  transition: border-color .45s var(--ease-soft), box-shadow .5s var(--ease-soft), background .45s var(--ease-soft);
+}
+.dd-btn:hover { border-color: rgb(var(--accent-rgb) / .4); }
+.dd-btn:focus-visible, .dd.is-open .dd-btn {
+  border-color: var(--accent); background: rgb(255 255 255 / .07);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .2), 0 0 14px 1px rgb(var(--accent-rgb) / .6), 0 0 34px rgb(var(--accent-rgb) / .28);
+}
+.dd-btn.is-placeholder .dd-label { color: var(--text-faint); }
+.dd-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-caret { width: 20px; height: 20px; flex: none; color: var(--accent); transition: transform .5s var(--ease-soft), filter .5s var(--ease-soft); filter: drop-shadow(0 0 4px rgb(var(--accent-rgb) / .6)); }
+.dd.is-open .dd-caret { transform: rotate(180deg); }
+.dd-panel {
+  position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 8px);
+  max-height: 280px; overflow-y: auto; padding: 6px; border-radius: 16px;
+  background: var(--card-bg-solid); border: 1px solid rgb(var(--accent-rgb) / .55);
+  box-shadow: 0 0 12px 1px rgb(var(--accent-rgb) / .4), 0 24px 60px rgb(0 0 0 / .6);
+  opacity: 0; visibility: hidden; transform: translateY(-8px) scale(.98); transform-origin: top;
+  transition: opacity .4s var(--ease-soft), transform .5s var(--ease-soft), visibility 0s linear .4s;
+}
+.dd-up .dd-panel { top: auto; bottom: calc(100% + 8px); transform-origin: bottom; transform: translateY(8px) scale(.98); }
+.dd.is-open .dd-panel { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+.dd-opt {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 11px;
+  cursor: pointer; color: var(--text-dim);
+  transition: background .35s var(--ease-soft), color .35s var(--ease-soft), box-shadow .4s var(--ease-soft);
+}
+.dd-opt.is-active { background: rgb(var(--accent-rgb) / .12); color: var(--text); box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / .4); }
+.dd-opt[aria-selected="true"] { color: var(--accent); font-weight: 600; }
+.dd-opt.is-empty { color: var(--text-faint); }
+.dd-opt .icon { width: 16px; height: 16px; flex: none; opacity: 0; }
+.dd-opt[aria-selected="true"] .icon { opacity: 1; filter: drop-shadow(0 0 4px rgb(var(--accent-rgb) / .7)); }
 .auth { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
 .auth-card { width: min(420px, 100%); padding: 34px 32px; display: flex; flex-direction: column; gap: 22px; }
 .auth-card .brand { padding: 0; }
@@ -566,7 +613,7 @@ input:focus, select:focus, textarea:focus {
 /* ---------- Операции: форма выдачи и приёма ---------- */
 .op-form { display: flex; flex-direction: column; gap: 18px; }
 #positions { display: flex; flex-direction: column; gap: 14px; }
-.op-head { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; padding: 18px; }
+.op-head { position: relative; z-index: 20; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; padding: 18px; }
 .field-error { font-size: 13px; color: rgb(var(--red-rgb)); }
 .form-error ul { margin: 6px 0 0 18px; }
 .pick-head { max-width: 420px; }
@@ -631,6 +678,30 @@ label.pick { cursor: pointer; }
 @media (max-width: 900px) { .op-head { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .pick--qty { flex-wrap: wrap; } .pick--qty .item-main { flex: 1 1 140px; } }
 @media (max-width: 520px) { .qty-of { display: none; } .qty-btn { width: 34px; } .qty input { width: 52px; } }
+
+/* ---------- Бегущий блик по рамке при наведении (как у карточек) ---------- */
+.row, .pick, .chip:not(.is-active), .nav-item:not(.is-active) { position: relative; }
+.row::before, .pick::before, .chip:not(.is-active)::before, .nav-item:not(.is-active)::before {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: conic-gradient(from var(--a), transparent 0 62%, rgb(var(--accent-rgb) / .95) 82%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0; transition: opacity .5s var(--ease-soft);
+}
+.row:hover::before, .pick:hover::before, .chip:not(.is-active):hover::before, .nav-item:not(.is-active):hover::before {
+  opacity: 1; animation: spin-a 3.2s linear infinite;
+}
+
+/* Редкий блик, пробегающий по активному пункту меню и активному фильтру (как на кнопках) */
+.nav-item.is-active, .chip.is-active { position: relative; overflow: hidden; }
+.nav-item.is-active::after, .chip.is-active::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -70%; width: 40%; pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / .5), transparent);
+  transform: skewX(-20deg); animation: shine-idle 6s ease-in-out infinite;
+}
+@keyframes shine-idle { 0%, 65% { left: -70%; } 100% { left: 130%; } }
 
 /* ---------- 4. Анимации ---------- */
 .reveal { animation: reveal .8s var(--ease) both; animation-delay: calc(var(--i, 0) * 80ms); }

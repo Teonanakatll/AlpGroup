@@ -174,6 +174,7 @@
     var max = parseInt(input.max, 10), value = parseInt(input.value, 10) || 0;
     value = Math.max(0, Math.min(isNaN(max) ? Infinity : max, value + parseInt(button.dataset.qtyStep, 10)));
     input.value = value;
+    markFilled(input);
     updatePicks();
   });
   document.addEventListener("keydown", function (event) {      // Enter в фильтре не отправляет форму
@@ -181,10 +182,133 @@
   });
   document.addEventListener("htmx:afterSwap", updatePicks);
 
+  // ---- Свои выпадающие списки -----------------------------------------
+  // Заменяют обычный <select> на список в стиле сайта. Сам select остаётся в форме (скрытый):
+  // из него уходит значение, на нём слушает HTMX; при выборе ему посылается обычное событие change.
+  function enhanceSelect(select) {
+    if (select.dataset.dd || select.multiple) return;
+    select.dataset.dd = "1";
+    var wrap = document.createElement("div");
+    wrap.className = "dd";
+    select.parentNode.insertBefore(wrap, select);
+    wrap.appendChild(select);
+    select.classList.add("dd-native");
+
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "dd-btn";
+    button.setAttribute("aria-haspopup", "listbox");
+    button.setAttribute("aria-expanded", "false");
+    if (select.id) { button.id = select.id; select.id += "_native"; }   // подпись «for» ведёт на кнопку
+    button.innerHTML = '<span class="dd-label"></span><svg class="icon dd-caret" aria-hidden="true"><use href="#i-chevron-down"/></svg>';
+    var label = button.firstChild;
+
+    var panel = document.createElement("div");
+    panel.className = "dd-panel";
+    panel.setAttribute("role", "listbox");
+    panel.setAttribute("data-lenis-prevent", "");      // колесо внутри списка крутит список, а не страницу
+    var options = Array.prototype.map.call(select.options, function (option, index) {
+      var item = document.createElement("div");
+      item.className = "dd-opt" + (option.value === "" ? " is-empty" : "");
+      item.setAttribute("role", "option");
+      item.innerHTML = "<span></span>" + '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
+      item.firstChild.textContent = option.text;
+      item.dataset.index = index;
+      panel.appendChild(item);
+      return item;
+    });
+    wrap.appendChild(button);
+    wrap.appendChild(panel);
+
+    var active = select.selectedIndex;
+    function sync() {
+      var chosen = select.options[select.selectedIndex];
+      label.textContent = chosen ? chosen.text : "";
+      var empty = !chosen || chosen.value === "";
+      button.classList.toggle("is-placeholder", empty);
+      button.classList.toggle("is-filled", !empty);
+      options.forEach(function (item, index) {
+        item.setAttribute("aria-selected", index === select.selectedIndex ? "true" : "false");
+      });
+    }
+    function highlight(index) {
+      active = Math.max(0, Math.min(options.length - 1, index));
+      options.forEach(function (item, i) { item.classList.toggle("is-active", i === active); });
+      options[active].scrollIntoView({ block: "nearest" });
+    }
+    function isOpen() { return wrap.classList.contains("is-open"); }
+    function open() {
+      var rect = button.getBoundingClientRect();
+      var below = window.innerHeight - rect.bottom, above = rect.top;
+      wrap.classList.toggle("dd-up", below < 300 && above > below);     // мало места снизу: открываем вверх
+      wrap.classList.add("is-open");
+      button.setAttribute("aria-expanded", "true");
+      highlight(select.selectedIndex < 0 ? 0 : select.selectedIndex);
+    }
+    function close() {
+      wrap.classList.remove("is-open");
+      button.setAttribute("aria-expanded", "false");
+    }
+    function choose(index) {
+      var changed = select.selectedIndex !== index;
+      select.selectedIndex = index;
+      sync();
+      close();
+      button.focus();
+      if (changed) select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    button.addEventListener("click", function () { if (isOpen()) close(); else open(); });
+    button.addEventListener("keydown", function (event) {
+      var key = event.key;
+      if (key === "ArrowDown" || key === "ArrowUp") {
+        event.preventDefault();
+        if (!isOpen()) open(); else highlight(active + (key === "ArrowDown" ? 1 : -1));
+      } else if (key === "Home" || key === "End") {
+        if (isOpen()) { event.preventDefault(); highlight(key === "Home" ? 0 : options.length - 1); }
+      } else if (key === "Enter" || key === " ") {
+        event.preventDefault();
+        if (isOpen()) choose(active); else open();
+      } else if (key === "Escape" || key === "Tab") {
+        if (isOpen()) { if (key === "Escape") event.preventDefault(); close(); }
+      } else if (key.length === 1) {                           // быстрый поиск по первой букве
+        var found = options.findIndex(function (item, i) {
+          return i !== active && item.textContent.toLowerCase().indexOf(key.toLowerCase()) === 0;
+        });
+        if (found >= 0) { if (!isOpen()) open(); highlight(found); }
+      }
+    });
+    panel.addEventListener("mousemove", function (event) {
+      var item = event.target.closest(".dd-opt");
+      if (item) highlight(parseInt(item.dataset.index, 10));
+    });
+    panel.addEventListener("click", function (event) {
+      var item = event.target.closest(".dd-opt");
+      if (item) choose(parseInt(item.dataset.index, 10));
+    });
+    document.addEventListener("click", function (event) { if (isOpen() && !wrap.contains(event.target)) close(); });
+    sync();
+  }
+
+  // Подсветка заполненных полей ввода (у выпадающих списков её ставит enhanceSelect)
+  var FILLABLE = ".field input, .pick-head input, .qty input";
+  function markFilled(input) {
+    input.classList.toggle("is-filled", input.value.trim() !== "" && input.value !== "0");
+  }
+  document.addEventListener("input", function (event) {
+    if (event.target.matches(FILLABLE)) markFilled(event.target);
+  });
+  function enhanceForms() {
+    document.querySelectorAll("main select").forEach(enhanceSelect);
+    document.querySelectorAll(FILLABLE).forEach(markFilled);
+  }
+  document.addEventListener("htmx:afterSwap", function () { document.querySelectorAll(FILLABLE).forEach(markFilled); });
+
   // ---- Старт ------------------------------------------------------------
   document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll("[data-count]").forEach(countUp);
     updatePicks();
+    enhanceForms();
     document.querySelectorAll("#toasts .toast").forEach(arm);   // сообщения от Django
   });
 })();
