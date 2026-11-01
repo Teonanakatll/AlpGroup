@@ -12,7 +12,7 @@ def test_seed_creates_45_and_35(admin_user):
     call_command("seed_demo", seed=1)
 
     assert Tool.objects.count() == 45
-    assert HandTool.objects.count() == 45
+    assert HandTool.objects.count() == 35
     assert all(5 <= h.total <= 15 for h in HandTool.objects.all())
     assert all(h.issued == 0 for h in HandTool.objects.all())
     assert Tool.objects.exclude(status=Tool.Status.AVAILABLE).count() == 0
@@ -23,7 +23,7 @@ def test_seed_writes_journal_through_services(admin_user):
 
     # По одной записи «поставлен на баланс» на каждую позицию.
     assert ToolMovement.objects.filter(type="added").count() == 45
-    assert HandToolMovement.objects.filter(type="added").count() == 45
+    assert HandToolMovement.objects.filter(type="added").count() == 35
     assert HandToolMovement.objects.filter(created_by=admin_user).count() == 35
 
 
@@ -32,7 +32,7 @@ def test_seed_twice_does_not_duplicate(admin_user):
     call_command("seed_demo", seed=2)
 
     assert Tool.objects.count() == 45
-    assert HandTool.objects.count() == 45
+    assert HandTool.objects.count() == 35
     assert HandToolMovement.objects.count() == 35
 
 
