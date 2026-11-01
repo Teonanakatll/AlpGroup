@@ -36,11 +36,7 @@
   function frame(t) {
     raf = 0;
     if (!visible) return;
-    var time = t / 1000;
-    if (!hasPointer) {                                     // без курсора слегка «дышим» сами
-      target.x = Math.sin(time * 0.35) * 0.45;
-      target.y = Math.cos(time * 0.27) * 0.25;
-    }
+    if (!hasPointer) { target.x = 0; target.y = 0; }       // курсор ушёл: плавно возвращаемся в центр
     // чем меньше коэффициент, тем плавнее и «тяжелее» движение
     cur.x += (target.x - cur.x) * 0.035;
     cur.y += (target.y - cur.y) * 0.035;
@@ -54,7 +50,8 @@
       }
       el.style.transform = tf;
     });
-    raf = requestAnimationFrame(frame);
+    // дошли до цели: цикл не нужен, проснёмся от следующего движения мыши
+    if (Math.abs(target.x - cur.x) > 0.0005 || Math.abs(target.y - cur.y) > 0.0005) raf = requestAnimationFrame(frame);
   }
 
   kick();

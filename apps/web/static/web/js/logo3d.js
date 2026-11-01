@@ -130,6 +130,15 @@
     return inst;
   }
 
+  // Рисуем только когда есть что менять: блик бежит или курсор рядом. Иначе остаётся готовый кадр.
+  function isActive(inst, time) {
+    var lr = inst.el.getBoundingClientRect();
+    var over = pointer.on && pointer.x > lr.left - 30 && pointer.x < lr.right + 30 &&
+               pointer.y > lr.top - 30 && pointer.y < lr.bottom + 30;
+    var sweeping = ((time + inst.phase) % inst.every) < SWEEP_TIME + 0.1;
+    return over || sweeping;
+  }
+
   function draw(inst, time) {
     var lr = inst.el.getBoundingClientRect(), L = inst.light, tx, ty;
     var over = pointer.on && pointer.x > lr.left - 30 && pointer.x < lr.right + 30 &&
@@ -154,12 +163,26 @@
   }
 
   /* ---------- общий цикл ---------- */
-  var list = [], raf = 0;
-  function kick() { if (!raf && list.length && !still) raf = requestAnimationFrame(frame); }
+  var list = [], raf = 0, timer = 0;
+  function kick() {
+    clearTimeout(timer); timer = 0;
+    if (!raf && list.length && !still) raf = requestAnimationFrame(frame);
+  }
   function frame(t) {
     raf = 0;
-    list.forEach(function (inst) { if (inst.visible) draw(inst, t / 1000); });
-    raf = requestAnimationFrame(frame);
+    var time = t / 1000, any = false;
+    list.forEach(function (inst) {
+      if (!inst.visible) return;
+      if (isActive(inst, time)) { draw(inst, time); inst.dirty = true; any = true; }
+      else if (inst.dirty) { draw(inst, time); inst.dirty = false; }      // один «парковочный» кадр после конца блика
+    });
+    if (any) { raf = requestAnimationFrame(frame); return; }
+    // ничего не бежит: засыпаем до начала ближайшего блика (курсор или прокрутка разбудят раньше)
+    var now = performance.now() / 1000, wait = 60;
+    list.forEach(function (inst) {
+      if (inst.visible) wait = Math.min(wait, inst.every - ((now + inst.phase) % inst.every));
+    });
+    timer = setTimeout(kick, Math.max(50, wait * 1000));
   }
 
   logos.forEach(function (el) {

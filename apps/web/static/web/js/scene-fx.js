@@ -13,6 +13,9 @@
   if (!canvas || !img) return;
   if (document.documentElement.dataset.motion === "reduced") return;
 
+  // Сенсорные экраны без мыши: ряби не от чего возникать, контекст и текстуры не создаём вовсе
+  if (window.matchMedia && matchMedia("(hover: none)").matches) return;
+
   var gl = canvas.getContext("webgl", { alpha: false, antialias: false });
   if (!gl) return;
 
@@ -114,7 +117,11 @@
   /* ---------- текстуры ---------- */
   var waveTex;
   function upload() {
-    canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+    // слабое устройство или экономия трафика: холст вдвое меньше (картинка и волны те же, только мельче)
+    var lite = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 ||
+               (window.matchMedia && matchMedia("(prefers-reduced-data: reduce)").matches);
+    var q = lite ? 0.5 : 1;
+    canvas.width = Math.round(img.naturalWidth * q); canvas.height = Math.round(img.naturalHeight * q);
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     gl.activeTexture(gl.TEXTURE0);
