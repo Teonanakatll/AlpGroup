@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,13 +25,35 @@ load_dotenv(BASE_DIR / ".env")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-823n0s5p8+x98&kec4^63roy-#&$1)%53v%$0@ne5^!e+fj259'
+def env_list(name):
+    """Список из переменной окружения через запятую: «a.com, b.com» -> ["a.com", "b.com"]."""
+    return [item.strip() for item in os.getenv(name, "").split(",") if item.strip()]
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
+# На своём компьютере ничего задавать не нужно: DEBUG включён, ключ запасной.
+# На сервере в .env обязательно DEBUG=0 и свой SECRET_KEY (см. docs/DEPLOY.md).
+DEBUG = os.getenv("DEBUG", "1") == "1"
+
+SECRET_KEY = os.getenv("SECRET_KEY") or (
+    "django-insecure-823n0s5p8+x98&kec4^63roy-#&$1)%53v%$0@ne5^!e+fj259" if DEBUG else None
+)
+if not SECRET_KEY:
+    raise ImproperlyConfigured("Задайте SECRET_KEY в .env (при DEBUG=0 запасного ключа нет).")
+
+# DOMAIN: адрес сайта на сервере (например alp.example.com). Он сам попадает в разрешённые хосты.
+# Для туннелей и демо можно добавить свои в ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS (через запятую).
+DOMAIN = os.getenv("DOMAIN", "")
+HTTPS = os.getenv("HTTPS", "1") == "1"       # сайт открывается по https (на сервере за Caddy: да)
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS") + ([DOMAIN] if DOMAIN else [])
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") + (
+    [f"{'https' if HTTPS else 'http'}://{DOMAIN}"] if DOMAIN else []
+)
+
+if not DEBUG:
+    # Перед Django стоит Caddy: он терминирует https и передаёт схему в заголовке.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = HTTPS
+    CSRF_COOKIE_SECURE = HTTPS
 
 
 # Application definition
@@ -131,6 +155,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+# Сюда `collectstatic` собирает статику для сервера; отдаёт её Caddy (в разработке Django сам)
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Загружаемые файлы (фото инструмента). Папка media/ в .gitignore
 MEDIA_URL = 'media/'
