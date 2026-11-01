@@ -1,0 +1,15 @@
+{# Ручная позиция (количеством) в списке инвентаря. Нужны: hand. #}
+<article class="card item reveal" style="--i:{% if forloop.counter0 < 10 %}{{ forloop.counter0|add:2 }}{% else %}12{% endif %}">
+          <span class="icon-tile tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
+          <div class="item-main">
+            <div class="item-name"><a class="row-link" href="{% url 'web:hand_tool_detail' hand.pk %}">{{ hand.name }}</a></div>
+            <div class="item-meta">{{ hand.category }}</div>
+          </div>
+          <span class="pill{% if not hand.available %} pill--empty{% endif %}">{{ hand.available }} на складе</span>
+          <div class="item-meter">
+            <div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="{{ hand.total }}" aria-valuenow="{{ hand.issued }}" aria-label="Выдано">
+              <i style="--v:{% widthratio hand.issued hand.total 100 %}"></i>
+            </div>
+            <div class="meter-caption"><span>Выдано <b>{{ hand.issued }}</b></span><span>Всего <b>{{ hand.total }}</b></span></div>
+          </div>
+        </article>

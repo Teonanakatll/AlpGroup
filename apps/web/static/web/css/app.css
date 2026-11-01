@@ -545,6 +545,13 @@ html.lenis, html.lenis body { height: auto; }
   background: linear-gradient(100deg, var(--accent), var(--accent-2));
   box-shadow: 0 0 22px rgb(var(--accent-rgb) / .35);
 }
+.cat-group { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+.cat-title {
+  display: flex; align-items: baseline; gap: 14px; margin-top: 8px;
+  font-size: clamp(22px, 2.4vw, 32px); font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--accent); text-shadow: 0 0 24px rgb(var(--accent-rgb) / .35);
+}
+.cat-title span { font-size: 14px; font-weight: 500; letter-spacing: 0; color: var(--text-dim); text-shadow: none; }
 .section-title { display: flex; align-items: baseline; gap: 10px; font-size: 18px; font-weight: 600; }
 .section-title span { font-size: 13px; font-weight: 500; color: var(--text-dim); }
 .grid-items { display: flex; flex-direction: column; gap: 12px; }       /* один элемент на всю ширину */

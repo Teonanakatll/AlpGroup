@@ -7,7 +7,7 @@ admin_client (pytest-django) это клиент, уже вошедший как
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.inventory import selectors, services
-from apps.inventory.models import ToolPhoto
+from apps.inventory.models import Category, ToolPhoto
 
 
 def page(client, url):
@@ -143,6 +143,38 @@ def test_inventory_lists_both_kinds(admin_client, tool, stocked_hand_tool):
     html = page(admin_client, "/inventory/")
 
     assert "Перфоратор" in html and "Молоток" in html
+
+
+def test_inventory_groups_by_category_with_title(admin_client, user, category, tool, stocked_hand_tool):
+    other = Category.objects.create(name="Высотное снаряжение")
+    services.register_tool(user=user, name="Обвязка", category=other)
+
+    html = page(admin_client, "/inventory/")
+
+    assert html.count('class="cat-group"') == 2                       # две категории: Электроинструмент и снаряжение
+    assert html.index("Высотное снаряжение") < html.index("Электроинструмент")      # по алфавиту
+    # штучный и ручной инструмент одной категории стоят в одной группе, под заголовком
+    assert html.index("Электроинструмент") < html.index("Перфоратор") < html.index("Молоток")
+
+
+def test_group_by_category_puts_both_kinds_in_one_group(category, tool, stocked_hand_tool):
+    tools, hand_tools = selectors.search_inventory()
+
+    groups = selectors.group_by_category(tools, hand_tools)
+
+    assert len(groups) == 1
+    assert groups[0]["name"] == category.name and groups[0]["count"] == 2
+    assert [t.name for t in groups[0]["tools"]] == ["Перфоратор"]
+    assert [h.name for h in groups[0]["hand_tools"]] == ["Молоток"]
+
+
+def test_group_by_category_shows_parent_path(user, category):
+    child = Category.objects.create(name="Верёвки", parent=category)
+    services.register_tool(user=user, name="Верёвка 1", category=child)
+
+    groups = selectors.group_by_category(*selectors.search_inventory())
+
+    assert groups[0]["name"] == f"{category.name} / Верёвки"
 
 
 def test_inventory_search_by_name(admin_client, tool, stocked_hand_tool):

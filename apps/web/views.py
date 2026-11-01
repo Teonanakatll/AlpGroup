@@ -52,8 +52,7 @@ def inventory(request):
         status = ""
     tools, hand_tools = selectors.search_inventory(query, status)
     return render(request, "web/inventory.html", {
-        "tools": tools,
-        "hand_tools": hand_tools,
+        "groups": selectors.group_by_category(tools, hand_tools),
         "query": query,
         "status": status,
         "statuses": Tool.Status.choices,

@@ -336,8 +336,8 @@ def search_inventory(query="", status=""):
     # Главное фото берём одним дополнительным запросом на всю страницу (а не по запросу на позицию).
     # В шаблоне: tool.main_photos (список из 0 или 1 фото).
     main_photo = Prefetch("photos", queryset=ToolPhoto.objects.filter(is_main=True), to_attr="main_photos")
-    tools = Tool.objects.select_related("category", "current_site").prefetch_related(main_photo).order_by("name")
-    hand_tools = HandTool.objects.select_related("category").order_by("name")
+    tools = Tool.objects.select_related("category__parent", "current_site").prefetch_related(main_photo).order_by("name")
+    hand_tools = HandTool.objects.select_related("category__parent").order_by("name")
     if query:
         tools = tools.filter(name__icontains=query)
         hand_tools = hand_tools.filter(name__icontains=query)
@@ -345,3 +345,28 @@ def search_inventory(query="", status=""):
         tools = tools.filter(status=status)
         hand_tools = hand_tools.none()
     return tools, hand_tools
+
+
+def group_by_category(tools, hand_tools):
+    """
+    Разложить штучные и ручные позиции по категориям для страницы инвентаря.
+
+    Результат: список словарей {name, tools, hand_tools, count}, по алфавиту названий категорий;
+    внутри группы позиции в том же порядке, что пришли (по названию). Категория подкатегории
+    подписывается путём «Родитель / Подкатегория». Категории без позиций не попадают.
+    """
+    groups = {}
+
+    def group_for(category):
+        if category.pk not in groups:
+            name = f"{category.parent.name} / {category.name}" if category.parent else category.name
+            groups[category.pk] = {"name": name, "tools": [], "hand_tools": []}
+        return groups[category.pk]
+
+    for tool in tools:
+        group_for(tool.category)["tools"].append(tool)
+    for hand_tool in hand_tools:
+        group_for(hand_tool.category)["hand_tools"].append(hand_tool)
+    for group in groups.values():
+        group["count"] = len(group["tools"]) + len(group["hand_tools"])
+    return sorted(groups.values(), key=lambda g: g["name"].lower())
