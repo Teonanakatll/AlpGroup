@@ -11,9 +11,8 @@
   var still = root.dataset.motion === "reduced";          // флаг из настроек сайта (см. DECISIONS §18)
   var layers = Array.prototype.slice.call(hero.querySelectorAll("[data-depth]"));
   var logo = hero.querySelector(".logo3d");
-  var clouds = hero.querySelector(".layer-clouds");
-
-  var SHIFT = 16;                                          // px на единицу глубины при крайнем положении курсора
+  
+  var SHIFT = 6;                                           // px на единицу глубины при крайнем положении курсора
   var target = { x: 0, y: 0 };                             // куда тянется курсор, -1..1
   var cur = { x: 0, y: 0 };                                // сглаженное положение
   var hasPointer = false;
@@ -26,6 +25,7 @@
     var r = hero.getBoundingClientRect();
     target.x = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width) * 2 - 1));
     target.y = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height) * 2 - 1));
+    client.x = e.clientX; client.y = e.clientY;
     hasPointer = true;
     kick();
   }
@@ -53,18 +53,17 @@
       target.y = Math.cos(time * 0.27) * 0.25;
     }
     // lerp: чем меньше коэффициент, тем плавнее и «тяжелее» движение
-    cur.x += (target.x - cur.x) * 0.07;
-    cur.y += (target.y - cur.y) * 0.07;
+    cur.x += (target.x - cur.x) * 0.035;
+    cur.y += (target.y - cur.y) * 0.035;
 
     layers.forEach(function (el) {
       var d = parseFloat(el.dataset.depth) || 0;
       var x = -cur.x * d * SHIFT;
       var y = -cur.y * d * SHIFT * 0.6;
-      if (el === clouds) x += Math.sin(time * 0.12) * 10;  // облака ещё и медленно плывут
       if (el === logo) {
         // тот же сдвиг + лёгкий наклон к курсору
         el.style.transform = "translate3d(" + x + "px," + y + "px,0) perspective(700px) rotateY(" +
-          (cur.x * 7).toFixed(2) + "deg) rotateX(" + (-cur.y * 5).toFixed(2) + "deg)";
+          (cur.x * 3).toFixed(2) + "deg) rotateX(" + (-cur.y * 2).toFixed(2) + "deg)";
       } else {
         el.style.transform = "translate3d(" + x + "px," + y + "px,0)";
       }
@@ -189,19 +188,32 @@
     drawLogo(0);
   }
 
+  // Свет: над логотипом идёт за курсором; иначе раз в несколько секунд сам пробегает слева направо.
+  var light = { x: -0.4, y: 0.35, z: 0.35 };
+  var client = { x: 0, y: 0 };
+  var SWEEP_EVERY = 6.5, SWEEP_TIME = 2.4;
+
   function drawLogo(time) {
     var c = gl.ctx;
-    // Свет: курсор в координатах героя -> в координатах логотипа. Без движения (reduced) свет стоит слева сверху.
-    var lr = logo.getBoundingClientRect(), hr = hero.getBoundingClientRect();
-    var lx, ly;
-    if (still) { lx = 0.25; ly = 0.2; }
-    else {
-      var px = hr.left + (cur.x * 0.5 + 0.5) * hr.width;
-      var py = hr.top + (cur.y * 0.5 + 0.5) * hr.height;
-      lx = (px - lr.left) / lr.width;
-      ly = (py - lr.top) / lr.height;
+    var lr = logo.getBoundingClientRect();
+    var tx, ty;
+    var over = hasPointer && client.x > lr.left - 30 && client.x < lr.right + 30 &&
+               client.y > lr.top - 30 && client.y < lr.bottom + 30;
+    if (still) { tx = 0.25; ty = 0.2; light.x = tx; light.y = ty; }
+    else if (over) {
+      tx = (client.x - lr.left) / lr.width;
+      ty = (client.y - lr.top) / lr.height;
+    } else {
+      var k = (time % SWEEP_EVERY) / SWEEP_TIME;           // 0..1 во время пробега, дальше свет стоит за краем
+      if (k < 1) {
+        var e = k * k * (3 - 2 * k);                       // smoothstep: разгон и торможение
+        tx = -0.35 + e * 1.7; ty = 0.25 + 0.2 * Math.sin(k * 3.14);
+      } else { tx = 1.35; ty = 0.35; }
     }
-    c.uniform3f(gl.u.light, lx, ly, 0.35);
+    // над логотипом свет следует быстро, при пробеге — точно по траектории
+    var f = over ? 0.2 : 1;
+    if (!still) { light.x += (tx - light.x) * f; light.y += (ty - light.y) * f; }
+    c.uniform3f(gl.u.light, light.x, light.y, 0.35);
     c.uniform1f(gl.u.time, time);
     c.clearColor(0, 0, 0, 0);
     c.clear(c.COLOR_BUFFER_BIT);

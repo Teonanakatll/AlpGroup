@@ -82,8 +82,7 @@ def test_home_hero_has_parallax_layers_and_logo(admin_client):
     html = page(admin_client, "/")
 
     assert "data-parallax" in html and "web/js/hero.js" in html
-    for layer in ("sky", "clouds", "mountain", "forest"):
-        assert f"web/img/hero/{layer}.webp" in html
+    assert "web/img/hero/matterhorn.webp" in html
     assert "logo3d-canvas" in html and "logo-alp-3d.png" in html
 
 
@@ -91,7 +90,7 @@ def test_hero_static_files_exist():
     from pathlib import Path
     static = Path(__file__).resolve().parents[2] / "web" / "static" / "web"
     for name in ("js/hero.js", "img/logo-alp.png", "img/logo-alp-3d.png",
-                 "img/hero/sky.webp", "img/hero/clouds.webp", "img/hero/mountain.webp", "img/hero/forest.webp"):
+                 "img/hero/matterhorn.webp"):
         assert (static / name).is_file(), name
 
 

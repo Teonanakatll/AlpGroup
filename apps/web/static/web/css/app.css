@@ -382,7 +382,7 @@ html.lenis, html.lenis body { height: auto; }
 }
 .layer {
   position: absolute; left: -6%; top: -6%; width: 112%; height: 112%; max-width: none;
-  object-fit: cover; object-position: 50% 14%;
+  object-fit: cover; object-position: 50% 18%;
   will-change: transform; pointer-events: none; user-select: none;
 }
 [data-theme="nexora"] .scene { display: none; }                /* у Nexora на этом месте кристалл */
