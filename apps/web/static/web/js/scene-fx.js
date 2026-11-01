@@ -1,6 +1,8 @@
-/* Фото горы в герое: вода и RGB-сдвиг вокруг курсора (WebGL).
-   Чем быстрее двигается мышь, тем сильнее рябь; когда курсор замер, всё успокаивается,
-   и цикл перерисовки останавливается (экономит батарею). Нет WebGL или «меньше движения» — просто фото. */
+/* Фото горы в герое: настоящая рябь на воде + RGB-расслоение (WebGL).
+   Курсор «роняет капли» вдоль своего пути; чем быстрее мышь, тем крупнее и сильнее волны и RGB.
+   Нажать левую кнопку и тянуть — максимум: большие волны и сильный RGB-сдвиг.
+   Волны считаются на CPU на маленькой сетке (волновое уравнение), в видеокарту уходит текстура
+   с наклоном и высотой воды, шейдер только преломляет фото. Нет WebGL или «меньше движения» — просто фото. */
 (function () {
   "use strict";
 
@@ -14,28 +16,27 @@
   var gl = canvas.getContext("webgl", { alpha: false, antialias: false });
   if (!gl) return;
 
+  /* ---------- шейдер ---------- */
   var VERT = "attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;uv.y=1.-uv.y;gl_Position=vec4(p,0.,1.);}";
   var FRAG = [
     "precision mediump float;",
     "varying vec2 uv;",
-    "uniform sampler2D tex;",
-    "uniform vec2 mouse;",      // положение курсора в координатах фото (0..1)
-    "uniform float amp;",       // сила эффекта 0..1 (зависит от скорости мыши)
-    "uniform float time;",
-    "uniform float aspect;",    // ширина/высота фото, чтобы волны были круглыми
+    "uniform sampler2D tex;",   // фото
+    "uniform sampler2D wave;",  // R,G: наклон воды, B: высота
+    "uniform float refr;",      // сила преломления
+    "uniform float rgb;",       // сила RGB-расслоения
     "void main(){",
-    "  vec2 d=(uv-mouse)*vec2(aspect,1.);",
-    "  float r=length(d);",
-    "  vec2 dir=d/max(r,.0001);",
-    "  float fall=exp(-r*10.)*amp;",                              // эффект затухает от курсора
-    "  float wave=sin(r*70.-time*6.)*fall;",                      // кольца, бегущие от курсора
-    "  vec2 off=dir*wave*.005/vec2(aspect,1.);",
-    "  vec2 split=dir*fall*.005/vec2(aspect,1.);",                // RGB-расслоение вдоль радиуса
-    "  float rr=texture2D(tex,uv+off+split).r;",
-    "  float gg=texture2D(tex,uv+off).g;",
-    "  float bb=texture2D(tex,uv+off-split).b;",
-    "  vec3 col=vec3(rr,gg,bb);",
-    "  col+=max(wave,0.)*.12;",                                    // блик на гребнях волн
+    "  vec4 w=texture2D(wave,uv);",
+    "  vec2 g=(w.rg-.5)*2.;",
+    "  float h=(w.b-.5)*2.;",
+    "  vec2 off=g*refr;",
+    "  float r=texture2D(tex,uv+off*(1.+rgb)).r;",               // красный и синий преломляются по-разному
+    "  float gr=texture2D(tex,uv+off).g;",
+    "  float b=texture2D(tex,uv+off*(1.-rgb)).b;",
+    "  vec3 col=vec3(r,gr,b);",
+    "  vec3 n=normalize(vec3(-g*5.,1.));",
+    "  float spec=pow(max(dot(n,normalize(vec3(-.3,-.5,.8))),0.),48.);",   // блик света на гребнях
+    "  col+=spec*.35*min(1.,length(g)*9.)+max(h,0.)*.05;",
     "  gl_FragColor=vec4(col,1.);",
     "}"
   ].join("\n");
@@ -61,66 +62,142 @@
   var loc = gl.getAttribLocation(prog, "p");
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  var uRefr = gl.getUniformLocation(prog, "refr"), uRgb = gl.getUniformLocation(prog, "rgb");
 
-  var u = {
-    mouse: gl.getUniformLocation(prog, "mouse"), amp: gl.getUniformLocation(prog, "amp"),
-    time: gl.getUniformLocation(prog, "time")
-  };
+  /* ---------- вода: волновое уравнение на сетке ---------- */
+  var W = 128, H = 192;                                    // клетки квадратные (фото 2:3)
+  var cur = new Float32Array(W * H), prev = new Float32Array(W * H);
+  var pix = new Uint8Array(W * H * 4);                     // текстура: наклон по x, y и высота
+  var DAMP = 0.985;                                        // чем ближе к 1, тем дольше живут круги
+  var energy = 0;
 
-  var state = { mx: 0.5, my: 0.5, amp: 0, last: null, raf: 0, ready: false };
+  function step() {
+    var e = 0, i, x, y, v;
+    for (y = 1; y < H - 1; y++) {
+      for (x = 1; x < W - 1; x++) {
+        i = y * W + x;
+        // среднее по соседям минус прошлое состояние = волна, бегущая по сетке
+        v = ((cur[i - 1] + cur[i + 1] + cur[i - W] + cur[i + W]) * 0.5 - prev[i]) * DAMP;
+        prev[i] = v;
+        e += v < 0 ? -v : v;
+      }
+    }
+    var t = cur; cur = prev; prev = t;                     // меняем местами буферы
+    energy = e;
+  }
 
+  function drop(gx, gy, strength, radius) {                // капля: гладкий «бугор» в точке
+    var r = Math.ceil(radius * 2), x0 = Math.round(gx), y0 = Math.round(gy);
+    for (var y = y0 - r; y <= y0 + r; y++) {
+      for (var x = x0 - r; x <= x0 + r; x++) {
+        if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) continue;
+        var d2 = ((x - gx) * (x - gx) + (y - gy) * (y - gy)) / (radius * radius);
+        if (d2 < 4) cur[y * W + x] = Math.max(-0.5, cur[y * W + x] - strength * Math.exp(-d2 * 1.6));
+      }
+    }
+  }
+
+  function pack() {                                        // высота и наклон -> байты текстуры
+    var GS = 8, x, y, i, o, gx, gy, h;
+    for (y = 1; y < H - 1; y++) {
+      for (x = 1; x < W - 1; x++) {
+        i = y * W + x; o = i * 4;
+        gx = (cur[i + 1] - cur[i - 1]) * GS; gy = (cur[i + W] - cur[i - W]) * GS; h = cur[i];
+        pix[o]     = 127.5 + 127.5 * Math.max(-1, Math.min(1, gx));
+        pix[o + 1] = 127.5 + 127.5 * Math.max(-1, Math.min(1, gy));
+        pix[o + 2] = 127.5 + 127.5 * Math.max(-1, Math.min(1, h * 2));
+        pix[o + 3] = 255;
+      }
+    }
+  }
+
+  /* ---------- текстуры ---------- */
+  var waveTex;
   function upload() {
     canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
     gl.viewport(0, 0, canvas.width, canvas.height);
+
+    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
+    setup();
+    gl.uniform1i(gl.getUniformLocation(prog, "tex"), 0);
+
+    gl.activeTexture(gl.TEXTURE1);
+    waveTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, waveTex);
+    pack();
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, pix);
+    setup();
+    gl.uniform1i(gl.getUniformLocation(prog, "wave"), 1);
+
+    ready = true;
+    render();
+    scene.classList.add("is-gl");
+  }
+  function setup() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.uniform1i(gl.getUniformLocation(prog, "tex"), 0);
-    gl.uniform1f(gl.getUniformLocation(prog, "aspect"), img.naturalWidth / img.naturalHeight);
-    state.ready = true;
-    draw(0);
-    scene.classList.add("is-gl");
   }
 
-  // Курсор (экран) -> координаты фото с учётом object-fit: cover и object-position 50% 18%
-  function toUV(cx, cy) {
+  /* ---------- ввод и цикл ---------- */
+  var ready = false, raf = 0, down = false;
+  var last = null;                                         // прошлая точка курсора (экран)
+  var power = 0, rgbPower = 0;                             // сглаженные: скорость мыши -> сила эффектов
+
+  // экран -> клетки сетки с учётом object-fit: cover и object-position 50% 18%
+  function toGrid(cx, cy) {
     var r = canvas.getBoundingClientRect();
     var s = Math.max(r.width / canvas.width, r.height / canvas.height);
     var dw = canvas.width * s, dh = canvas.height * s;
     var ox = (r.width - dw) * 0.5, oy = (r.height - dh) * 0.18;
-    return { x: (cx - r.left - ox) / dw, y: (cy - r.top - oy) / dh };
-  }
-
-  function draw(t) {
-    gl.uniform2f(u.mouse, state.mx, state.my);
-    gl.uniform1f(u.amp, state.amp);
-    gl.uniform1f(u.time, t / 1000);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  }
-
-  function frame(t) {
-    state.raf = 0;
-    state.amp *= 0.965;                                    // затухание, когда мышь замерла
-    draw(t);
-    if (state.amp > 0.004) state.raf = requestAnimationFrame(frame);
-    else { state.amp = 0; draw(t); }                       // последний чистый кадр, дальше цикл не нужен
+    return { x: (cx - r.left - ox) / dw * W, y: (cy - r.top - oy) / dh * H };
   }
 
   hero.addEventListener("pointermove", function (e) {
-    if (!state.ready) return;
-    var p = toUV(e.clientX, e.clientY);
-    if (state.last) {                                      // скорость мыши -> сила эффекта
-      var sp = Math.hypot(e.clientX - state.last.x, e.clientY - state.last.y);
-      state.amp = Math.min(1, Math.max(state.amp, sp / 28));
+    if (!ready) return;
+    var now = { x: e.clientX, y: e.clientY };
+    if (last) {
+      var sp = Math.hypot(now.x - last.x, now.y - last.y);          // px за событие
+      var k = Math.min(1, sp / 45);                                 // 0..1 по скорости
+      var kk = down ? 1 : k;
+      power += (kk - power) * 0.5; rgbPower += (kk - rgbPower) * 0.5;
+      // капли по всему пути от прошлой точки: быстрый взмах оставляет след, а не отдельные кружки
+      var a = toGrid(last.x, last.y), b = toGrid(now.x, now.y);
+      var n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 1.5));
+      var strength = down ? 0.28 : 0.05 + 0.16 * k * k;               // тихо: еле заметно, быстро: сильно
+      var radius = down ? 3.6 : 1.5 + 1.6 * k;                      // и крупнее при быстром движении
+      for (var i = 1; i <= n; i++) drop(a.x + (b.x - a.x) * i / n, a.y + (b.y - a.y) * i / n, strength / n, radius);
     }
-    state.last = { x: e.clientX, y: e.clientY };
-    state.mx = p.x; state.my = p.y;
-    if (!state.raf) state.raf = requestAnimationFrame(frame);
+    last = now;
+    kick();
   });
-  hero.addEventListener("pointerleave", function () { state.last = null; });
+  hero.addEventListener("pointerleave", function () { last = null; down = false; });
+  hero.addEventListener("pointerdown", function (e) { if (e.button === 0 && e.pointerType === "mouse") { down = true; last = { x: e.clientX, y: e.clientY }; kick(); } });
+  window.addEventListener("pointerup", function () { down = false; });
+
+  function kick() { if (!raf && ready) raf = requestAnimationFrame(frame); }
+
+  function render() {
+    pack();
+    gl.activeTexture(gl.TEXTURE1);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, pix);
+    // базовое преломление + прибавка от силы эффекта; RGB растёт сильнее всего при перетаскивании
+    gl.uniform1f(uRefr, 0.012 + 0.022 * power);
+    gl.uniform1f(uRgb, 0.25 + 1.5 * rgbPower);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  function frame() {
+    raf = 0;
+    step(); step();                                        // два шага за кадр: волны бегут бодрее
+    power *= 0.97; rgbPower *= 0.97;                       // когда мышь замерла, сила плавно спадает
+    render();
+    if (energy > 0.02 || down) raf = requestAnimationFrame(frame);
+    else { cur.fill(0); prev.fill(0); power = rgbPower = 0; render(); }   // вода успокоилась: чистый кадр и стоп
+  }
 
   if (img.complete && img.naturalWidth) upload();
   else img.addEventListener("load", upload, { once: true });
