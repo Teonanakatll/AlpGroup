@@ -312,3 +312,16 @@
     document.querySelectorAll("#toasts .toast").forEach(arm);   // сообщения от Django
   });
 })();
+
+/* Кнопки с data-confirm: первое нажатие только «взводит» кнопку (текст меняется на вопрос),
+   второе в течение 4 секунд отправляет форму. Без JS форма просто отправляется сразу. */
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest("button[data-confirm]");
+  if (!btn) return;
+  if (btn.classList.contains("is-armed")) return;           // второй клик: пусть форма уйдёт
+  e.preventDefault();
+  var label = btn.textContent;
+  btn.textContent = btn.dataset.confirm;
+  btn.classList.add("is-armed");
+  setTimeout(function () { btn.textContent = label; btn.classList.remove("is-armed"); }, 4000);
+});

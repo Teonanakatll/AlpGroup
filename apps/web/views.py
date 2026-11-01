@@ -5,12 +5,15 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.shortcuts import redirect, render
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 
 from apps.inventory import selectors, services
 from apps.inventory.forms import ReceiveFromServicingForm, ReceiveFromSiteForm
-from apps.inventory.models import Tool
+from apps.inventory.models import HandTool, HandToolMovement, Tool, ToolMovement
 from apps.sites import services as site_services
 from apps.sites.models import Site
 
@@ -332,3 +335,81 @@ def servicing(request):
 @login_required
 def from_servicing(request):
     return _site_operation(request, "from_servicing")
+
+
+# ---------------------------------------------------------------------------
+# Журнал, история позиции, отмена
+# ---------------------------------------------------------------------------
+
+def _style_rows(rows):
+    """Добавляет к строкам журнала иконку и цвет по типу операции."""
+    for row in rows:
+        row["icon"], row["tone"] = OPERATION_STYLE[row["type"]]
+    return rows
+
+
+@login_required
+def journal(request):
+    """Журнал операций: наборы и одиночные строки, у каждого кнопки отмены (если можно)."""
+    try:
+        limit = min(max(int(request.GET.get("n", 40)), 1), 400)
+    except ValueError:
+        limit = 40
+    entries, has_more = selectors.journal_entries(limit=limit)
+    for entry in entries:
+        _style_rows(entry["rows"])
+    return render(request, "web/journal.html", {
+        "entries": entries, "has_more": has_more and limit < 400, "next_limit": limit + 40,
+    })
+
+
+@login_required
+def tool_detail(request, pk):
+    tool = get_object_or_404(Tool.objects.select_related("category", "current_site"), pk=pk)
+    return render(request, "web/position.html", {
+        "kind": "tool", "item": tool, "rows": _style_rows(selectors.tool_history_rows(tool)),
+    })
+
+
+@login_required
+def hand_tool_detail(request, pk):
+    hand_tool = get_object_or_404(HandTool.objects.select_related("category"), pk=pk)
+    return render(request, "web/position.html", {
+        "kind": "hand", "item": hand_tool, "rows": _style_rows(selectors.hand_tool_history_rows(hand_tool)),
+    })
+
+
+def _back(request, default="web:journal"):
+    """Куда вернуться после отмены: на страницу, откуда нажали (только свой сайт), иначе в журнал."""
+    url = request.POST.get("next", "")
+    if url and url_has_allowed_host_and_scheme(url, allowed_hosts={request.get_host()}):
+        return redirect(url)
+    return redirect(default)
+
+
+@login_required
+@require_POST
+def cancel_batch(request, batch):
+    try:
+        services.cancel_batch(user=request.user, batch=batch)
+    except services.ServiceError as error:
+        messages.error(request, " ".join(str(error).splitlines()))   # причины одной строкой в плашке
+    else:
+        messages.success(request, "Набор отменён: состояние позиций пересчитано по журналу.")
+    return _back(request)
+
+
+@login_required
+@require_POST
+def cancel_movement(request, kind, pk):
+    model = {"tool": ToolMovement, "hand": HandToolMovement}.get(kind)
+    if model is None:
+        raise Http404
+    movement = get_object_or_404(model, pk=pk)
+    try:
+        services.cancel_movement(user=request.user, movement=movement)
+    except services.ServiceError as error:
+        messages.error(request, " ".join(str(error).splitlines()))
+    else:
+        messages.success(request, "Операция отменена: состояние позиции пересчитано по журналу.")
+    return _back(request)

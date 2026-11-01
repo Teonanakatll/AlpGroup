@@ -1,7 +1,7 @@
 """
 Выборки (только чтение, ничего не меняют). Считаются по журналу, а не по кэшу в моделях.
 """
-from django.db.models import Case, Count, F, IntegerField, Prefetch, Sum, Value, When
+from django.db.models import Case, Count, F, IntegerField, Max, Prefetch, Sum, Value, When
 
 from .models import BaseMovement, HandTool, HandToolMovement, Tool, ToolMovement, ToolPhoto
 
@@ -208,6 +208,106 @@ def recent_movements(limit=6):
     items += [row_dict(r, r.hand_tool.name, r.quantity) for r in hand_rows]
     items.sort(key=lambda item: item["created_at"], reverse=True)
     return items[:limit]
+
+
+# ---------------------------------------------------------------------------
+# Журнал для страницы: строки со знанием «можно ли отменить»
+# ---------------------------------------------------------------------------
+
+def _last_active_ids(model, field, ids):
+    """Для каждой позиции из ids: pk её последней действующей (не отменённой) записи журнала."""
+    rows = model.objects.filter(is_cancelled=False, **{f"{field}__in": ids}).order_by()
+    return dict(rows.values_list(field).annotate(last=Max("pk")))
+
+
+def _movement_dicts(tool_rows, hand_rows):
+    """
+    Строки обоих журналов -> словари для страницы, новые сверху.
+
+    can_cancel повторяет правила services._cancel: нельзя отменить уже отменённую,
+    постановку на баланс и не последнюю действующую операцию по позиции. Если нельзя,
+    в hint причина (для подсказки пользователю); сам запрет всё равно проверяет сервис.
+    """
+    last_tool = _last_active_ids(ToolMovement, "tool_id", {r.tool_id for r in tool_rows})
+    last_hand = _last_active_ids(HandToolMovement, "hand_tool_id", {r.hand_tool_id for r in hand_rows})
+
+    def make(row, kind, item, item_id, quantity, last):
+        if row.is_cancelled:
+            can, hint = False, ""
+        elif row.type == MovementType.ADDED:
+            can, hint = False, "Постановку на баланс отменять нельзя"
+        elif last.get(item_id) != row.pk:
+            can, hint = False, "После этой операции были другие: сначала отмените их"
+        else:
+            can, hint = True, ""
+        return {
+            "id": row.pk, "kind": kind, "item": item, "item_id": item_id, "quantity": quantity,
+            "batch": str(row.batch) if row.batch else "",
+            "type": row.type, "type_display": row.get_type_display(),
+            "site": row.site.name if row.site else None,
+            "taken_by": row.taken_by, "note": row.note,
+            "created_at": row.created_at, "created_by": row.created_by.get_username(),
+            "is_cancelled": row.is_cancelled,
+            "cancelled_by": row.cancelled_by.get_username() if row.cancelled_by else "",
+            "can_cancel": can, "hint": hint,
+        }
+
+    items = [make(r, "tool", r.tool.name, r.tool_id, None, last_tool) for r in tool_rows]
+    items += [make(r, "hand", r.hand_tool.name, r.hand_tool_id, r.quantity, last_hand) for r in hand_rows]
+    items.sort(key=lambda d: (d["created_at"], d["id"]), reverse=True)
+    return items
+
+
+def journal_entries(limit=40):
+    """
+    Журнал операций для страницы: (записи, есть_ещё).
+
+    Запись это одна операция пользователя: набор (строки с общим batch из обоих журналов)
+    или одиночная строка. У записи can_cancel_batch: набор можно отменить целиком, только если
+    каждую его действующую строку можно отменить (правило «всё или ничего»).
+    Если набор попал на границу страницы, его строки догружаются целиком.
+    """
+    tool_qs = ToolMovement.objects.select_related("tool", "site", "created_by", "cancelled_by")
+    hand_qs = HandToolMovement.objects.select_related("hand_tool", "site", "created_by", "cancelled_by")
+    tool_rows = list(tool_qs.order_by("-created_at", "-pk")[:limit])
+    hand_rows = list(hand_qs.order_by("-created_at", "-pk")[:limit])
+    has_more = len(tool_rows) == limit or len(hand_rows) == limit
+
+    batches = {r.batch for r in tool_rows + hand_rows if r.batch}
+    if batches:
+        have_t, have_h = {r.pk for r in tool_rows}, {r.pk for r in hand_rows}
+        tool_rows += [r for r in tool_qs.filter(batch__in=batches) if r.pk not in have_t]
+        hand_rows += [r for r in hand_qs.filter(batch__in=batches) if r.pk not in have_h]
+
+    entries, by_batch = [], {}
+    for row in _movement_dicts(tool_rows, hand_rows):
+        if row["batch"] and row["batch"] in by_batch:
+            by_batch[row["batch"]]["rows"].append(row)
+            continue
+        entry = {"batch": row["batch"], "rows": [row], "created_at": row["created_at"],
+                 "site": row["site"], "taken_by": row["taken_by"], "created_by": row["created_by"]}
+        entries.append(entry)
+        if row["batch"]:
+            by_batch[row["batch"]] = entry
+
+    for entry in entries:
+        active = [r for r in entry["rows"] if not r["is_cancelled"]]
+        entry["is_set"] = len(entry["rows"]) > 1
+        entry["can_cancel_batch"] = bool(active) and all(r["can_cancel"] for r in active)
+        entry["cancel_batch_hint"] = "" if entry["can_cancel_batch"] or not active else next(
+            (f"«{r['item']}»: {r['hint'].lower()}" for r in active if not r["can_cancel"]), "")
+    return entries[:limit], has_more
+
+
+def tool_history_rows(tool):
+    """История штучной позиции для страницы (со словами «можно ли отменить»)."""
+    rows = list(tool_history(tool).select_related("created_by", "cancelled_by"))
+    return _movement_dicts(rows, [])
+
+
+def hand_tool_history_rows(hand_tool):
+    rows = list(hand_tool_history(hand_tool).select_related("created_by", "cancelled_by"))
+    return _movement_dicts([], rows)
 
 
 def tools_needing_attention(limit=None):

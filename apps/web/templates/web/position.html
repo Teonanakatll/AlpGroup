@@ -1,0 +1,32 @@
+{% extends "web/base.html" %}
+{% block title %}{{ item.name }} · AlpGroup{% endblock %}
+
+{% block content %}
+  <div class="page-head reveal">
+    <div>
+      <p class="muted"><a class="row-link" href="{% url 'web:inventory' %}">← Инвентарь</a></p>
+      <h1>{{ item.name }}</h1>
+      <p class="muted">
+        {{ item.category }}
+        {% if kind == "tool" %}
+          · {{ item.get_status_display }}{% if item.current_site %} · {{ item.current_site }}{% endif %}
+        {% else %}
+          · всего {{ item.total }}, выдано {{ item.issued }}, на складе {{ item.available }}
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div class="card block reveal" style="--i:1">
+    <div class="block-head"><h2>История операций</h2></div>
+    {% if rows %}
+      <ul class="rows">
+        {% for row in rows %}
+          {% include "web/_movement.html" with show_item=False %}
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">Операций по этой позиции пока нет.</p>
+    {% endif %}
+  </div>
+{% endblock %}

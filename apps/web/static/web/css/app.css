@@ -503,6 +503,25 @@ html.lenis, html.lenis body { height: auto; }
 .row.is-cancelled .row-title { text-decoration: line-through; text-decoration-color: rgb(255 255 255 / .35); }
 .tag-cancel { margin-left: 6px; font-size: 11px; font-weight: 500; padding: 1px 8px; border-radius: 99px; color: var(--text-dim); background: rgb(255 255 255 / .08); }
 
+/* ---------- Журнал и отмена ---------- */
+.journal { display: flex; flex-direction: column; gap: 14px; }
+.entry-meta { margin-left: 8px; font-size: 13px; font-weight: 400; }
+.more { text-align: center; margin-top: 8px; }
+.row-link { color: inherit; transition: color .4s var(--ease-soft); }
+.row-link:hover { color: var(--accent); }
+.cancel-form { flex: none; display: inline-flex; }
+.btn-cancel {
+  flex: none; padding: 6px 14px; border-radius: 99px; font: inherit; font-size: 13px; cursor: pointer;
+  color: var(--text-dim); background: rgb(255 255 255 / .04); border: 1px solid var(--card-border);
+  transition: color .4s var(--ease-soft), border-color .45s var(--ease-soft), background .45s var(--ease-soft), box-shadow .45s var(--ease-soft), transform .45s var(--ease-soft);
+}
+.btn-cancel:hover { color: rgb(var(--red-rgb)); border-color: rgb(var(--red-rgb) / .6); box-shadow: 0 0 14px rgb(var(--red-rgb) / .3); }
+.btn-cancel.is-armed {                     /* второй шаг: «Точно отменить?» */
+  color: #fff; background: rgb(var(--red-rgb) / .85); border-color: rgb(var(--red-rgb)); box-shadow: 0 0 18px rgb(var(--red-rgb) / .55);
+}
+.btn-cancel.is-off { opacity: .35; cursor: not-allowed; }
+.btn-cancel.is-off:hover { color: var(--text-dim); border-color: var(--card-border); box-shadow: none; }
+
 /* ---------- Инвентарь ---------- */
 .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .chip {

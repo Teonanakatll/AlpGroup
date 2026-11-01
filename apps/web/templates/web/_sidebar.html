@@ -15,6 +15,9 @@
       <a class="nav-item {% if current == 'inventory' %}is-active{% endif %}" href="{% url 'web:inventory' %}">
         <svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg><span>Инвентарь</span>
       </a>
+      <a class="nav-item {% if current == 'journal' %}is-active{% endif %}" href="{% url 'web:journal' %}">
+        <svg class="icon" aria-hidden="true"><use href="#i-list"/></svg><span>Журнал</span>
+      </a>
       {# Аналитика появится вместе с отчётами #}
       <a class="nav-item {% if current == 'issue' or current == 'receive' or current == 'missing' or current == 'write_off' or current == 'servicing' or current == 'from_servicing' %}is-active{% endif %}" href="{% url 'web:operations' %}">
         <svg class="icon" aria-hidden="true"><use href="#i-swap"/></svg><span>Операции</span>

@@ -1,0 +1,45 @@
+{% extends "web/base.html" %}
+{% block title %}Журнал · AlpGroup{% endblock %}
+
+{% block content %}
+  <div class="page-head reveal">
+    <div>
+      <h1>Журнал операций</h1>
+      <p class="muted">Всё, что происходило с инструментом. Отменить можно только последнюю операцию по позиции; отменённые остаются в журнале.</p>
+    </div>
+  </div>
+
+  {% if entries %}
+    <div class="journal">
+      {% for entry in entries %}
+        <section class="card block entry reveal" style="--i:{% if forloop.counter0 < 8 %}{{ forloop.counter0|add:1 }}{% else %}9{% endif %}">
+          {% if entry.is_set %}
+            <div class="block-head">
+              <h2>Набор · {% if entry.site %}{{ entry.site }}{% else %}Склад{% endif %}
+                <span class="muted entry-meta">{{ entry.created_at|date:"d.m.Y H:i" }} · {{ entry.rows|length }} поз.</span></h2>
+              {% if entry.can_cancel_batch %}
+                <form class="cancel-form" method="post" action="{% url 'web:cancel_batch' entry.batch %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button class="btn-cancel" type="submit" data-confirm="Отменить весь набор?">Отменить набор</button>
+                </form>
+              {% elif entry.cancel_batch_hint %}
+                <span class="btn-cancel is-off" title="{{ entry.cancel_batch_hint }}">Отменить набор</span>
+              {% endif %}
+            </div>
+          {% endif %}
+          <ul class="rows">
+            {% for row in entry.rows %}
+              {% include "web/_movement.html" with show_item=True %}
+            {% endfor %}
+          </ul>
+        </section>
+      {% endfor %}
+    </div>
+    {% if has_more %}
+      <p class="more"><a class="chip" href="?n={{ next_limit }}">Показать ещё</a></p>
+    {% endif %}
+  {% else %}
+    <div class="panel empty reveal" style="--i:1">В журнале пока нет операций.</div>
+  {% endif %}
+{% endblock %}

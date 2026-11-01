@@ -1,0 +1,23 @@
+{# Одна строка журнала. Нужны: row, show_item (показывать название позиции ссылкой). #}
+<li class="row{% if row.is_cancelled %} is-cancelled{% endif %}">
+  <span class="icon-tile {{ row.tone }}"><svg class="icon" aria-hidden="true"><use href="#i-{{ row.icon }}"/></svg></span>
+  <div class="row-main">
+    <div class="row-title">
+      {{ row.type_display }}{% if show_item %} ·
+        {% if row.kind == "tool" %}<a class="row-link" href="{% url 'web:tool_detail' row.item_id %}">{{ row.item }}</a>{% else %}<a class="row-link" href="{% url 'web:hand_tool_detail' row.item_id %}">{{ row.item }}</a>{% endif %}
+      {% endif %}{% if row.quantity %} × {{ row.quantity }}{% endif %}
+      {% if row.is_cancelled %}<span class="tag-cancel">отменена{% if row.cancelled_by %} · {{ row.cancelled_by }}{% endif %}</span>{% endif %}
+    </div>
+    <div class="row-sub">{% if row.site %}{{ row.site }}{% else %}Склад{% endif %}{% if row.taken_by %} · {{ row.taken_by }}{% endif %}{% if row.note %} · {{ row.note }}{% endif %}</div>
+  </div>
+  <span class="row-end">{{ row.created_at|date:"d.m.Y H:i" }} · {{ row.created_by }}</span>
+  {% if row.can_cancel %}
+    <form class="cancel-form" method="post" action="{% url 'web:cancel_movement' row.kind row.id %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button class="btn-cancel" type="submit" data-confirm="Точно отменить?">Отменить</button>
+    </form>
+  {% elif not row.is_cancelled %}
+    <span class="btn-cancel is-off" title="{{ row.hint }}">Отменить</span>
+  {% endif %}
+</li>

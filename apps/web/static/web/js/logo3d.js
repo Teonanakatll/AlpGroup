@@ -122,7 +122,7 @@
       ctx.viewport(0, 0, w, h);
     };
     inst.resize();
-    window.addEventListener("resize", function () { inst.resize(); if (still) draw(inst, 0); });
+    window.addEventListener("resize", function () { inst.resize(); draw(inst, still ? 0 : performance.now() / 1000); });   // смена размера стирает холст: перерисовать сразу
     if ("IntersectionObserver" in window) {
       new IntersectionObserver(function (en) { inst.visible = en[0].isIntersecting; if (inst.visible) kick(); }).observe(el);
     }
@@ -191,7 +191,8 @@
       var inst = setup(el);
       if (!inst) return;
       list.push(inst);
-      if (still) draw(inst, 0); else kick();
+      draw(inst, still ? 0 : performance.now() / 1000);       // первый кадр сразу: дальше рисуем только во время бликов
+      if (!still) kick();
     }
     if (img && !img.complete) img.addEventListener("load", go, { once: true });
     else go();

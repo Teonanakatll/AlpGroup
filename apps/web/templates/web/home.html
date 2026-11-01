@@ -71,9 +71,7 @@
     <div class="card block reveal" style="--i:5">
       <div class="block-head">
         <h2>Недавние операции</h2>
-        {% if request.user.is_staff %}
-          <a class="link-more" href="{% url 'admin:inventory_toolmovement_changelist' %}">Журнал <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-        {% endif %}
+        <a class="link-more" href="{% url 'web:journal' %}">Журнал <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
       </div>
       {% if recent %}
         <ul class="rows">
