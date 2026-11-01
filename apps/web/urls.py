@@ -12,6 +12,10 @@ urlpatterns = [
     path("operations/", views.operations, name="operations"),
     path("operations/issue/", views.issue, name="issue"),
     path("operations/receive/", views.receive, name="receive"),
+    path("operations/missing/", views.missing, name="missing"),
+    path("operations/write-off/", views.write_off, name="write_off"),
+    path("operations/servicing/", views.servicing, name="servicing"),
+    path("operations/from-servicing/", views.from_servicing, name="from_servicing"),
     path(
         "login/",
         auth_views.LoginView.as_view(template_name="web/login.html", redirect_authenticated_user=True),

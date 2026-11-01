@@ -224,7 +224,7 @@
     function sync() {
       var chosen = select.options[select.selectedIndex];
       label.textContent = chosen ? chosen.text : "";
-      var empty = !chosen || chosen.value === "";
+      var empty = (!chosen || chosen.value === "") && !select.hasAttribute("data-dd-keep");   // «Склад» это настоящий выбор
       button.classList.toggle("is-placeholder", empty);
       button.classList.toggle("is-filled", !empty);
       options.forEach(function (item, index) {

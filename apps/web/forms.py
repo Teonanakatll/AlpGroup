@@ -23,3 +23,22 @@ class IssueForm(SiteOperationForm):
         if not cleaned.get("site") and not cleaned["new_site"]:
             self.add_error("site", "Выберите объект или введите новый.")
         return cleaned
+
+
+class MissingForm(SiteOperationForm):
+    """«Не найден»: объект обязателен, указываем, кто сообщил о пропаже."""
+    taken_by = forms.CharField(label="Кто сообщил", max_length=200, required=False)
+
+
+class _SourceForm(forms.Form):
+    """Операции со склада или с объекта: пустой «Откуда» означает склад."""
+    site = forms.ModelChoiceField(queryset=Site.objects.all(), label="Откуда", required=False, empty_label="Склад")
+
+
+class WriteOffForm(_SourceForm):
+    note = forms.CharField(label="Причина, примечание", max_length=300, required=False)
+
+
+class ServicingForm(_SourceForm):
+    taken_by = forms.CharField(label="Кто отвёз", max_length=200, required=False)
+    note = forms.CharField(label="Примечание", max_length=300, required=False)

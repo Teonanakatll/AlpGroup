@@ -1,20 +1,21 @@
 {% extends "web/base.html" %}
-{% block title %}{% if mode == "issue" %}Выдача{% else %}Приём{% endif %} · AlpGroup{% endblock %}
+{% block title %}{{ title }} · AlpGroup{% endblock %}
 
 {% block content %}
   <div class="page-head reveal">
     <div>
-      <h1>{% if mode == "issue" %}Выдача на объект{% else %}Приём с объекта{% endif %}</h1>
-      <p class="muted">
-        {% if mode == "issue" %}Отметьте штучный инструмент и укажите количество ручного, затем выберите объект.
-        {% else %}Выберите объект: покажем всё, что на нём числится.{% endif %}
-      </p>
+      <h1>{{ title }}</h1>
+      <p class="muted">{{ hint }}</p>
     </div>
   </div>
 
   <nav class="toolbar reveal" style="--i:1" aria-label="Вид операции">
     <a class="chip {% if mode == 'issue' %}is-active{% endif %}" href="{% url 'web:issue' %}">Выдача</a>
     <a class="chip {% if mode == 'receive' %}is-active{% endif %}" href="{% url 'web:receive' %}">Приём</a>
+    <a class="chip {% if mode == 'missing' %}is-active{% endif %}" href="{% url 'web:missing' %}">Не найден</a>
+    <a class="chip {% if mode == 'write_off' %}is-active{% endif %}" href="{% url 'web:write_off' %}">Списание</a>
+    <a class="chip {% if mode == 'servicing' %}is-active{% endif %}" href="{% url 'web:servicing' %}">В ремонт</a>
+    <a class="chip {% if mode == 'from_servicing' %}is-active{% endif %}" href="{% url 'web:from_servicing' %}">Из ремонта</a>
   </nav>
 
   <form method="post" class="op-form reveal" style="--i:2" novalidate>
@@ -42,7 +43,7 @@
     <div class="op-bar panel">
       <span class="op-count">Выбрано: <b data-pick-count>0</b></span>
       <button class="btn btn-primary" type="submit" data-pick-submit disabled>
-        {% if mode == "issue" %}Выдать{% else %}Принять{% endif %}
+        {{ button }}
         <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow-right"/></svg>
       </button>
     </div>

@@ -11,7 +11,7 @@ Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .e
 - config/ — настройки и urls
 - apps/inventory/ — Category, Tool, ToolPhoto, HandTool, BaseMovement (abstract), ToolMovement, HandToolMovement
 - apps/sites/ — Site, WorkType (минимальный справочник)
-- apps/web/ — сайт: страницы, шаблоны, стили (app.css, темы summit и nexora на переменных), иконки, логотип; формы выдачи и приёма (views.py, positions.py)
+- apps/web/ — сайт: страницы, шаблоны, стили (app.css, темы summit и nexora на переменных), иконки, логотип; формы операций: выдача, приём, не найден, списание, ремонт (views.py, forms.py, positions.py)
 - в каждом приложении services.py (изменения), selectors.py (выборки), tests/
 
 ## Ключевые правила (подробности в DECISIONS.md)
@@ -55,7 +55,8 @@ Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .e
 - [x] DRF-эндпоинты только для чтения (списки, история, доступно к выдаче, на объекте)
 - [x] DRF-операции: выдача, приём, не найден, списание, ремонт, отмена (POST /api/issue/, receive/, receive-from-servicing/, missing/, write-off/, servicing/, cancel-batch/, cancel-movement/)
 - [x] сайт: каркас, вход, главная, инвентарь, темы
-- [ ] сайт: формы выдачи и приёма (Django + HTMX) сделаны (отметить после проверки тестами); дальше «не найден», списание, ремонт и отмена в интерфейсе, история позиции
+- [x] сайт: формы выдачи и приёма (Django + HTMX)
+- [ ] сайт: формы «не найден», списания, ремонта и приёма из ремонта сделаны (отметить после проверки тестами); дальше отмена в интерфейсе, история позиции
 - [ ] права, отчёты и бэкапы, оповещения
 
 ## Открытые вопросы

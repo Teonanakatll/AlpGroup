@@ -13,7 +13,7 @@
         <svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg><span>Инвентарь</span>
       </a>
       {# Аналитика появится вместе с отчётами #}
-      <a class="nav-item {% if current == 'issue' or current == 'receive' %}is-active{% endif %}" href="{% url 'web:operations' %}">
+      <a class="nav-item {% if current == 'issue' or current == 'receive' or current == 'missing' or current == 'write_off' or current == 'servicing' or current == 'from_servicing' %}is-active{% endif %}" href="{% url 'web:operations' %}">
         <svg class="icon" aria-hidden="true"><use href="#i-swap"/></svg><span>Операции</span>
       </a>
       <span class="nav-item is-soon" aria-disabled="true">

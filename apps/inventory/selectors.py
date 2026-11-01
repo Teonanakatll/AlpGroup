@@ -58,6 +58,20 @@ def tools_on_site(site):
     )
 
 
+def tools_in_servicing():
+    """Штучные позиции, которые сейчас в ремонте (для приёма из ремонта)."""
+    return Tool.objects.filter(status=Tool.Status.SERVICING).select_related("category").order_by("name")
+
+
+def tools_for_write_off():
+    """
+    Штучные позиции, которые можно списать со склада: «на складе», «в ремонте» и «не найден»
+    (потерянное закрывается списанием, DECISIONS, раздел 14).
+    """
+    statuses = (Tool.Status.AVAILABLE, Tool.Status.SERVICING, Tool.Status.MISSING)
+    return Tool.objects.filter(status__in=statuses).select_related("category").order_by("name")
+
+
 def hand_tools_on_site(site):
     """
     Ручной инструмент, который числится на объекте: список пар (HandTool, количество).

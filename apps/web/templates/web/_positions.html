@@ -15,7 +15,7 @@
             <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-box"/></svg></span>
             <span class="item-main">
               <span class="item-name">{{ tool.name }}</span>
-              <span class="item-meta">{{ tool.category }}</span>
+              <span class="item-meta">{{ tool.category }}{% if show_status %} · {{ tool.get_status_display }}{% endif %}</span>
             </span>
           </label>
         {% endfor %}
@@ -30,7 +30,7 @@
             <span class="icon-tile tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
             <span class="item-main">
               <span class="item-name">{{ row.hand.name }}</span>
-              <span class="item-meta">{{ row.hand.category }} · {% if mode == "issue" %}на складе{% else %}на объекте{% endif %} {{ row.max }}</span>
+              <span class="item-meta">{{ row.hand.category }} · {{ hand_where }} {{ row.max }}</span>
             </span>
             <span class="qty">
               <button type="button" class="qty-btn" data-qty-step="-1" aria-label="Меньше"><svg class="icon" aria-hidden="true"><use href="#i-tri-left"/></svg></button>
@@ -43,10 +43,6 @@
       </div>
     {% endif %}
   {% else %}
-    <div class="panel empty">
-      {% if mode == "issue" %}На складе сейчас нечего выдавать.
-      {% elif site %}На объекте «{{ site }}» ничего не числится.
-      {% else %}Выберите объект, чтобы увидеть, что на нём числится.{% endif %}
-    </div>
+    <div class="panel empty">{{ empty_text }}</div>
   {% endif %}
 </div>
