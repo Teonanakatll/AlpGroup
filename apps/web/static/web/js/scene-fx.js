@@ -13,9 +13,6 @@
   if (!canvas || !img) return;
   if (document.documentElement.dataset.motion === "reduced") return;
 
-  // Сенсорные экраны без мыши: ряби не от чего возникать, контекст и текстуры не создаём вовсе
-  if (window.matchMedia && matchMedia("(hover: none)").matches) return;
-
   var gl = canvas.getContext("webgl", { alpha: false, antialias: false });
   if (!gl) return;
 
@@ -119,6 +116,7 @@
   function upload() {
     // слабое устройство или экономия трафика: холст вдвое меньше (картинка и волны те же, только мельче)
     var lite = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 ||
+               (window.matchMedia && matchMedia("(hover: none)").matches) ||      // телефон: и так рябь мельче глазом, и батарея
                (window.matchMedia && matchMedia("(prefers-reduced-data: reduce)").matches);
     var q = lite ? 0.5 : 1;
     canvas.width = Math.round(img.naturalWidth * q); canvas.height = Math.round(img.naturalHeight * q);
@@ -163,8 +161,16 @@
     return { x: (cx - r.left - ox) / dw * W, y: (cy - r.top - oy) / dh * H };
   }
 
+  var logoEl = hero.querySelector(".logo3d-hero");
+  function overLogo(x, y) {                                // под логотипом воды не нужно
+    if (!logoEl) return false;
+    var r = logoEl.getBoundingClientRect();
+    return x > r.left - 8 && x < r.right + 8 && y > r.top - 8 && y < r.bottom + 8;
+  }
+
   hero.addEventListener("pointermove", function (e) {
     if (!ready) return;
+    if (overLogo(e.clientX, e.clientY)) { last = null; return; }
     var now = { x: e.clientX, y: e.clientY };
     if (last) {
       var sp = Math.hypot(now.x - last.x, now.y - last.y);          // px за событие
@@ -182,7 +188,19 @@
     kick();
   });
   hero.addEventListener("pointerleave", function () { last = null; down = false; });
-  hero.addEventListener("pointerdown", function (e) { if (e.button === 0 && e.pointerType === "mouse") { down = true; last = { x: e.clientX, y: e.clientY }; kick(); } });
+  hero.addEventListener("pointerdown", function (e) {
+    if (!ready || overLogo(e.clientX, e.clientY)) return;
+    if (e.pointerType === "mouse") {
+      if (e.button === 0) { down = true; last = { x: e.clientX, y: e.clientY }; kick(); }
+    } else {                                               // палец: касание роняет заметную каплю, дальше работает движение
+      var g = toGrid(e.clientX, e.clientY);
+      drop(g.x, g.y, 0.4, 3.2);
+      power = rgbPower = 0.8;
+      last = { x: e.clientX, y: e.clientY };
+      kick();
+    }
+  });
+  hero.addEventListener("pointercancel", function () { last = null; down = false; });   // браузер забрал жест под прокрутку
   window.addEventListener("pointerup", function () { down = false; });
 
   function kick() { if (!raf && ready) raf = requestAnimationFrame(frame); }

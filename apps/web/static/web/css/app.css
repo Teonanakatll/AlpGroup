@@ -345,6 +345,7 @@ html.lenis, html.lenis body { height: auto; }
 
 /* ---------- Главная: герой ---------- */
 .hero {
+  touch-action: pan-y;               /* вертикально прокручиваем страницу, всё остальное отдаём эффектам (волны от пальца) */
   position: relative; overflow: hidden; isolation: isolate;
   min-height: 440px; padding: 36px 44px; display: flex; flex-direction: column; justify-content: center; gap: 16px;
   border-radius: var(--radius-xl);
@@ -392,8 +393,8 @@ html.lenis, html.lenis body { height: auto; }
 /* Логотип: картинка и поверх неё канвас с бликами; оба с одной раскладкой */
 .logo3d {
   /* светлая обводка по контуру и мягкое свечение под самим логотипом (по альфе, не по прямоугольнику) */
-  --logo-halo: drop-shadow(0 0 1.5px rgb(255 255 255 / .85)) drop-shadow(0 0 9px rgb(255 255 255 / .38)) drop-shadow(0 6px 18px rgb(0 0 0 / .5));
-  --logo-halo-sm: drop-shadow(0 0 1px rgb(255 255 255 / .8)) drop-shadow(0 0 6px rgb(255 255 255 / .3));
+  --logo-halo: drop-shadow(0 0 1.5px rgb(255 255 255 / 1)) drop-shadow(0 0 3px rgb(255 255 255 / .6)) drop-shadow(0 0 14px rgb(255 255 255 / .5)) drop-shadow(0 8px 20px rgb(0 0 0 / .55));
+  --logo-halo-sm: drop-shadow(0 0 1px rgb(255 255 255 / 1)) drop-shadow(0 0 3px rgb(255 255 255 / .55)) drop-shadow(0 0 9px rgb(255 255 255 / .38));
 }
 .logo3d { position: relative; display: block; will-change: transform; }
 .logo3d-hero { position: absolute; z-index: 2; right: 6%; top: 15%; width: min(400px, 34%); filter: var(--logo-halo); }
@@ -783,8 +784,8 @@ label.pick { cursor: pointer; }
   .nav-open .sidebar { transform: none; }
   .nav-open .scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgb(0 0 0 / .6); animation: reveal .3s ease both; }
   .hero { padding: 26px 22px; min-height: 380px; }
-  .scene { width: 100%; opacity: .5; -webkit-mask-image: none; mask-image: none; }
-  .logo3d-hero { right: 5%; top: 6%; width: min(220px, 52%); }
+  .scene { width: 100%; opacity: .72; -webkit-mask-image: none; mask-image: none; }
+  .logo3d-hero { position: static; order: -1; align-self: flex-start; width: min(240px, 66%); margin-bottom: 4px; }   /* на телефоне логотип над текстом, а не поверх него */
   .hero::after { background: linear-gradient(90deg, rgb(5 7 10 / .95) 0%, rgb(5 7 10 / .7) 100%); }
   :root { --card-blur: 8px; }        /* слабым телефонам тяжело большое размытие */
 }
