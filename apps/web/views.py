@@ -358,6 +358,7 @@ def journal(request):
     entries, has_more = selectors.journal_entries(limit=limit)
     for entry in entries:
         _style_rows(entry["rows"])
+        entry["icon"], entry["tone"] = entry["rows"][0]["icon"], entry["rows"][0]["tone"]   # у набора иконка его операции
     return render(request, "web/journal.html", {
         "entries": entries, "has_more": has_more and limit < 400, "next_limit": limit + 40,
     })

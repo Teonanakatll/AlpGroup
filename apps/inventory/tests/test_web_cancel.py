@@ -86,6 +86,30 @@ def test_journal_shows_cancel_buttons(admin_client, user, tool, stocked_hand_too
     assert "Перфоратор" in html and site.name in html
 
 
+def test_journal_set_is_one_accordion_row(admin_client, user, tool, stocked_hand_tool, site):
+    services.issue_to_site(user=user, site=site, tools=[tool], hand_tools=[(stocked_hand_tool, 3)])
+
+    html = page(admin_client, "/journal/")
+
+    assert html.count("<details") == 1                      # набор свёрнут в одну строку
+    assert "2 поз." in html and site.name in html            # объект и число позиций
+    assert "Перфоратор" in html and "Молоток × 3" in html     # позиции внутри и в превью строки
+
+
+def test_journal_single_row_is_not_accordion(admin_client, user, tool, site):
+    services.issue_to_site(user=user, site=site, tools=[tool])
+
+    assert "<details" not in page(admin_client, "/journal/")
+
+
+def test_inventory_shows_site_after_status(admin_client, user, tool, site):
+    services.issue_to_site(user=user, site=site, tools=[tool])
+
+    html = page(admin_client, "/inventory/")
+
+    assert f'<span class="item-site" title="{site.name}">' in html
+
+
 def test_journal_link_in_menu_and_on_home(admin_client):
     assert 'href="/journal/"' in page(admin_client, "/")
 

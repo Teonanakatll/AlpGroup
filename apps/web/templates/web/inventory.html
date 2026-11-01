@@ -28,10 +28,11 @@
           {% endif %}
           <div class="item-main">
             <div class="item-name"><a class="row-link" href="{% url 'web:tool_detail' tool.pk %}">{{ tool.name }}</a></div>
-            <div class="item-meta">{{ tool.category }}{% if tool.current_site %} · {{ tool.current_site }}{% endif %}</div>
+            <div class="item-meta">{{ tool.category }}</div>
           </div>
           <span class="pill pill--{{ tool.status }}">{{ tool.get_status_display }}</span>
-          <div class="item-extra"></div>   {# место под доп. информацию справа #}
+          {# адрес после статуса: где сейчас (выдан, не найден на объекте и т.п.) #}
+          <div class="item-extra">{% if tool.current_site %}<span class="item-site" title="{{ tool.current_site }}"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>{{ tool.current_site }}</span>{% endif %}</div>
         </article>
       {% endfor %}
     </section>

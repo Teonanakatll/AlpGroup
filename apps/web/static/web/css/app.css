@@ -522,6 +522,16 @@ html.lenis, html.lenis body { height: auto; }
 .btn-cancel.is-off { opacity: .35; cursor: not-allowed; }
 .btn-cancel.is-off:hover { color: var(--text-dim); border-color: var(--card-border); box-shadow: none; }
 
+/* Набор в журнале: одна строка-«гармошка», раскрывается в список позиций */
+.entry-set > summary { list-style: none; cursor: pointer; }
+.entry-set > summary::-webkit-details-marker { display: none; }
+.entry-set .chev { flex: none; color: var(--text-faint); transition: rotate .5s var(--ease-soft), color .4s var(--ease-soft); }
+.row > .chev:last-child, .row:hover > .chev:last-child { transform: none; }
+.row:hover > .chev:last-child { color: var(--accent); }
+.entry-set[open] > summary .chev { rotate: 180deg; }
+.entry-set[open] > summary { margin-bottom: 8px; }
+.sub-rows { margin: 0 0 4px 22px; padding-left: 14px; border-left: 1px solid rgb(var(--accent-rgb) / .28); }
+
 /* ---------- Инвентарь ---------- */
 .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .chip {
@@ -543,7 +553,11 @@ html.lenis, html.lenis body { height: auto; }
 .item .icon-tile { width: 44px; height: 44px; border-radius: 14px; }
 .item .icon-tile .icon { width: 22px; height: 22px; }
 .item-main { flex: 0 1 260px; min-width: 0; }          /* статус стоит рядом с названием */
-.item-extra { flex: 1; }
+.item-extra { flex: 1; min-width: 0; }
+.item-extra:empty { display: none; }
+.item-site { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; font-size: 14px; color: var(--text-dim); }
+.item-site .icon { width: 16px; height: 16px; flex: none; color: var(--accent); }
+.item-site { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-photo { width: 52px; height: 52px; flex: none; object-fit: cover; border-radius: 14px; border: 1px solid rgb(var(--accent-rgb) / .35); box-shadow: 0 0 18px rgb(var(--accent-rgb) / .15); transition: transform .6s var(--ease-soft), box-shadow .55s var(--ease-soft); }
 .item:hover .item-photo { transform: scale(1.06); box-shadow: 0 0 26px rgb(var(--accent-rgb) / .4); }
 .item-name { font-weight: 600; font-size: 16px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -812,7 +826,7 @@ label.pick { cursor: pointer; }
   .item { flex-wrap: wrap; gap: 12px 14px; }
   .item-meter { order: 3; width: 100%; }
   .item-main { flex: 1 1 0; }
-  .item-extra { display: none; }
+  .item-extra { order: 2; flex: 1 1 100%; }
   .item > .pill { min-width: 0; }
   .item-name, .item-meta { white-space: normal; }
 }

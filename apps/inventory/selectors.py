@@ -293,6 +293,9 @@ def journal_entries(limit=40):
     for entry in entries:
         active = [r for r in entry["rows"] if not r["is_cancelled"]]
         entry["is_set"] = len(entry["rows"]) > 1
+        entry["count"] = len(entry["rows"])
+        entry["type_display"] = entry["rows"][0]["type_display"]
+        entry["is_cancelled"] = not active
         entry["can_cancel_batch"] = bool(active) and all(r["can_cancel"] for r in active)
         entry["cancel_batch_hint"] = "" if entry["can_cancel_batch"] or not active else next(
             (f"«{r['item']}»: {r['hint'].lower()}" for r in active if not r["can_cancel"]), "")

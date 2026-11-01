@@ -14,25 +14,41 @@
       {% for entry in entries %}
         <section class="card block entry reveal" style="--i:{% if forloop.counter0 < 8 %}{{ forloop.counter0|add:1 }}{% else %}9{% endif %}">
           {% if entry.is_set %}
-            <div class="block-head">
-              <h2>Набор · {% if entry.site %}{{ entry.site }}{% else %}Склад{% endif %}
-                <span class="muted entry-meta">{{ entry.created_at|date:"d.m.Y H:i" }} · {{ entry.rows|length }} поз.</span></h2>
-              {% if entry.can_cancel_batch %}
-                <form class="cancel-form" method="post" action="{% url 'web:cancel_batch' entry.batch %}">
-                  {% csrf_token %}
-                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                  <button class="btn-cancel" type="submit" data-confirm="Отменить весь набор?">Отменить набор</button>
-                </form>
-              {% elif entry.cancel_batch_hint %}
-                <span class="btn-cancel is-off" title="{{ entry.cancel_batch_hint }}">Отменить набор</span>
-              {% endif %}
-            </div>
+            {# Набор: одна строка (объект и число позиций), по нажатию раскрывается список #}
+            <details class="entry-set">
+              <summary class="row{% if entry.is_cancelled %} is-cancelled{% endif %}">
+                <span class="icon-tile {{ entry.tone }}"><svg class="icon" aria-hidden="true"><use href="#i-{{ entry.icon }}"/></svg></span>
+                <div class="row-main">
+                  <div class="row-title">{{ entry.type_display }} · {% if entry.site %}{{ entry.site }}{% else %}Склад{% endif %} · {{ entry.count }} поз.{% if entry.is_cancelled %} <span class="tag-cancel">отменён</span>{% endif %}</div>
+                  <div class="row-sub">{% for r in entry.rows|slice:":3" %}{{ r.item }}{% if r.quantity %} × {{ r.quantity }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% if entry.count > 3 %}…{% endif %}{% if entry.taken_by %} · {{ entry.taken_by }}{% endif %}</div>
+                </div>
+                <span class="row-end">{{ entry.created_at|date:"d.m.Y H:i" }} · {{ entry.created_by }}</span>
+                {% if entry.can_cancel_batch %}
+                  <button class="btn-cancel" type="submit" form="cb-{{ entry.batch }}" data-confirm="Отменить весь набор?">Отменить набор</button>
+                {% elif entry.cancel_batch_hint %}
+                  <span class="btn-cancel is-off" title="{{ entry.cancel_batch_hint }}">Отменить набор</span>
+                {% endif %}
+                <svg class="icon chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+              </summary>
+              <ul class="rows sub-rows">
+                {% for row in entry.rows %}
+                  {% include "web/_movement.html" with show_item=True %}
+                {% endfor %}
+              </ul>
+            </details>
+            {% if entry.can_cancel_batch %}
+              <form id="cb-{{ entry.batch }}" method="post" action="{% url 'web:cancel_batch' entry.batch %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              </form>
+            {% endif %}
+          {% else %}
+            <ul class="rows">
+              {% for row in entry.rows %}
+                {% include "web/_movement.html" with show_item=True %}
+              {% endfor %}
+            </ul>
           {% endif %}
-          <ul class="rows">
-            {% for row in entry.rows %}
-              {% include "web/_movement.html" with show_item=True %}
-            {% endfor %}
-          </ul>
         </section>
       {% endfor %}
     </div>
