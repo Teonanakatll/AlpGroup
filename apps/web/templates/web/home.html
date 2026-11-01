@@ -1,8 +1,22 @@
 {% extends "web/base.html" %}
+{% load static %}
 {% block title %}Главная · AlpGroup{% endblock %}
+{% block head_extra %}<script src="{% static 'web/js/hero.js' %}" defer></script>{% endblock %}
 
 {% block content %}
-  <section class="hero reveal">
+  <section class="hero reveal" data-parallax>
+    {# Фото горы слоями: дальние слои двигаются за курсором слабо, ближние сильнее (hero.js) #}
+    <div class="scene" aria-hidden="true">
+      <img class="layer" data-depth="0.12" src="{% static 'web/img/hero/sky.webp' %}" alt="">
+      <img class="layer layer-clouds" data-depth="0.3" src="{% static 'web/img/hero/clouds.webp' %}" alt="">
+      <img class="layer" data-depth="0.6" src="{% static 'web/img/hero/mountain.webp' %}" alt="">
+      <img class="layer" data-depth="1.5" src="{% static 'web/img/hero/forest.webp' %}" alt="">
+    </div>
+    {# Самый близкий слой: логотип с бликами от курсора (WebGL; без него остаётся обычная картинка) #}
+    <div class="logo3d" data-depth="2.4" data-tilt>
+      <img class="logo3d-img" src="{% static 'web/img/logo-alp-3d.png' %}" width="360" height="105" alt="ALP GROUP">
+      <canvas class="logo3d-canvas" aria-hidden="true"></canvas>
+    </div>
     <span class="eyebrow"><i></i>Здравствуйте, {{ request.user.get_username }}</span>
     <h1>Порядок на земле — <span class="accent-text">безопасность на высоте</span></h1>
     <p>Учёт инструмента и снаряжения: выдача на объекты, приём, ремонт и история в одном месте.</p>

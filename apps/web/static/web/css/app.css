@@ -40,7 +40,7 @@
   --card-shadow: 0 10px 40px rgb(0 0 0 / .35);
   --outline-hover: rgb(var(--accent-rgb) / .75);
 
-  --hero-art: url("../img/mountains.svg");
+  --hero-art: none;                  /* в Summit справа слоистая фотография (.scene), не фон */
   --hero-art-size: cover;
   --hero-art-pos: right bottom;
   --hero-shade: linear-gradient(90deg, rgb(5 7 10 / .94) 0%, rgb(5 7 10 / .55) 42%, transparent 75%);
@@ -346,7 +346,7 @@ html.lenis, html.lenis body { height: auto; }
 /* ---------- Главная: герой ---------- */
 .hero {
   position: relative; overflow: hidden; isolation: isolate;
-  min-height: 320px; padding: 40px 44px; display: flex; flex-direction: column; justify-content: center; gap: 16px;
+  min-height: 440px; padding: 36px 44px; display: flex; flex-direction: column; justify-content: center; gap: 16px;
   border-radius: var(--radius-xl);
   background: #070a10; border: 1px solid var(--card-border); box-shadow: var(--card-shadow);
 }
@@ -372,6 +372,27 @@ html.lenis, html.lenis body { height: auto; }
   box-shadow: 0 0 10px var(--accent); animation: beacon 2s ease-in-out infinite;
 }
 .hero .btn { align-self: flex-start; margin-top: 6px; }
+
+
+/* Фото горы слоями (Summit): справа, левый край растворяется в тёмном фоне */
+.scene {
+  position: absolute; z-index: -2; top: 0; right: 0; bottom: 0; width: min(62%, 780px); overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 38%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 38%);
+}
+.layer {
+  position: absolute; left: -6%; top: -6%; width: 112%; height: 112%; max-width: none;
+  object-fit: cover; object-position: 50% 14%;
+  will-change: transform; pointer-events: none; user-select: none;
+}
+[data-theme="nexora"] .scene { display: none; }                /* у Nexora на этом месте кристалл */
+
+/* Логотип: картинка и поверх неё канвас с бликами; оба с одной раскладкой */
+.logo3d { filter: drop-shadow(0 0 22px rgba(255,255,255,.10)); position: relative; width: min(360px, 78%); align-self: flex-start; will-change: transform; transform-style: preserve-3d; }
+.logo3d-img { display: block; width: 100%; height: auto; transition: opacity .5s var(--ease-soft); }
+.logo3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .5s var(--ease-soft); pointer-events: none; }
+.logo3d.is-gl .logo3d-canvas { opacity: 1; }
+.logo3d.is-gl .logo3d-img { opacity: 0; }                        /* остаётся в разметке (alt, размеры), но не виден */
 
 /* ---------- Карточки со статистикой ---------- */
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
@@ -740,7 +761,9 @@ label.pick { cursor: pointer; }
   }
   .nav-open .sidebar { transform: none; }
   .nav-open .scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgb(0 0 0 / .6); animation: reveal .3s ease both; }
-  .hero { padding: 28px 24px; min-height: 280px; }
+  .hero { padding: 26px 22px; min-height: 380px; }
+  .scene { width: 100%; opacity: .5; -webkit-mask-image: none; mask-image: none; }
+  .logo3d { width: min(260px, 70%); }
   .hero::after { background: linear-gradient(90deg, rgb(5 7 10 / .95) 0%, rgb(5 7 10 / .7) 100%); }
   :root { --card-blur: 8px; }        /* слабым телефонам тяжело большое размытие */
 }
