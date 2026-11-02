@@ -31,7 +31,7 @@ def test_pages_require_login(client):
 def test_all_operation_tabs_are_on_every_page(admin_client):
     for url in ("/operations/issue/", "/operations/receive/") + URLS:
         html = page(admin_client, url)
-        for target in ("/operations/issue/", "/operations/receive/") + URLS:
+        for target in ("/operations/add/", "/operations/issue/", "/operations/receive/") + URLS:
             assert f'href="{target}"' in html
 
 

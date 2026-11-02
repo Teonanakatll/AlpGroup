@@ -9,14 +9,7 @@
     </div>
   </div>
 
-  <nav class="toolbar reveal" style="--i:1" aria-label="Вид операции">
-    <a class="chip {% if mode == 'issue' %}is-active{% endif %}" href="{% url 'web:issue' %}">Выдача</a>
-    <a class="chip {% if mode == 'receive' %}is-active{% endif %}" href="{% url 'web:receive' %}">Приём</a>
-    <a class="chip {% if mode == 'missing' %}is-active{% endif %}" href="{% url 'web:missing' %}">Не найден</a>
-    <a class="chip {% if mode == 'write_off' %}is-active{% endif %}" href="{% url 'web:write_off' %}">Списание</a>
-    <a class="chip {% if mode == 'servicing' %}is-active{% endif %}" href="{% url 'web:servicing' %}">В ремонт</a>
-    <a class="chip {% if mode == 'from_servicing' %}is-active{% endif %}" href="{% url 'web:from_servicing' %}">Из ремонта</a>
-  </nav>
+  {% include "web/_op_nav.html" %}
 
   <form method="post" class="op-form reveal" style="--i:2" novalidate>
     {% csrf_token %}

@@ -164,6 +164,31 @@ def add_hand_tool_stock(*, user, hand_tool, quantity, note="", batch=None):
     return hand_tool
 
 
+@transaction.atomic
+def register_tools(*, user, name, category, count=1, note=""):
+    """
+    Поставить на баланс `count` одинаковых штучных позиций (например, три одинаковые дрели).
+    Все записи журнала получают один batch: в журнале это один набор. Возвращает список Tool.
+    """
+    name = " ".join(name.split())
+    if not name:
+        raise ServiceError("Укажите название.")
+    if not 1 <= count <= 50:
+        raise ServiceError("Штук должно быть от 1 до 50.")
+    batch = new_batch()
+    return [register_tool(user=user, name=name, category=category, note=note, batch=batch) for _ in range(count)]
+
+
+@transaction.atomic
+def register_hand_tool(*, user, name, category, quantity, note=""):
+    """Завести новую количественную позицию (total = 0) и сразу поставить на баланс `quantity` единиц."""
+    name = " ".join(name.split())
+    if not name:
+        raise ServiceError("Укажите название.")
+    hand_tool = HandTool.objects.create(name=name, category=category, note=note)
+    return add_hand_tool_stock(user=user, hand_tool=hand_tool, quantity=quantity, note=note[:300])
+
+
 # ---------------------------------------------------------------------------
 # Общие помощники для операций над набором позиций (выдача, приём)
 # ---------------------------------------------------------------------------

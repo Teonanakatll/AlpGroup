@@ -2,6 +2,7 @@
 from django import forms
 
 from apps.inventory.forms import SiteOperationForm
+from apps.inventory.models import Category, HandTool
 from apps.sites.models import Site
 
 
@@ -42,3 +43,36 @@ class WriteOffForm(_SourceForm):
 class ServicingForm(_SourceForm):
     taken_by = forms.CharField(label="Кто отвёз", max_length=200, required=False)
     note = forms.CharField(label="Примечание", max_length=300, required=False)
+
+
+class AddForm(forms.Form):
+    """
+    Постановка на баланс. Штучное: название, категория и сколько одинаковых штук завести.
+    Количественное: либо пополнить существующую позицию, либо завести новую; quantity это сколько единиц.
+    """
+    KIND = [("tool", "Штучный инструмент"), ("hand", "Количественный (ручной)")]
+
+    kind = forms.ChoiceField(label="Вид учёта", choices=KIND)
+    name = forms.CharField(label="Название", max_length=200, required=False)
+    category = forms.ModelChoiceField(queryset=Category.objects.all(), label="Категория", required=False,
+                                      empty_label="Выберите категорию…")
+    quantity = forms.IntegerField(label="Количество (штук)", min_value=1, max_value=100000, initial=1)
+    existing_hand = forms.ModelChoiceField(
+        queryset=HandTool.objects.order_by("name"), label="Или пополнить существующую", required=False,
+        empty_label="Новая позиция", help_text="Только для количественного учёта",
+    )
+    note = forms.CharField(label="Примечание", max_length=300, required=False)
+
+    def clean(self):
+        cleaned = super().clean()
+        kind = cleaned.get("kind")
+        existing = cleaned.get("existing_hand") if kind == "hand" else None
+        cleaned["existing_hand"] = existing
+        if kind == "tool" and cleaned.get("quantity") and cleaned["quantity"] > 50:
+            self.add_error("quantity", "Штучных можно завести не больше 50 за раз.")
+        if kind and not existing:
+            if not " ".join(cleaned.get("name", "").split()):
+                self.add_error("name", "Укажите название.")
+            if not cleaned.get("category"):
+                self.add_error("category", "Выберите категорию.")
+        return cleaned

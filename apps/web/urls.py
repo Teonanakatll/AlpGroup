@@ -15,6 +15,7 @@ urlpatterns = [
     path("inventory/tool/<int:pk>/", views.tool_detail, name="tool_detail"),
     path("inventory/hand/<int:pk>/", views.hand_tool_detail, name="hand_tool_detail"),
     path("operations/", views.operations, name="operations"),
+    path("operations/add/", views.add, name="add"),
     path("operations/issue/", views.issue, name="issue"),
     path("operations/receive/", views.receive, name="receive"),
     path("operations/missing/", views.missing, name="missing"),

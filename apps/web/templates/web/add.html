@@ -1,0 +1,43 @@
+{% extends "web/base.html" %}
+{% block title %}{{ title }} · AlpGroup{% endblock %}
+
+{% block content %}
+  <div class="page-head reveal">
+    <div>
+      <h1>{{ title }}</h1>
+      <p class="muted">{{ hint }}</p>
+    </div>
+  </div>
+
+  {% include "web/_op_nav.html" %}
+
+  <form method="post" class="op-form reveal" style="--i:2" novalidate>
+    {% csrf_token %}
+
+    {% if errors %}
+      <div class="form-error" role="alert">
+        <b>Не записано:</b>
+        <ul>{% for line in errors %}<li>{{ line }}</li>{% endfor %}</ul>
+      </div>
+    {% endif %}
+
+    <div class="panel op-head">
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<span class="muted">{{ field.help_text }}</span>{% endif %}
+          {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="op-bar panel">
+      <span class="op-count">Штучное: сколько одинаковых завести. Количественное: сколько единиц добавить.</span>
+      <button class="btn btn-primary" type="submit">
+        Поставить на баланс
+        <svg class="icon icon-go" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+      </button>
+    </div>
+  </form>
+{% endblock %}

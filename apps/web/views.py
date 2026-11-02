@@ -19,7 +19,7 @@ from apps.inventory.models import HandTool, HandToolMovement, Tool, ToolMovement
 from apps.sites import services as site_services
 from apps.sites.models import Site
 
-from .forms import IssueForm, MissingForm, ServicingForm, WriteOffForm
+from .forms import AddForm, IssueForm, MissingForm, ServicingForm, WriteOffForm
 from .positions import Positions, parse_positions
 
 # Как показывать тип операции: иконка из набора (_icons.html) и цвет (класс tone-*).
@@ -188,6 +188,41 @@ def issue(request):
     form.fields["site"].empty_label = "Выберите объект…"
     context = _operation_context(request, mode="issue", form=form, positions=positions, site=None, errors=errors)
     return render(request, "web/operation.html", context)
+
+
+@login_required
+def add(request):
+    """Постановка на баланс: новые штучные позиции, новая или пополнение количественной."""
+    errors = []
+    if request.method == "POST":
+        form = AddForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            try:
+                if data["kind"] == "tool":
+                    created = services.register_tools(user=request.user, name=data["name"], category=data["category"],
+                                                      count=data["quantity"], note=data["note"])
+                    text = f"Поставлено на баланс: «{created[0].name}», {data['quantity']} шт."
+                elif data["existing_hand"]:
+                    hand = services.add_hand_tool_stock(user=request.user, hand_tool=data["existing_hand"],
+                                                        quantity=data["quantity"], note=data["note"])
+                    text = f"Пополнено «{hand.name}»: +{data['quantity']}, всего {hand.total}."
+                else:
+                    hand = services.register_hand_tool(user=request.user, name=data["name"], category=data["category"],
+                                                       quantity=data["quantity"], note=data["note"])
+                    text = f"Заведено «{hand.name}»: {data['quantity']} шт."
+            except services.ServiceError as error:
+                errors = str(error).splitlines()
+            else:
+                messages.success(request, text)
+                return redirect("web:add")
+    else:
+        form = AddForm(initial={"kind": "tool"})
+    return render(request, "web/add.html", {
+        "mode": "add", "title": "Постановка на баланс",
+        "hint": "Новый инструмент или пополнение количественной позиции. Запись попадёт в журнал.",
+        "form": form, "errors": errors,
+    })
 
 
 @login_required
