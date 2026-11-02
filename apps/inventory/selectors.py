@@ -185,31 +185,6 @@ def stock_summary():
     }
 
 
-def recent_movements(limit=6):
-    """
-    Последние операции по обоим журналам, новые сверху.
-
-    Отменённые тоже возвращаются, с is_cancelled=True: страница показывает их приглушёнными,
-    чтобы было видно, что было. Результат — список словарей (у журналов разные поля:
-    tool или hand_tool, а странице нужно одно и то же): type, type_display, name,
-    quantity (None у штучных), site (название или None), taken_by, created_at, is_cancelled.
-    """
-    tool_rows = ToolMovement.objects.select_related("tool", "site").order_by("-created_at", "-pk")[:limit]
-    hand_rows = HandToolMovement.objects.select_related("hand_tool", "site").order_by("-created_at", "-pk")[:limit]
-
-    def row_dict(row, name, quantity):
-        return {
-            "type": row.type, "type_display": row.get_type_display(), "name": name,
-            "quantity": quantity, "site": row.site.name if row.site else None,
-            "taken_by": row.taken_by, "created_at": row.created_at, "is_cancelled": row.is_cancelled,
-        }
-
-    items = [row_dict(r, r.tool.name, None) for r in tool_rows]
-    items += [row_dict(r, r.hand_tool.name, r.quantity) for r in hand_rows]
-    items.sort(key=lambda item: item["created_at"], reverse=True)
-    return items[:limit]
-
-
 # ---------------------------------------------------------------------------
 # Журнал для страницы: строки со знанием «можно ли отменить»
 # ---------------------------------------------------------------------------
@@ -258,7 +233,7 @@ def _movement_dicts(tool_rows, hand_rows):
     return items
 
 
-def journal_entries(limit=40):
+def journal_entries(limit=40, batch=None, row_limit=None):
     """
     Журнал операций для страницы: (записи, есть_ещё).
 
@@ -266,18 +241,27 @@ def journal_entries(limit=40):
     или одиночная строка. У записи can_cancel_batch: набор можно отменить целиком, только если
     каждую его действующую строку можно отменить (правило «всё или ничего»).
     Если набор попал на границу страницы, его строки догружаются целиком.
+    batch: показать только один набор (страница по ссылке с главной).
+    row_limit: сколько строк брать из каждого журнала (по умолчанию limit); главной нужно
+    больше строк, чем записей, потому что набор занимает много строк.
     """
     tool_qs = ToolMovement.objects.select_related("tool", "site", "created_by", "cancelled_by")
     hand_qs = HandToolMovement.objects.select_related("hand_tool", "site", "created_by", "cancelled_by")
-    tool_rows = list(tool_qs.order_by("-created_at", "-pk")[:limit])
-    hand_rows = list(hand_qs.order_by("-created_at", "-pk")[:limit])
-    has_more = len(tool_rows) == limit or len(hand_rows) == limit
+    if batch is not None:
+        tool_rows = list(tool_qs.filter(batch=batch).order_by("-created_at", "-pk"))
+        hand_rows = list(hand_qs.filter(batch=batch).order_by("-created_at", "-pk"))
+        has_more = False
+    else:
+        row_limit = row_limit or limit
+        tool_rows = list(tool_qs.order_by("-created_at", "-pk")[:row_limit])
+        hand_rows = list(hand_qs.order_by("-created_at", "-pk")[:row_limit])
+        has_more = len(tool_rows) == row_limit or len(hand_rows) == row_limit
 
-    batches = {r.batch for r in tool_rows + hand_rows if r.batch}
-    if batches:
-        have_t, have_h = {r.pk for r in tool_rows}, {r.pk for r in hand_rows}
-        tool_rows += [r for r in tool_qs.filter(batch__in=batches) if r.pk not in have_t]
-        hand_rows += [r for r in hand_qs.filter(batch__in=batches) if r.pk not in have_h]
+        batches = {r.batch for r in tool_rows + hand_rows if r.batch}
+        if batches:
+            have_t, have_h = {r.pk for r in tool_rows}, {r.pk for r in hand_rows}
+            tool_rows += [r for r in tool_qs.filter(batch__in=batches) if r.pk not in have_t]
+            hand_rows += [r for r in hand_qs.filter(batch__in=batches) if r.pk not in have_h]
 
     entries, by_batch = [], {}
     for row in _movement_dicts(tool_rows, hand_rows):
@@ -300,6 +284,12 @@ def journal_entries(limit=40):
         entry["cancel_batch_hint"] = "" if entry["can_cancel_batch"] or not active else next(
             (f"«{r['item']}»: {r['hint'].lower()}" for r in active if not r["can_cancel"]), "")
     return entries[:limit], has_more
+
+
+def recent_entries(limit=6):
+    """Последние операции для главной: те же записи, что в журнале (набор = одна запись)."""
+    entries, _ = journal_entries(limit=limit, row_limit=limit * 8)
+    return entries
 
 
 def tool_history_rows(tool):

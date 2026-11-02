@@ -2,6 +2,8 @@
 Страницы сайта. Вьюхи тонкие: данные берутся из selectors.py, здесь только подготовка
 к показу. Все страницы доступны только вошедшим (login_required).
 """
+import uuid
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -34,9 +36,9 @@ OPERATION_STYLE = {
 
 @login_required
 def home(request):
-    recent = selectors.recent_movements(limit=6)
-    for operation in recent:
-        operation["icon"], operation["tone"] = OPERATION_STYLE[operation["type"]]
+    recent = selectors.recent_entries(limit=6)
+    for entry in recent:
+        _style_entry(entry)
     return render(request, "web/home.html", {
         "summary": selectors.stock_summary(),
         "recent": recent,
@@ -53,6 +55,7 @@ def inventory(request):
     tools, hand_tools = selectors.search_inventory(query, status)
     return render(request, "web/inventory.html", {
         "groups": selectors.group_by_category(tools, hand_tools),
+        "open_all": bool(query or status),      # при поиске или фильтре категории раскрыты сразу
         "query": query,
         "status": status,
         "statuses": Tool.Status.choices,
@@ -340,6 +343,12 @@ def from_servicing(request):
 # Журнал, история позиции, отмена
 # ---------------------------------------------------------------------------
 
+def _style_entry(entry):
+    """Иконки у строк записи журнала и у самой записи (иконка набора = иконка его операции)."""
+    _style_rows(entry["rows"])
+    entry["icon"], entry["tone"] = entry["rows"][0]["icon"], entry["rows"][0]["tone"]
+
+
 def _style_rows(rows):
     """Добавляет к строкам журнала иконку и цвет по типу операции."""
     for row in rows:
@@ -354,12 +363,17 @@ def journal(request):
         limit = min(max(int(request.GET.get("n", 40)), 1), 400)
     except ValueError:
         limit = 40
-    entries, has_more = selectors.journal_entries(limit=limit)
+    only_batch = None
+    try:                                           # ?batch=<uuid>: показать один набор (ссылка с главной)
+        only_batch = uuid.UUID(request.GET["batch"]) if "batch" in request.GET else None
+    except ValueError:
+        pass
+    entries, has_more = selectors.journal_entries(limit=limit, batch=only_batch)
     for entry in entries:
-        _style_rows(entry["rows"])
-        entry["icon"], entry["tone"] = entry["rows"][0]["icon"], entry["rows"][0]["tone"]   # у набора иконка его операции
+        _style_entry(entry)
     return render(request, "web/journal.html", {
         "entries": entries, "has_more": has_more and limit < 400, "next_limit": limit + 40,
+        "only_batch": only_batch,
     })
 
 

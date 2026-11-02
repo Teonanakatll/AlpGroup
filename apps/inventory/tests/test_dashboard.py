@@ -47,27 +47,40 @@ def test_summary_ignores_written_off(user, tool):
     assert summary["ready_percent"] == 100
 
 
-def test_recent_movements_merges_journals_newest_first(user, tool, stocked_hand_tool, site):
+def test_recent_entries_groups_set_into_one_entry(user, tool, stocked_hand_tool, site):
     services.issue_to_site(user=user, site=site, tools=[tool], hand_tools=[(stocked_hand_tool, 3)])
 
-    rows = selectors.recent_movements(limit=3)
+    entries = selectors.recent_entries(limit=6)
 
-    assert len(rows) == 3
-    assert [row["created_at"] for row in rows] == sorted((row["created_at"] for row in rows), reverse=True)
-    issued = [row for row in rows if row["type"] == "issued"]
-    assert {row["name"] for row in issued} == {"Перфоратор", "Молоток"}
-    assert {row["quantity"] for row in issued} == {None, 3}
-    assert all(row["site"] == site.name for row in issued)
+    # Постановка на баланс (две записи) и выдача набора из двух позиций (одна запись-набор).
+    issued = [e for e in entries if e["type_display"] == "Выдан"]
+    assert len(issued) == 1
+    entry = issued[0]
+    assert entry["is_set"] is True and entry["count"] == 2
+    assert {row["item"] for row in entry["rows"]} == {"Перфоратор", "Молоток"}
+    assert entry["site"] == site.name
+    created = [e["created_at"] for e in entries]
+    assert created == sorted(created, reverse=True)
 
 
-def test_recent_movements_respects_limit_and_marks_cancelled(user, tool, site):
+def test_recent_entries_respects_limit_and_marks_cancelled(user, tool, site):
     batch = services.issue_to_site(user=user, site=site, tools=[tool])
     services.cancel_batch(user=user, batch=batch)
 
-    rows = selectors.recent_movements(limit=1)
+    entries = selectors.recent_entries(limit=1)
 
-    assert len(rows) == 1
-    assert rows[0]["is_cancelled"] is True
+    assert len(entries) == 1
+    assert entries[0]["is_cancelled"] is True
+    assert entries[0]["is_set"] is False
+
+
+def test_journal_entries_single_batch_only(user, tool, stocked_hand_tool, site):
+    batch = services.issue_to_site(user=user, site=site, tools=[tool], hand_tools=[(stocked_hand_tool, 3)])
+
+    entries, has_more = selectors.journal_entries(batch=batch)
+
+    assert has_more is False
+    assert len(entries) == 1 and entries[0]["count"] == 2
 
 
 def test_tools_needing_attention_lists_missing_first(user, category, site):

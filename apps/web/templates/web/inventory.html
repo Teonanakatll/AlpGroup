@@ -16,16 +16,19 @@
     {% endfor %}
   </nav>
 
-  {# Группы по категориям: крупный заголовок категории, под ним все её позиции (сначала штучные, потом количественные) #}
-  {% for group in groups %}
-    <section class="cat-group">
-      <h2 class="cat-title reveal" style="--i:2">{{ group.name }} <span>{{ group.count }}</span></h2>
-      <div class="grid-items">
-        {% for tool in group.tools %}{% include "web/_item_tool.html" %}{% endfor %}
-        {% for hand in group.hand_tools %}{% include "web/_item_hand.html" %}{% endfor %}
-      </div>
-    </section>
-  {% endfor %}
+  {# Категории-аккордеоны: заголовок крупный, по нажатию раскрывается список позиций (сначала штучные, потом количественные).
+     Без поиска и фильтра какие категории открыты, запоминается в браузере (app.js). #}
+  <div class="cat-list" data-cat-list{% if not open_all %} data-remember{% endif %}>
+    {% for group in groups %}
+      <details class="cat-group" data-cat="{{ group.name }}"{% if open_all %} open{% endif %}>
+        <summary class="cat-title reveal" style="--i:2">{{ group.name }} <span>{{ group.count }}</span><svg class="icon chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+        <div class="grid-items">
+          {% for tool in group.tools %}{% include "web/_item_tool.html" %}{% endfor %}
+          {% for hand in group.hand_tools %}{% include "web/_item_hand.html" %}{% endfor %}
+        </div>
+      </details>
+    {% endfor %}
+  </div>
 
   {% if not groups %}
     <div class="panel empty reveal" style="--i:2">

@@ -325,3 +325,21 @@ document.addEventListener("click", function (e) {
   btn.classList.add("is-armed");
   setTimeout(function () { btn.textContent = label; btn.classList.remove("is-armed"); }, 4000);
 });
+
+/* Категории в инвентаре: какие открыты, запоминаем между заходами (localStorage; без него просто всё свёрнуто).
+   При поиске и фильтре (нет data-remember) категории раскрыты сервером и состояние не сохраняется. */
+(function () {
+  var list = document.querySelector("[data-cat-list][data-remember]");
+  if (!list) return;
+  var KEY = "inventory-open", groups = list.querySelectorAll("details.cat-group");
+  var saved = [];
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) {}
+  groups.forEach(function (g) {
+    if (saved.indexOf(g.dataset.cat) !== -1) g.open = true;
+    g.addEventListener("toggle", function () {
+      var open = [];
+      groups.forEach(function (x) { if (x.open) open.push(x.dataset.cat); });
+      try { localStorage.setItem(KEY, JSON.stringify(open)); } catch (e) {}
+    });
+  });
+})();

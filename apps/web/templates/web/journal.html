@@ -5,7 +5,11 @@
   <div class="page-head reveal">
     <div>
       <h1>Журнал операций</h1>
-      <p class="muted">Всё, что происходило с инструментом. Отменить можно только последнюю операцию по позиции; отменённые остаются в журнале.</p>
+      {% if only_batch %}
+        <p class="muted"><a class="row-link" href="{% url 'web:journal' %}">← Весь журнал</a> · один набор</p>
+      {% else %}
+        <p class="muted">Всё, что происходило с инструментом. Отменить можно только последнюю операцию по позиции; отменённые остаются в журнале.</p>
+      {% endif %}
     </div>
   </div>
 
@@ -15,7 +19,7 @@
         <section class="card block entry reveal" style="--i:{% if forloop.counter0 < 8 %}{{ forloop.counter0|add:1 }}{% else %}9{% endif %}">
           {% if entry.is_set %}
             {# Набор: одна строка (объект и число позиций), по нажатию раскрывается список #}
-            <details class="entry-set">
+            <details class="entry-set"{% if only_batch %} open{% endif %}>
               <summary class="row{% if entry.is_cancelled %} is-cancelled{% endif %}">
                 <span class="icon-tile {{ entry.tone }}"><svg class="icon" aria-hidden="true"><use href="#i-{{ entry.icon }}"/></svg></span>
                 <div class="row-main">
@@ -56,6 +60,6 @@
       <p class="more"><a class="chip" href="?n={{ next_limit }}">Показать ещё</a></p>
     {% endif %}
   {% else %}
-    <div class="panel empty reveal" style="--i:1">В журнале пока нет операций.</div>
+    <div class="panel empty reveal" style="--i:1">{% if only_batch %}Набор не найден.{% else %}В журнале пока нет операций.{% endif %}</div>
   {% endif %}
 {% endblock %}

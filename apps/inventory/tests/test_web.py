@@ -108,7 +108,42 @@ def test_home_shows_summary_and_recent_operations(admin_client, user, tool, stoc
 
     assert 'data-count="6"' in html        # на складе: 6 из 10 молотков (перфоратор выдан)
     assert 'data-count="5"' in html        # выдано: перфоратор и 4 молотка
-    assert "Перфоратор" in html and "Молоток" in html and site.name in html
+    # Выдача из двух позиций: одна строка-ссылка на набор, а не по строке на позицию.
+    assert "2 поз." in html and site.name in html
+    assert "?batch=" in html
+
+
+def test_home_single_operation_shows_item(admin_client, user, tool, site):
+    services.issue_to_site(user=user, site=site, tools=[tool])
+
+    html = page(admin_client, "/")
+
+    assert "Перфоратор" in html and "?batch=" not in html
+
+
+def test_journal_batch_filter_shows_only_that_set(admin_client, user, tool, stocked_hand_tool, site):
+    batch = services.issue_to_site(user=user, site=site, tools=[tool], hand_tools=[(stocked_hand_tool, 3)])
+
+    html = page(admin_client, f"/journal/?batch={batch}")
+
+    assert html.count("<details") == 1 and " open" in html
+    assert "Весь журнал" in html and "Молоток × 3" in html
+
+
+def test_journal_batch_filter_unknown_or_invalid(admin_client):
+    assert "Набор не найден" in page(admin_client, "/journal/?batch=00000000-0000-0000-0000-000000000000")
+    assert admin_client.get("/journal/?batch=не-uuid").status_code == 200
+
+
+def test_inventory_categories_are_accordions(admin_client, tool):
+    html = page(admin_client, "/inventory/")
+    assert '<details class="cat-group"' in html and "<summary" in html and " open" not in html.split("<details")[1].split(">")[0]
+    assert "data-remember" in html
+
+
+def test_inventory_search_opens_all_categories(admin_client, tool):
+    html = page(admin_client, "/inventory/?q=Перф")
+    assert '<details class="cat-group" data-cat' in html and " open>" in html and "data-remember" not in html
 
 
 def test_home_marks_cancelled_operation(admin_client, user, tool, site):
