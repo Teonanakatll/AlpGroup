@@ -20,7 +20,7 @@ from django.utils import timezone
 
 from . import selectors
 from .models import (
-    BaseMovement, HandTool, HandToolMovement, Tool, ToolMovement,
+    BaseMovement, HandTool, HandToolMovement, Tool, ToolMovement, ToolPhoto,
 )
 
 MovementType = BaseMovement.Type
@@ -187,6 +187,43 @@ def register_hand_tool(*, user, name, category, quantity, note=""):
         raise ServiceError("Укажите название.")
     hand_tool = HandTool.objects.create(name=name, category=category, note=note)
     return add_hand_tool_stock(user=user, hand_tool=hand_tool, quantity=quantity, note=note[:300])
+
+
+@transaction.atomic
+def add_tool_photos(*, tool, images):
+    """
+    Прикрепить фото к штучной позиции. Если главного фото ещё нет, главным станет первое.
+    Фото не часть учёта (не влияет на статус и журнал), поэтому записи в журнал нет.
+    """
+    tool = Tool.objects.select_for_update().get(pk=tool.pk)       # два загрузчика не создадут два главных
+    has_main = tool.photos.filter(is_main=True).exists()
+    created = []
+    for image in images:
+        created.append(ToolPhoto.objects.create(tool=tool, image=image, is_main=not has_main))
+        has_main = True
+    return created
+
+
+@transaction.atomic
+def set_main_photo(*, photo):
+    """Сделать фото главным (прежнее главное перестаёт им быть)."""
+    tool = Tool.objects.select_for_update().get(pk=photo.tool_id)
+    tool.photos.filter(is_main=True).exclude(pk=photo.pk).update(is_main=False)
+    tool.photos.filter(pk=photo.pk).update(is_main=True)
+
+
+@transaction.atomic
+def delete_photo(*, photo):
+    """Удалить фото. Если удалили главное, главным становится самое раннее из оставшихся."""
+    tool = Tool.objects.select_for_update().get(pk=photo.tool_id)
+    was_main = photo.is_main
+    photo.image.delete(save=False)
+    photo.delete()
+    if was_main:
+        first = tool.photos.order_by("created_at", "pk").first()
+        if first:
+            first.is_main = True
+            first.save(update_fields=["is_main"])
 
 
 # ---------------------------------------------------------------------------

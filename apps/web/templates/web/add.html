@@ -11,7 +11,7 @@
 
   {% include "web/_op_nav.html" %}
 
-  <form method="post" class="op-form reveal" style="--i:2" novalidate>
+  <form method="post" enctype="multipart/form-data" class="op-form reveal" style="--i:2" novalidate>
     {% csrf_token %}
 
     {% if errors %}

@@ -17,7 +17,37 @@
     </div>
   </div>
 
-  <div class="card block reveal" style="--i:1">
+  {% if kind == "tool" %}
+    <div class="card block reveal" style="--i:1">
+      <div class="block-head"><h2>Фото</h2></div>
+      {% if photos %}
+        <ul class="photo-grid">
+          {% for photo in photos %}
+            <li class="photo-card{% if photo.is_main %} is-main{% endif %}">
+              <a href="{{ photo.image.url }}" target="_blank" rel="noopener"><img src="{{ photo.image.url }}" alt="{{ item.name }}" loading="lazy"></a>
+              <div class="photo-actions">
+                {% if photo.is_main %}
+                  <span class="tag-main">Главное</span>
+                {% else %}
+                  <form method="post" action="{% url 'web:photo_main' photo.pk %}">{% csrf_token %}<button class="btn" type="submit">Сделать главным</button></form>
+                {% endif %}
+                <form method="post" action="{% url 'web:photo_delete' photo.pk %}">{% csrf_token %}<button class="btn-cancel" type="submit" data-confirm="Точно удалить?">Удалить</button></form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">Фото пока нет.</p>
+      {% endif %}
+      <form method="post" enctype="multipart/form-data" action="{% url 'web:tool_photos' item.pk %}" class="photo-upload">
+        {% csrf_token %}
+        {{ photo_form.photos }}
+        <button class="btn btn-primary" type="submit">Загрузить</button>
+      </form>
+    </div>
+  {% endif %}
+
+  <div class="card block reveal" style="--i:2">
     <div class="block-head"><h2>История операций</h2></div>
     {% if rows %}
       <ul class="rows">

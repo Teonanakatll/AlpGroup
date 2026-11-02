@@ -15,11 +15,11 @@ from django.views.decorators.http import require_POST
 
 from apps.inventory import selectors, services
 from apps.inventory.forms import ReceiveFromServicingForm, ReceiveFromSiteForm
-from apps.inventory.models import HandTool, HandToolMovement, Tool, ToolMovement
+from apps.inventory.models import HandTool, HandToolMovement, Tool, ToolMovement, ToolPhoto
 from apps.sites import services as site_services
 from apps.sites.models import Site
 
-from .forms import AddForm, IssueForm, MissingForm, ServicingForm, WriteOffForm
+from .forms import AddForm, IssueForm, MissingForm, PhotosForm, ServicingForm, WriteOffForm
 from .positions import Positions, parse_positions
 
 # Как показывать тип операции: иконка из набора (_icons.html) и цвет (класс tone-*).
@@ -195,13 +195,17 @@ def add(request):
     """Постановка на баланс: новые штучные позиции, новая или пополнение количественной."""
     errors = []
     if request.method == "POST":
-        form = AddForm(request.POST)
+        form = AddForm(request.POST, request.FILES)
         if form.is_valid():
             data = form.cleaned_data
             try:
                 if data["kind"] == "tool":
                     created = services.register_tools(user=request.user, name=data["name"], category=data["category"],
                                                       count=data["quantity"], note=data["note"])
+                    if data["photo"]:               # одно фото на все штуки: файл сохраняем один раз
+                        first = services.add_tool_photos(tool=created[0], images=[data["photo"]])[0]
+                        for other in created[1:]:
+                            services.add_tool_photos(tool=other, images=[first.image.name])
                     text = f"Поставлено на баланс: «{created[0].name}», {data['quantity']} шт."
                 elif data["existing_hand"]:
                     hand = services.add_hand_tool_stock(user=request.user, hand_tool=data["existing_hand"],
@@ -417,7 +421,41 @@ def tool_detail(request, pk):
     tool = get_object_or_404(Tool.objects.select_related("category", "current_site"), pk=pk)
     return render(request, "web/position.html", {
         "kind": "tool", "item": tool, "rows": _style_rows(selectors.tool_history_rows(tool)),
+        "photos": tool.photos.order_by("-is_main", "created_at"), "photo_form": PhotosForm(),
     })
+
+
+@login_required
+@require_POST
+def tool_photos(request, pk):
+    """Загрузка фото на странице позиции (несколько файлов сразу)."""
+    tool = get_object_or_404(Tool, pk=pk)
+    form = PhotosForm(request.POST, request.FILES)
+    if form.is_valid():
+        services.add_tool_photos(tool=tool, images=form.cleaned_data["photos"])
+        messages.success(request, f"Фото добавлено: {len(form.cleaned_data['photos'])}.")
+    else:
+        messages.error(request, " ".join(e for errs in form.errors.values() for e in errs))
+    return redirect("web:tool_detail", pk=tool.pk)
+
+
+@login_required
+@require_POST
+def photo_main(request, pk):
+    photo = get_object_or_404(ToolPhoto, pk=pk)
+    services.set_main_photo(photo=photo)
+    messages.success(request, "Главное фото обновлено.")
+    return redirect("web:tool_detail", pk=photo.tool_id)
+
+
+@login_required
+@require_POST
+def photo_delete(request, pk):
+    photo = get_object_or_404(ToolPhoto, pk=pk)
+    tool_id = photo.tool_id
+    services.delete_photo(photo=photo)
+    messages.success(request, "Фото удалено.")
+    return redirect("web:tool_detail", pk=tool_id)
 
 
 @login_required

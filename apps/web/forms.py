@@ -62,6 +62,7 @@ class AddForm(forms.Form):
         empty_label="Новая позиция", help_text="Только для количественного учёта",
     )
     note = forms.CharField(label="Примечание", max_length=300, required=False)
+    photo = forms.ImageField(label="Фото (для штучных)", required=False)
 
     def clean(self):
         cleaned = super().clean()
@@ -76,3 +77,16 @@ class AddForm(forms.Form):
             if not cleaned.get("category"):
                 self.add_error("category", "Выберите категорию.")
         return cleaned
+
+
+class MultiFileInput(forms.FileInput):
+    allow_multiple_selected = True       # Django по умолчанию запрещает multiple, разрешаем явно
+
+
+class PhotosForm(forms.Form):
+    """Загрузка фото к штучной позиции: можно выбрать несколько файлов сразу."""
+    photos = forms.Field(label="Фото", widget=MultiFileInput(attrs={"accept": "image/*"}), error_messages={"required": "Выберите файл."})
+
+    def clean_photos(self):
+        checker = forms.ImageField()        # каждую картинку проверяет как обычное поле-картинку (Pillow)
+        return [checker.clean(f) for f in self.files.getlist("photos")]
