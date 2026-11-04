@@ -190,6 +190,19 @@ REST_FRAMEWORK = {
 }
 
 
+# Ошибки 500 с трейсбеком всегда в консоль: при DEBUG=0 Django по умолчанию шлёт их только на почту
+# админам (не настроена), и в окне runserver или в `docker compose logs web` их бы не было видно.
+# propagate=False, чтобы при DEBUG=1 трейсбек не печатался дважды.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    },
+}
+
+
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
