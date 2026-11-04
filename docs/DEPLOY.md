@@ -62,7 +62,60 @@ sh scripts/backup.sh
 - Нет стилей или фото: `docker compose logs caddy web`; статика собирается при старте `web`.
 - Работа по IP без домена и без sslip.io: `DOMAIN=:80`, `HTTPS=0` (только http, пароли идут открыто, только для проверки).
 
-## Быстрый показ без сервера
-Cloudflare Tunnel: `cloudflared tunnel --url http://localhost:8000` (запущен `runserver`).
-В `.env` добавьте `ALLOWED_HOSTS=.trycloudflare.com` и `CSRF_TRUSTED_ORIGINS=https://*.trycloudflare.com`.
-Работает, пока включён ваш компьютер; адрес меняется при каждом запуске.
+## Быстрый показ без сервера (Cloudflare Tunnel)
+Сайт работает на вашем компьютере (`runserver`), `cloudflared` даёт ему временный адрес
+`https://что-то.trycloudflare.com`. Аккаунт Cloudflare не нужен. Работает, пока включён компьютер
+и открыты оба окна; адрес меняется при каждом запуске.
+
+### Почему не просто `runserver` с обычным `.env`
+- При `DEBUG=1` любой посетитель на ошибке видит страницу с трейсбеком и настройками, а ключ
+  сессий запасной, из репозитория. Наружу показываем только с `DEBUG=0` и своим `SECRET_KEY`.
+- При `DEBUG=0` Django сам не отдаёт стили и фото (на сервере это делает Caddy).
+  Флаг `SERVE_FILES=1` включает раздачу через Django: для показа хватает, на сервере не нужен.
+- Прав пока нет: любой вошедший может выдавать и списывать, а журнал только дописывается.
+  Поэтому показ на **отдельной базе** (`alpgroup_demo`), рабочая остаётся чистой.
+
+### Один раз
+1. Установить cloudflared (PowerShell): `winget install --id Cloudflare.cloudflared`, затем открыть новое окно терминала.
+2. Создать базу для показа (psql или pgAdmin, от суперпользователя PostgreSQL):
+   `CREATE DATABASE alpgroup_demo OWNER alpgroup;`
+3. Сгенерировать ключ: `python -c "import secrets; print(secrets.token_urlsafe(50))"`.
+4. Переключить `.env` на показ (старые строки можно закомментировать `#`, вернуть позже):
+   ```
+   DB_NAME=alpgroup_demo
+   DEBUG=0
+   SECRET_KEY=сгенерированный_ключ
+   SERVE_FILES=1
+   ALLOWED_HOSTS=localhost,127.0.0.1,.trycloudflare.com
+   CSRF_TRUSTED_ORIGINS=https://*.trycloudflare.com
+   ```
+   `HTTPS` оставьте `1`: cloudflared отдаёт сайт по https и сообщает Django об этом в заголовке.
+5. Подготовить базу:
+   ```
+   python manage.py migrate
+   python manage.py createsuperuser
+   python manage.py seed_demo
+   ```
+6. Завести логины для гостей: `/admin/` → Пользователи → Добавить (по одному на человека,
+   чтобы в журнале было видно, кто что делал).
+
+### Каждый показ
+Два окна терминала в папке проекта (venv активирован):
+```
+python manage.py runserver 8000
+```
+```
+cloudflared tunnel --url http://localhost:8000
+```
+Во втором окне появится адрес `https://….trycloudflare.com`: его и отправляйте.
+Остановить: Ctrl+C в обоих окнах.
+
+### После показа
+Верните в `.env` рабочие `DB_NAME` и уберите строку `DEBUG=0` (или `DEBUG=1`), иначе при обычной
+разработке не будет страниц с ошибками. Демо-базу можно удалить: `DROP DATABASE alpgroup_demo;`.
+
+### Если что-то не так
+- 400 Bad Request: адреса нет в `ALLOWED_HOSTS` (проверьте `.trycloudflare.com` с точкой в начале).
+- 403 CSRF при входе: нет или опечатка в `CSRF_TRUSTED_ORIGINS`.
+- Страницы без стилей и фото: не включён `SERVE_FILES=1`.
+- Ошибка 500 без подробностей: так и задумано при `DEBUG=0`, трейсбек смотрите в окне `runserver`.
