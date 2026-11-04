@@ -49,8 +49,14 @@ CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") + (
     [f"{'https' if HTTPS else 'http'}://{DOMAIN}"] if DOMAIN else []
 )
 
+# SERVE_FILES=1: статику и фото отдаёт сам Django даже при DEBUG=0.
+# Нужно для показа через Cloudflare Tunnel со своего компьютера, где нет Caddy (docs/DEPLOY.md).
+# На сервере не включать: там файлы отдаёт Caddy, это быстрее.
+SERVE_FILES = os.getenv("SERVE_FILES", "0") == "1"
+
 if not DEBUG:
-    # Перед Django стоит Caddy: он терминирует https и передаёт схему в заголовке.
+    # Перед Django стоит прокси (Caddy на сервере, cloudflared у туннеля): он терминирует https
+    # и передаёт схему в заголовке X-Forwarded-Proto.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = HTTPS
     CSRF_COOKIE_SECURE = HTTPS
