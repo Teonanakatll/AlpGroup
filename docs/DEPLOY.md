@@ -68,7 +68,14 @@ sh scripts/backup.sh
 и открыты оба окна; адрес меняется при каждом запуске.
 
 ### Один раз
-Установить cloudflared (PowerShell): `winget install --id Cloudflare.cloudflared`, затем открыть новое окно терминала.
+Скачать cloudflared: это один файл, установка не нужна. В командной строке (cmd):
+```
+curl -L -o %USERPROFILE%\Downloads\cloudflared.exe https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe
+```
+Если `curl` не найден, откройте эту ссылку в браузере и переименуйте скачанный файл в `cloudflared.exe`
+(в папке «Загрузки»). Класть его в папку проекта не стоит: попадёт в `git status`.
+Если на компьютере есть winget, можно и так: `winget install --id Cloudflare.cloudflared`, тогда
+дальше вместо полного пути просто `cloudflared`.
 
 ### Каждый показ
 1. Добавить в `.env`:
@@ -85,9 +92,9 @@ sh scripts/backup.sh
    python manage.py runserver 8000
    ```
    ```
-   cloudflared tunnel --url http://localhost:8000
+   %USERPROFILE%\Downloads\cloudflared.exe tunnel --url http://localhost:8000
    ```
-   Во втором окне появится адрес `https://….trycloudflare.com`: его и отправляйте, только своим
+   Это одна команда, из любой папки (в cmd; в PowerShell вместо `%USERPROFILE%` пишется `$env:USERPROFILE`). Во втором окне через несколько секунд появится рамка с адресом `https://….trycloudflare.com`: его и отправляйте, только своим
    (с `DEMO_USER` сайт открыт всем, у кого есть ссылка). Сами входите под своим логином через `/login/`.
 3. После показа: Ctrl+C в обоих окнах и удалить (или закомментировать `#`) две строки из `.env`.
 
