@@ -54,6 +54,10 @@ CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") + (
 # На сервере не включать: там файлы отдаёт Caddy, это быстрее.
 SERVE_FILES = os.getenv("SERVE_FILES", "0") == "1"
 
+# DEMO_USER=гость: посетители входят без пароля под этим пользователем (создаётся сам, без is_staff).
+# Только для показа (apps/web/middleware.py). Пусто: обычный вход по логину.
+DEMO_USER = os.getenv("DEMO_USER", "")
+
 if not DEBUG:
     # Перед Django стоит прокси (Caddy на сервере, cloudflared у туннеля): он терминирует https
     # и передаёт схему в заголовке X-Forwarded-Proto.
@@ -87,6 +91,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'apps.web.middleware.DemoAutoLoginMiddleware',   # работает только при DEMO_USER в .env
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
