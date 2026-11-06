@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}AlpGroup{% endblock %}</title>
+  {# Иконка вкладки: SVG для современных браузеров, PNG как запасной вариант и для ярлыка на телефоне #}
+  <link rel="icon" href="{% static 'web/img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="icon" href="{% static 'web/img/favicon-32.png' %}" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="{% static 'web/img/apple-touch-icon.png' %}">
+  <meta name="theme-color" content="#05070a">
   <script>
     /* Тема применяется до отрисовки страницы, чтобы не было мигания */
     try {

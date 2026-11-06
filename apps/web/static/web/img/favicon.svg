@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Иконка вкладки: лаймовый пик на тёмной плашке (цвета темы summit) -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16201a"/>
+      <stop offset="1" stop-color="#05070a"/>
+    </linearGradient>
+    <linearGradient id="peak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b6ff2e"/>
+      <stop offset="1" stop-color="#7ade1c"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <rect x="1" y="1" width="62" height="62" rx="13" fill="none" stroke="#b6ff2e" stroke-opacity=".35" stroke-width="2"/>
+  <!-- дальний хребет -->
+  <path d="M6 50 L20 33 L27 40 L36 28 L58 50 Z" fill="#b6ff2e" fill-opacity=".22"/>
+  <!-- главный пик -->
+  <path d="M10 52 L31 14 L54 52 Z" fill="url(#peak)"/>
+  <!-- снежная шапка -->
+  <path d="M31 14 L38.5 27.5 L34 25 L30.5 29 L27 25.5 L24.6 26.6 Z" fill="#f1f5ee"/>
+</svg>

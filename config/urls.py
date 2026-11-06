@@ -18,10 +18,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.staticfiles.views import serve as serve_static
+from django.templatetags.static import static as static_url
 from django.urls import include, path, re_path
+from django.views.generic import RedirectView
 from django.views.static import serve as serve_media
 
 urlpatterns = [
+    # Браузер сам запрашивает /favicon.ico там, где в <head> нет иконки (например, в админке)
+    path('favicon.ico', RedirectView.as_view(url=static_url('web/img/favicon-32.png'), permanent=False)),
     path('admin/', admin.site.urls),
     path('api/', include('apps.inventory.urls')),
     path('', include('apps.web.urls')),
