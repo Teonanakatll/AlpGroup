@@ -402,15 +402,18 @@ html.lenis, html.lenis body { height: auto; }
   content: ""; position: absolute; inset: 0; pointer-events: none;
   /* картинки бывают и светлые (айсберг на дневном небе): под текстом слева темнее, справа лёгкая дымка */
   background:
-    linear-gradient(90deg, rgb(5 6 5 / .9) 0%, rgb(5 6 5 / .72) 30%, rgb(5 6 5 / .32) 55%, rgb(5 6 5 / .12) 80%),
-    linear-gradient(0deg, rgb(5 6 5 / .35), transparent 40%);
+    linear-gradient(90deg, rgb(4 5 7 / .9) 0%, rgb(4 5 7 / .72) 30%, rgb(4 5 7 / .32) 55%, rgb(4 5 7 / .12) 80%),
+    linear-gradient(0deg, rgb(4 5 7 / .35), transparent 40%);
 }
 /* текст поверх фотографии: тени, чтобы читался и на светлых местах */
 [data-theme="nexora"] .hero.has-liquid h1 { text-shadow: 0 1px 2px rgb(0 0 0 / .6), 0 4px 22px rgb(0 0 0 / .55); }
 [data-theme="nexora"] .hero.has-liquid h1 .accent-text { text-shadow: none; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .6)) drop-shadow(0 3px 12px rgb(0 0 0 / .5)); }
 [data-theme="nexora"] .hero.has-liquid p { color: #e3e8e0; text-shadow: 0 1px 2px rgb(0 0 0 / .8), 0 2px 14px rgb(0 0 0 / .6); }
-[data-theme="nexora"] .hero.has-liquid::before { opacity: 0; }   /* кристалл-SVG не нужен, пока виден эффект */
-.hero::before { transition: opacity .9s var(--ease-soft); }
+/* Пока виден эффект, слои старой заставки Nexora не нужны: кристалл-SVG и зелёное свечение под ним
+   (--hero-shade) легли бы на фотографию зелёными пятнами */
+[data-theme="nexora"] .hero.has-liquid::before,
+[data-theme="nexora"] .hero.has-liquid::after { opacity: 0; }
+.hero::before, .hero::after { transition: opacity .9s var(--ease-soft); }
 
 /* Логотип: картинка и поверх неё канвас с бликами; оба с одной раскладкой */
 .logo3d {
@@ -854,7 +857,7 @@ label.pick { cursor: pointer; }
   .logo3d-hero { position: static; order: -1; align-self: flex-start; width: min(240px, 66%); margin-bottom: 4px; }   /* в узком блоке логотип над текстом, а не поверх горы и заголовка */
   /* Гора видна целиком: лёгкое затемнение сверху и снизу вместо сплошной заливки,
      а читаемость текста держат тени и размытое пятно прямо под ним (.hero-mid::before) */
-  .liquid::after { background: linear-gradient(180deg, rgb(5 6 5 / .45) 0%, rgb(5 6 5 / .2) 45%, rgb(5 6 5 / .6) 100%); }
+  .liquid::after { background: linear-gradient(180deg, rgb(4 5 7 / .45) 0%, rgb(4 5 7 / .2) 45%, rgb(4 5 7 / .6) 100%); }
   [data-theme="summit"] .hero::after { background: linear-gradient(180deg, rgb(5 7 10 / .35) 0%, rgb(5 7 10 / .1) 45%, rgb(5 7 10 / .55) 100%); }
   .hero-mid { isolation: isolate; }
   .hero-mid::before {
