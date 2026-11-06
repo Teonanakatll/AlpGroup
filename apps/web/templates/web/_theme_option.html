@@ -1,0 +1,5 @@
+<button type="button" class="theme-opt" role="menuitemradio" aria-checked="false" data-set-theme="{{ theme.id }}" data-theme-mode="{{ theme.mode }}">
+  <span class="theme-dots" aria-hidden="true">{% for color in theme.swatch %}<i style="background: {{ color }}"></i>{% endfor %}</span>
+  <span class="theme-opt-name">{{ theme.name }}</span>
+  <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+</button>

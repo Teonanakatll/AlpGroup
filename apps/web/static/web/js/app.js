@@ -1,6 +1,6 @@
 /*
  * Небольшой скрипт интерфейса. Без библиотек, работает и без него (страницы остаются читаемыми).
- *  - переключение темы summit / nexora (запоминается в браузере)
+ *  - меню тем оформления (список в apps/web/themes.py, выбор запоминается в браузере)
  *  - подсветка карточки под курсором
  *  - числа «набегают» от нуля
  *  - всплывающие сообщения (window.toast), сообщения Django показываются так же
@@ -14,14 +14,54 @@
   var reduceMotion = root.dataset.motion === "reduced";   // только по явному выбору, не по флагу системы
 
   // ---- Тема -------------------------------------------------------------
-  function setTheme(name) {
+  // data-theme — палитра, data-mode — тёмное или светлое оформление (у каждой темы свой, см. themes.py)
+  var themeMenu = document.querySelector("[data-theme-menu]");
+  function markTheme() {
+    if (!themeMenu) return;
+    themeMenu.querySelectorAll("[data-set-theme]").forEach(function (option) {
+      option.setAttribute("aria-checked", String(option.dataset.setTheme === root.dataset.theme));
+    });
+  }
+  function setTheme(name, mode) {
     root.dataset.theme = name;
+    root.dataset.mode = mode;
     try { localStorage.setItem("theme", name); } catch (e) { /* приватный режим: не страшно */ }
+    markTheme();
+  }
+  function openThemes(open) {
+    if (!themeMenu) return;
+    themeMenu.querySelector("[data-theme-open]").setAttribute("aria-expanded", String(open));
+    themeMenu.querySelector(".theme-list").hidden = !open;
+    if (open) {
+      markTheme();
+      var current = themeMenu.querySelector('[aria-checked="true"]');
+      if (current) current.focus();
+    }
   }
   document.addEventListener("click", function (event) {
-    var button = event.target.closest("[data-theme-toggle]");
-    if (!button) return;
-    setTheme(root.dataset.theme === "nexora" ? "summit" : "nexora");
+    if (!themeMenu) return;
+    var option = event.target.closest("[data-set-theme]");
+    if (option) {
+      setTheme(option.dataset.setTheme, option.dataset.themeMode);
+      openThemes(false);
+      return;
+    }
+    if (event.target.closest("[data-theme-open]")) {
+      openThemes(themeMenu.querySelector(".theme-list").hidden);
+      return;
+    }
+    if (!event.target.closest("[data-theme-menu]")) openThemes(false);   // клик мимо меню закрывает его
+  });
+  document.addEventListener("keydown", function (event) {
+    if (!themeMenu || themeMenu.querySelector(".theme-list").hidden) return;
+    if (event.key === "Escape") { openThemes(false); themeMenu.querySelector("[data-theme-open]").focus(); return; }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {   // стрелками по списку
+      event.preventDefault();
+      var options = Array.prototype.slice.call(themeMenu.querySelectorAll("[data-set-theme]"));
+      var i = options.indexOf(document.activeElement);
+      var next = event.key === "ArrowDown" ? (i + 1) % options.length : (i - 1 + options.length) % options.length;
+      options[next].focus();
+    }
   });
 
   // ---- Свет под курсором («шейдер» на CSS) -------------------------------

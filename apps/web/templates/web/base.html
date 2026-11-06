@@ -1,5 +1,5 @@
 {% load static %}<!doctype html>
-<html lang="ru" data-theme="summit">
+<html lang="ru" data-theme="summit" data-mode="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,11 +9,18 @@
   <link rel="icon" href="{% static 'web/img/favicon-32.png' %}" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="{% static 'web/img/apple-touch-icon.png' %}">
   <meta name="theme-color" content="#05070a">
+  {# Какая тема тёмная, какая светлая (apps/web/themes.py): скрипту ниже, чтобы выставить режим сразу #}
+  {{ site_theme_modes|json_script:"theme-modes" }}
   <script>
-    /* Тема применяется до отрисовки страницы, чтобы не было мигания */
+    /* Тема применяется до отрисовки страницы, чтобы не было мигания.
+       data-theme — палитра, data-mode — тёмное или светлое оформление */
     try {
+      var modes = JSON.parse(document.getElementById("theme-modes").textContent);
       var saved = localStorage.getItem("theme");
-      if (saved === "summit" || saved === "nexora") document.documentElement.dataset.theme = saved;
+      if (saved && Object.prototype.hasOwnProperty.call(modes, saved)) {
+        document.documentElement.dataset.theme = saved;
+        document.documentElement.dataset.mode = modes[saved];
+      }
       document.documentElement.dataset.motion = localStorage.getItem("motion") === "reduced" ? "reduced" : "full";
     } catch (e) {}
   </script>

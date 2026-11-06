@@ -10,9 +10,18 @@
   </form>
 
   <div class="top-actions">
-    <button class="icon-btn theme-toggle" type="button" data-theme-toggle title="Сменить тему оформления" aria-label="Сменить тему оформления">
-      <svg class="icon i-moon" aria-hidden="true"><use href="#i-moon"/></svg>
-      <svg class="icon i-sun" aria-hidden="true"><use href="#i-sun"/></svg>
-    </button>
+    {# Меню тем: список из apps/web/themes.py, выбор и запоминание — app.js #}
+    <div class="theme-menu" data-theme-menu>
+      <button class="icon-btn theme-toggle" type="button" data-theme-open aria-haspopup="true" aria-expanded="false" aria-controls="theme-list" title="Тема оформления" aria-label="Тема оформления">
+        <svg class="icon i-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+        <svg class="icon i-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+      </button>
+      <div class="theme-list" id="theme-list" role="menu" aria-label="Тема оформления" hidden>
+        <div class="theme-group">Тёмные</div>
+        {% for theme in site_themes_dark %}{% include "web/_theme_option.html" %}{% endfor %}
+        <div class="theme-group">Светлые</div>
+        {% for theme in site_themes_light %}{% include "web/_theme_option.html" %}{% endfor %}
+      </div>
+    </div>
   </div>
 </header>
