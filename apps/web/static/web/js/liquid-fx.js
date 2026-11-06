@@ -301,7 +301,7 @@
   }
 
   function kick() {
-    if (!raf && visible && onScreen && !document.hidden) raf = requestAnimationFrame(frame);
+    if (!raf && visible && textures.length && onScreen && !document.hidden) raf = requestAnimationFrame(frame);   // без текстур (сброс видеокарты) кадров нет
   }
 
   /* ---------- запуск только в светлых темах (data-mode="light") ---------- */
@@ -327,6 +327,11 @@
 
   new MutationObserver(themeChanged).observe(root, { attributes: true, attributeFilter: ["data-theme", "data-mode", "data-motion"] });
   window.addEventListener("resize", function () { if (textures.length) { resize(); kick(); } });
+  // Видеокарта сбросила контекст (бывает на телефонах при нехватке памяти): прячем эффект, а не рисуем в пустоту
+  canvas.addEventListener("webglcontextlost", function (e) {
+    e.preventDefault(); textures = []; visible = false;
+    box.classList.remove("is-gl"); hero.classList.remove("has-liquid");
+  });
   document.addEventListener("visibilitychange", kick);
   if ("IntersectionObserver" in window) {
     new IntersectionObserver(function (entries) { onScreen = entries[0].isIntersecting; kick(); }).observe(box);

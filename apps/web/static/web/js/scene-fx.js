@@ -87,6 +87,8 @@
   }
 
   function drop(gx, gy, strength, radius) {                // капля: гладкий «бугор» в точке
+    // Защита от вечного цикла: при бесконечной координате y = ∞ − r, и y++ никогда не дойдёт до ∞ + r
+    if (!isFinite(gx) || !isFinite(gy)) return;
     var r = Math.ceil(radius * 2), x0 = Math.round(gx), y0 = Math.round(gy);
     for (var y = y0 - r; y <= y0 + r; y++) {
       for (var x = x0 - r; x <= x0 + r; x++) {
@@ -152,6 +154,13 @@
   var last = null;                                         // прошлая точка курсора (экран)
   var power = 0, rgbPower = 0;                             // сглаженные: скорость мыши -> сила эффектов
 
+  // Фото горы видно только в Summit: в других темах блок скрыт, размер 0, и пересчёт в сетку дал бы деление на ноль.
+  // Так телефон в светлой теме и зависал (07.11.2026): касание заставки → бесконечная координата → вечный цикл в drop.
+  function shown() {
+    var r = canvas.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+
   // экран -> клетки сетки с учётом object-fit: cover и object-position 50% 18%
   function toGrid(cx, cy) {
     var r = canvas.getBoundingClientRect();
@@ -169,7 +178,7 @@
   }
 
   hero.addEventListener("pointermove", function (e) {
-    if (!ready) return;
+    if (!ready || !shown()) return;
     if (overLogo(e.clientX, e.clientY)) { last = null; return; }
     var now = { x: e.clientX, y: e.clientY };
     if (last) {
@@ -189,7 +198,7 @@
   });
   hero.addEventListener("pointerleave", function () { last = null; down = false; });
   hero.addEventListener("pointerdown", function (e) {
-    if (!ready || overLogo(e.clientX, e.clientY)) return;
+    if (!ready || !shown() || overLogo(e.clientX, e.clientY)) return;
     if (e.pointerType === "mouse") {
       if (e.button === 0) { down = true; last = { x: e.clientX, y: e.clientY }; kick(); }
     } else {                                               // палец: касание роняет заметную каплю, дальше работает движение
