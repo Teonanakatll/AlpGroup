@@ -1377,6 +1377,55 @@ label.pick { cursor: pointer; }
 [data-mode="light"] .toast-icon, [data-mode="light"] .toast::after { box-shadow: none; }
 [data-mode="light"] .btn-cancel:hover { box-shadow: none; }
 
+/* ---------- Яркие темы (все, кроме Summit и Nexora): подача как в превью палитр ----------
+   Оформление Summit полупрозрачное (стекло, прозрачные рамки, бледные заливки, размытое свечение):
+   каждый такой слой подмешивает тёмный фон, и сочные цвета палитр становятся мыльными. Здесь —
+   сплошные блоки, рамки 2 px с оттенком акцента, плитки значков и плашки в полный цвет без размытия,
+   цветные значки и подписи в меню, заголовки и второстепенный текст в цветах темы. */
+
+/* все яркие темы: меню, заголовки, второстепенный текст в цветах темы */
+:root:not([data-theme="summit"], [data-theme="nexora"]) .nav-item:not(.is-active) { color: color-mix(in srgb, rgb(var(--tone, var(--accent-rgb))) 60%, var(--text)); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .nav-item:not(.is-active) .icon { color: rgb(var(--tone, var(--accent-rgb))); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .nav-item:not(.is-active):hover {
+  color: var(--text); border-color: rgb(var(--tone, var(--accent-rgb))); background: rgb(var(--tone, var(--accent-rgb)) / .12);
+  box-shadow: 0 0 0 1px rgb(var(--tone, var(--accent-rgb)) / .5), 0 0 16px rgb(var(--tone, var(--accent-rgb)) / .45);
+}
+:root:not([data-theme="summit"], [data-theme="nexora"]) .nav-item:not(.is-active):hover .icon { color: rgb(var(--tone, var(--accent-rgb))); filter: drop-shadow(0 0 5px rgb(var(--tone, var(--accent-rgb)))); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .block-head h2, :root:not([data-theme="summit"], [data-theme="nexora"]) .section-title { color: var(--accent-text); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) :is(.row-sub, .item-meta, .stat-label, .meter-caption, .muted, .field label) { color: color-mix(in srgb, var(--accent-text) 28%, var(--text-dim)); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .item[data-status="available"] .icon-tile, :root:not([data-theme="summit"], [data-theme="nexora"]) .pick[data-status="available"] .icon-tile { --tone: var(--ok-rgb); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .pill:not([class*="pill--"]) { --tone: var(--ok-rgb); }
+
+/* тёмные яркие темы: сплошные поверхности и полные цвета */
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] { --card-bg: var(--card-bg-solid); --card-blur: 0px; }
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] :is(.card, .panel, .sidebar, .search, .user-chip) { border: 2px solid color-mix(in srgb, var(--card-border) 75%, var(--accent)); }
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] :is(.row, .pick) { background: color-mix(in srgb, var(--card-bg-solid) 92%, var(--text)); border: 2px solid var(--card-border); }
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn) { background: var(--card-bg-solid); border: 2px solid var(--card-border); color: var(--text); }
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] :is(input[type="text"], input[type="password"], input[type="search"], input[type="number"], select, textarea):not(.search input):not(.qty input),
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .dd-btn { background: color-mix(in srgb, var(--card-bg-solid) 92%, var(--text)); border: 2px solid var(--card-border); }
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .op-tab { font-weight: 700; }
+/* рамка при наведении и в фокусе — акцентом, как в Summit (правила выше тяжелее и иначе её перебили бы) */
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] :is(.card, .panel, .search, .user-chip):is(:hover, :focus-within),
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] :is(.row, .pick, .chip:not(.is-active), .btn-ghost, .icon-btn, .dd-btn):hover,
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] :is(input, select, textarea):not(.search input):not(.qty input):is(:hover, :focus) { border-color: var(--accent); }
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .pick.is-selected { border-color: var(--accent); background: color-mix(in srgb, var(--card-bg-solid) 80%, var(--accent)); }
+
+/* плитки значков: сплошная плитка, рамка цветом значка, без бледной заливки и размытия */
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .icon-tile {
+  background: color-mix(in srgb, var(--card-bg-solid) 92%, var(--text)); color: rgb(var(--tone, var(--accent-rgb))); border: 2px solid rgb(var(--tone, var(--accent-rgb)));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .16), 0 2px 0 rgb(var(--tone, var(--accent-rgb)) / .6);
+}
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .icon-tile .icon { filter: none; }
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .icon-tile::after { display: none; }
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .stat .icon-tile .icon, :root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .stat:hover .icon-tile .icon { animation: float 5s ease-in-out infinite; }
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] :is(.stat, .item, .row, .pick):hover .icon-tile {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .16), 0 0 0 2px rgb(var(--tone, var(--accent-rgb)) / .4), 0 0 18px rgb(var(--tone, var(--accent-rgb)));
+}
+
+/* плашки статусов: цветная рамка, текст и точка в полный цвет */
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .pill { border: 1.5px solid rgb(var(--tone, var(--accent-rgb))); background: rgb(var(--tone, var(--accent-rgb)) / .14); font-weight: 700; }
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .pill::before { box-shadow: none; }
+
 /* ---------- 5. Адаптивность ---------- */
 .scrim { display: none; }
 @media (max-width: 1180px) {
