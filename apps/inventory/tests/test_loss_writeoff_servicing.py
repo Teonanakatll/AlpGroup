@@ -78,9 +78,55 @@ def test_cannot_mark_missing_more_hand_tools_than_on_site(user, issued_hand_tool
     assert not HandToolMovement.objects.filter(type=Type.MISSING).exists()
 
 
-def test_mark_missing_site_is_required(user, issued_tool):
+def test_mark_missing_on_warehouse_refuses_issued_tool(user, issued_tool):
+    # Без объекта это пропажа на складе: выданную позицию так не отметить, только с её объекта.
     with pytest.raises(services.ServiceError):
         services.mark_missing(user=user, site=None, tools=[issued_tool])
+
+
+def test_mark_missing_tool_on_warehouse(user, tool):
+    batch = services.mark_missing(user=user, tools=[tool], note="не нашли при пересчёте")
+
+    tool.refresh_from_db()
+    assert tool.status == Tool.Status.MISSING and tool.current_site is None
+    row = ToolMovement.objects.get(batch=batch)
+    assert row.type == Type.MISSING and row.site is None
+
+
+def test_mark_missing_hand_tool_on_warehouse_reduces_only_total(user, issued_hand_tool):
+    # На балансе 10, на объекте 6, на складе 4. На складе не нашли 3.
+    services.mark_missing(user=user, hand_tools=[(issued_hand_tool, 3)])
+
+    issued_hand_tool.refresh_from_db()
+    assert (issued_hand_tool.total, issued_hand_tool.issued, issued_hand_tool.available) == (7, 6, 1)
+
+
+def test_cannot_mark_missing_more_hand_tools_than_on_warehouse(user, issued_hand_tool):
+    with pytest.raises(services.ServiceError):
+        services.mark_missing(user=user, hand_tools=[(issued_hand_tool, 5)])   # на складе 4
+
+    assert not HandToolMovement.objects.filter(type=Type.MISSING).exists()
+
+
+def test_cancel_missing_on_warehouse_restores_stock(user, tool, issued_hand_tool):
+    batch = services.mark_missing(user=user, tools=[tool], hand_tools=[(issued_hand_tool, 2)])
+
+    services.cancel_batch(user=user, batch=batch)
+
+    tool.refresh_from_db()
+    issued_hand_tool.refresh_from_db()
+    assert tool.status == Tool.Status.AVAILABLE
+    assert (issued_hand_tool.total, issued_hand_tool.issued) == (10, 6)
+
+
+def test_missing_on_warehouse_then_write_off(user, tool):
+    # Потерянное на складе закрывается списанием, как и потерянное на объекте.
+    services.mark_missing(user=user, tools=[tool])
+
+    services.write_off(user=user, tools=[tool])
+
+    tool.refresh_from_db()
+    assert tool.status == Tool.Status.WRITTEN_OFF
 
 
 def test_mark_missing_all_or_nothing(user, issued_tool, issued_hand_tool, site):

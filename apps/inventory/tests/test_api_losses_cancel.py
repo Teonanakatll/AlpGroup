@@ -33,6 +33,19 @@ def test_missing_on_site(admin_client, user, tool, stocked_hand_tool, site):
     assert (stocked_hand_tool.total, stocked_hand_tool.issued) == (8, 3)
 
 
+def test_missing_on_warehouse_without_site(admin_client, tool, stocked_hand_tool):
+    response = post(admin_client, "/api/missing/", {
+        "tools": [tool.pk],
+        "hand_tools": [{"hand_tool": stocked_hand_tool.pk, "quantity": 2}],
+    })
+
+    assert response.status_code == 201
+    tool.refresh_from_db()
+    stocked_hand_tool.refresh_from_db()
+    assert tool.status == Tool.Status.MISSING
+    assert (stocked_hand_tool.total, stocked_hand_tool.issued) == (8, 0)
+
+
 def test_missing_refused_for_tool_not_on_site(admin_client, tool, site):
     response = post(admin_client, "/api/missing/", {"site": site.pk, "tools": [tool.pk]})
 

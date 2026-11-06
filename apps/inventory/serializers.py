@@ -113,7 +113,7 @@ class _PositionsSerializer(serializers.Serializer):
 
 class SiteOperationSerializer(_PositionsSerializer):
     """
-    Выдача, приём с объекта, «не найден»: операции на объекте. Пример тела запроса:
+    Выдача и приём с объекта: операции на объекте. Пример тела запроса:
     {"site": 1, "tools": [3, 4], "hand_tools": [{"hand_tool": 7, "quantity": 5}], "note": ""}
     """
     site = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all())
@@ -122,6 +122,18 @@ class SiteOperationSerializer(_PositionsSerializer):
     def service_kwargs(self):
         data = self.validated_data
         return {**self.positions_kwargs(), "site": data["site"], "taken_by": data["taken_by"]}
+
+
+class MissingSerializer(_PositionsSerializer):
+    """
+    «Не найден». С site пропажа на объекте, без site (или с "site": null) пропажа на складе.
+    """
+    site = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all(), required=False, allow_null=True)
+    taken_by = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
+
+    def service_kwargs(self):
+        data = self.validated_data
+        return {**self.positions_kwargs(), "site": data.get("site"), "taken_by": data["taken_by"]}
 
 
 class WriteOffSerializer(_PositionsSerializer):

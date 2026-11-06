@@ -15,7 +15,7 @@ from . import selectors, services
 from .models import Category, HandTool, HandToolMovement, Tool, ToolMovement
 from .serializers import (
     CancelBatchSerializer, CancelMovementSerializer, CategorySerializer,
-    HandToolMovementSerializer, HandToolSerializer, OnSiteHandToolSerializer,
+    HandToolMovementSerializer, HandToolSerializer, MissingSerializer, OnSiteHandToolSerializer,
     ReceiveFromServicingSerializer, ServicingSerializer, SiteOperationSerializer,
     SiteSerializer, ToolMovementSerializer, ToolSerializer, WriteOffSerializer,
 )
@@ -166,8 +166,8 @@ class ReceiveFromServicingView(OperationView):
 
 
 class MissingView(OperationView):
-    """Отметить позиции не найденными на объекте."""
-    serializer_class = SiteOperationSerializer
+    """Отметить позиции не найденными на объекте (с site) или на складе (без site)."""
+    serializer_class = MissingSerializer
 
     def perform(self, user, serializer):
         return {"batch": services.mark_missing(user=user, **serializer.service_kwargs())}

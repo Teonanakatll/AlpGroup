@@ -81,7 +81,7 @@ def recalc_hand_tool(hand_tool):
     total  = приход − не найдено − списано: это то, чем реально можно снабдить людей;
     issued = выдано − принято − не найдено − списано на объекте.
     «Не найден» и «списан» уменьшают и total, и issued, если позиция числилась на объекте
-    (запись с объектом). Списание со склада (запись без объекта) уменьшает только total.
+    (запись с объектом). Потеря и списание на складе (запись без объекта) уменьшают только total.
     Сами записи остаются в журнале, отчёты по потерям и списаниям строятся по нему.
 
     Вызывать только внутри transaction.atomic и после select_for_update.
@@ -101,7 +101,7 @@ def recalc_hand_tool(hand_tool):
     hand_tool.issued = (
         qty(MovementType.ISSUED)
         - qty(MovementType.RETURNED)
-        - missing                                   # потеряно всегда на объекте
+        - qty(MovementType.MISSING, only_with_site=True)
         - qty(MovementType.WRITTEN_OFF, only_with_site=True)
     )
     # Если журнал даст issued > total или отрицательное число, БД отклонит сохранение
@@ -496,25 +496,24 @@ def receive_from_servicing(*, user, tools, taken_by="", note=""):
 # ---------------------------------------------------------------------------
 
 @transaction.atomic
-def mark_missing(*, user, site, tools=(), hand_tools=(), taken_by="", note=""):
+def mark_missing(*, user, site=None, tools=(), hand_tools=(), taken_by="", note=""):
     """
-    Отметить позиции не найденными на объекте.
+    Отметить позиции не найденными.
 
-    Это возможно только для того, что числится на этом объекте (выдано и не принято):
-    штучная позиция должна быть выдана на этот объект, ручного инструмента нельзя
-    потерять больше, чем там числится. Запись остаётся в журнале, из total ручного
-    инструмента потерянное вычитается (см. recalc_hand_tool).
+    site указан    — пропажа на объекте: штучная позиция выдана на этот объект,
+                     ручного инструмента не больше, чем там числится;
+    site не указан — пропажа на складе (не нашли при пересчёте): штучная позиция
+                     «на складе», ручного инструмента не больше, чем в наличии.
+    Запись остаётся в журнале, из total ручного инструмента потерянное вычитается,
+    из issued только потерянное на объекте (см. recalc_hand_tool).
     Возвращает batch (UUID).
     """
     tools = list(tools)
     hand_tools = list(hand_tools)
-
-    if site is None:
-        raise ServiceError("Не указан объект.")
     _check_not_empty(tools, hand_tools)
 
     locked = _lock_positions(tools, hand_tools)
-    _check_tools_at(locked, site, "отметить не найденным")
+    _check_tools_at(locked, site, "отметить не найденным", warehouse_statuses=(Tool.Status.AVAILABLE,))
     _check_hand_quantities(locked, site)
 
     if locked.errors:
