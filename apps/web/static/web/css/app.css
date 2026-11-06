@@ -1588,3 +1588,44 @@ label.pick { cursor: pointer; }
 .photo-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .tag-main { font-size: 12px; color: var(--accent-text); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
 .photo-upload { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* ---------- Красный темы как декор: стрелки, счётчик «Требует внимания», цифры сводки, «верёвка» под заголовками ----------
+   --deco-rgb = красный текущей темы (--red-rgb). Яркие темы: везде; Summit и Nexora: только счётчик и верёвка,
+   у них своё оформление. Красный тут не значит «ошибка»: ошибки и «не найден» остаются плашками и плитками. */
+:root { --deco-rgb: var(--red-rgb); }
+
+/* Счётчик рядом с заголовком блока (сейчас: «Требует внимания»). Заголовок слева, счётчик сразу за ним */
+.block-head:has(.count-badge) { justify-content: flex-start; }
+.count-badge {
+  min-width: 24px; height: 24px; padding: 0 8px; border-radius: 99px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: #fff; background: rgb(var(--deco-rgb));
+}
+:root[data-mode="dark"] .count-badge { box-shadow: 0 0 12px rgb(var(--deco-rgb) / .55); animation: badge-pulse 2.6s ease-in-out infinite; }
+@keyframes badge-pulse { 50% { box-shadow: 0 0 20px rgb(var(--deco-rgb) / .8); } }
+
+/* «Верёвка» под заголовками блоков: три цвета темы, как страховочная верёвка с цветной оплёткой */
+.block-head h2 { position: relative; padding-bottom: 8px; }
+.block-head h2::after {
+  content: ""; position: absolute; left: 0; bottom: 0; width: 44px; height: 3px; border-radius: 3px;
+  background: linear-gradient(90deg,
+    rgb(var(--accent-text-rgb)) 0 34%, rgb(var(--violet-rgb)) 34% 67%, rgb(var(--deco-rgb)) 67% 100%);
+  transition: width .5s var(--ease-soft);
+}
+.card:hover .block-head h2::after { width: 64px; }
+:root[data-mode="dark"] .block-head h2::after { box-shadow: 0 0 8px rgb(var(--deco-rgb) / .45); }
+
+/* Яркие темы: стрелки в строках и у «Журнал» красные, на наведении светятся */
+:root:not([data-theme="summit"], [data-theme="nexora"]) :is(.row > .icon:last-child, .link-more .icon) { color: rgb(var(--deco-rgb)); stroke-width: 2.4; }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .row:hover > .icon:last-child,
+:root:not([data-theme="summit"], [data-theme="nexora"]) .link-more:hover .icon { color: rgb(var(--deco-rgb)); }
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .row:hover > .icon:last-child,
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .link-more:hover .icon { filter: drop-shadow(0 0 4px rgb(var(--deco-rgb))); }
+
+/* Яркие темы: цифры сводки цветом своей плитки (красным не красим: «Парк в строю» — хороший показатель) */
+:root:not([data-theme="summit"], [data-theme="nexora"]) .stat .stat-value { color: rgb(var(--ok-rgb)); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .stat:has(.tone-violet) .stat-value { color: rgb(var(--violet-rgb)); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .stat:has(.tone-orange) .stat-value { color: rgb(var(--orange-rgb)); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .stat:has(.ring) .stat-value { color: var(--accent-text); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .stat .stat-value small { color: inherit; opacity: .75; }

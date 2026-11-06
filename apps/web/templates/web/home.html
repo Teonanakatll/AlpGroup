@@ -119,7 +119,7 @@
 
     <div class="stack">
     <div class="card block reveal" style="--i:6">
-      <div class="block-head"><h2>Требует внимания</h2></div>
+      <div class="block-head"><h2>Требует внимания</h2>{% if attention_total %}<span class="count-badge" title="Не найдено и в ремонте">{{ attention_total }}</span>{% endif %}</div>
       {% if attention %}
         <ul class="rows">
           {% for tool in attention %}

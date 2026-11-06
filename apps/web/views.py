@@ -65,6 +65,7 @@ def home(request):
         "summary": selectors.stock_summary(),
         "recent": recent,
         "attention": selectors.tools_needing_attention(limit=5),
+        "attention_total": selectors.tools_needing_attention().count(),
     })
 
 

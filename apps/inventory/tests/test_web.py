@@ -160,6 +160,11 @@ def test_home_lists_tools_needing_attention(admin_client, user, tool):
 
     assert "Требует внимания" in html
     assert "Перфоратор" in html
+    assert '<span class="count-badge"' in html and ">1</span>" in html    # счётчик: одна позиция
+
+
+def test_home_attention_badge_hidden_when_nothing_to_do(admin_client):
+    assert "count-badge" not in page(admin_client, "/")
 
 
 def test_home_on_empty_database(admin_client):
