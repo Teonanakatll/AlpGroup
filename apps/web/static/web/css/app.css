@@ -969,10 +969,10 @@ label.pick { cursor: pointer; }
   color: rgb(var(--tone));
   background: radial-gradient(circle at calc(35% + var(--px, 0) * 25%) calc(25% + var(--py, 0) * 25%), #fff 0, #fff 28%, #e7eaef 78%, #d6dae1 100%);
   border: 2px solid rgb(var(--tone));
+  /* только объём кнопки: блик сверху, лёгкая тень снизу внутри, бортик и тень снаружи; без цветного свечения внутри */
   box-shadow:
     inset 0 2px 0 rgb(255 255 255 / .95),
-    inset 0 -4px 6px rgb(var(--tone) / .22),
-    inset 0 0 10px rgb(var(--tone-glow) / .35),
+    inset 0 -4px 6px rgb(20 24 32 / .08),
     0 3px 0 rgb(var(--tone) / .7),
     3px 7px 12px rgb(20 24 32 / .24);
   transform: perspective(260px) rotateX(calc(var(--py, 0) * -10deg)) rotateY(calc(var(--px, 0) * 10deg));
@@ -980,7 +980,7 @@ label.pick { cursor: pointer; }
 }
 [data-theme="nexora"] .icon-tile .icon {
   stroke-width: 2.6;
-  filter: drop-shadow(0 -1px 0 rgb(255 255 255 / .95)) drop-shadow(1px 2px 0 rgb(var(--tone) / .4));
+  filter: drop-shadow(0 -1px 0 rgb(255 255 255 / .95)) drop-shadow(1px 1.5px 0 rgb(var(--tone) / .3));   /* выдавленный значок */
   transition: filter .45s var(--ease-soft);
 }
 [data-theme="nexora"] .icon-tile.tone-violet { --tone: var(--violet-rgb); --tone-glow: var(--violet-rgb); }
@@ -994,17 +994,17 @@ label.pick { cursor: pointer; }
 [data-theme="nexora"] :is(.item, .pick)[data-status="written_off"] .icon-tile { --tone: 96 102 112; --tone-glow: 96 102 112; }
 [data-theme="nexora"] :is(.stat, .item, .row, .pick, .op-head):hover .icon-tile {
   transform: perspective(260px) rotateX(calc(var(--py, 0) * -18deg)) rotateY(calc(var(--px, 0) * 18deg)) scale(1.08);
+  /* плитка остаётся белой выпуклой кнопкой, светится только снаружи */
   box-shadow:
     inset 0 2px 0 rgb(255 255 255 / .95),
-    inset 0 -4px 6px rgb(var(--tone) / .22),
-    inset 0 0 14px rgb(var(--tone-glow) / .6),
+    inset 0 -4px 6px rgb(20 24 32 / .08),
     0 3px 0 rgb(var(--tone) / .8),
-    0 0 0 2px rgb(var(--tone-glow) / .45),
-    0 0 20px rgb(var(--tone-glow) / .7),
+    0 0 0 2px rgb(var(--tone-glow) / .4),
+    0 0 18px rgb(var(--tone-glow) / .6),
     calc(var(--px, 0) * -6px + 3px) 9px 14px rgb(20 24 32 / .26);
 }
 [data-theme="nexora"] :is(.stat, .item, .row, .pick, .op-head):hover .icon-tile .icon {
-  filter: drop-shadow(0 -1px 0 rgb(255 255 255 / .95)) drop-shadow(0 0 3px rgb(var(--tone-glow))) drop-shadow(0 0 8px rgb(var(--tone-glow) / .85));
+  filter: drop-shadow(0 -1px 0 rgb(255 255 255 / .95)) drop-shadow(0 0 2px rgb(var(--tone-glow) / .9));   /* значок чуть светится своим цветом, без тёмного ореола */
 }
 
 /* плашки статусов: «на складе» — лаймовая, остальные — цветная рамка и текст */
