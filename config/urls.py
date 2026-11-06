@@ -17,11 +17,9 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.staticfiles.views import serve as serve_static
 from django.templatetags.static import static as static_url
-from django.urls import include, path, re_path
+from django.urls import include, path
 from django.views.generic import RedirectView
-from django.views.static import serve as serve_media
 
 urlpatterns = [
     # Браузер сам запрашивает /favicon.ico там, где в <head> нет иконки (например, в админке)
@@ -31,17 +29,6 @@ urlpatterns = [
     path('', include('apps.web.urls')),
 ]
 
+# В режиме разработки Django сам отдаёт загруженные файлы; на сервере это делает Caddy
 if settings.DEBUG:
-    # В разработке Django сам отдаёт фото (статику при DEBUG отдаёт runserver); на сервере это делает Caddy
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-elif settings.SERVE_FILES:
-    # Показ через туннель при DEBUG=0: Caddy нет, поэтому и статику, и фото отдаёт Django.
-    # Хелпер static() при DEBUG=0 ничего не подключает, поэтому маршруты заданы явно;
-    # insecure=True разрешает раздачу статики из папок приложений без collectstatic.
-    # lstrip('/'): Django возвращает STATIC_URL как «/static/», а пути в urls пишутся без ведущего слэша.
-    static_prefix = settings.STATIC_URL.lstrip('/')
-    media_prefix = settings.MEDIA_URL.lstrip('/')
-    urlpatterns += [
-        re_path(rf'^{static_prefix}(?P<path>.*)$', serve_static, {'insecure': True}),
-        re_path(rf'^{media_prefix}(?P<path>.*)$', serve_media, {'document_root': settings.MEDIA_ROOT}),
-    ]
