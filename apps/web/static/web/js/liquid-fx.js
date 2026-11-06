@@ -1,8 +1,9 @@
 /* Заставка темы Nexora: «жидкая» картинка с RGB-расслоением и помехами (WebGL, без библиотек).
    Повторяет эффект rgbKineticSlider (PixiJS + GSAP, ~600 КБ) одним шейдером, с теми же коэффициентами:
-   - мышь: картинка у курсора тянется за ним (радиальная линза), а по всей картинке красный и голубой
-     разъезжаются на скорость мыши в пикселях: чем резче движение, тем сильнее расслоение;
-   - зажать кнопку и тянуть: по картинке едет рваная карта смещения — края «текут» и бьются помехами;
+   - мышь без нажатия: картинка у курсора тянется за ним (радиальная линза), а вся картинка чуть
+     проскальзывает вслед за мышью и пружинит обратно (по обеим осям). Расслоения цветов тут нет;
+   - зажать кнопку и тянуть (свайп): по картинке едет рваная карта смещения — края «текут» и бьются
+     помехами, красный и голубой разъезжаются по скорости; протащить на 40% ширины — следующая картинка;
    - клик по заставке, появление и смена картинок: переход — картинку рвёт по той же карте до 160 px
      и расслаивает до 80 px, потом она собирается.
    Рваную карту (блочный радиальный шум + кольца с резкими краями) считает сам шейдер, файлов-карт нет.
@@ -32,8 +33,11 @@
     momentum: 0.14,        // cursorMomentum: как быстро «точка» догоняет курсор (меньше — дольше хвост)
     cursorScale: 0.65,     // cursorScaleIntensity: насколько линза тянет картинку за мышью
     cursorRadius: 256,     // радиус линзы, px
-    rgb: 0.9,              // imagesRgbIntensity: расслоение = скорость мыши × это число
-    dragScale: 2,          // swipeScaleIntensity: сила рваной карты при перетаскивании
+    rgb: 0.9,              // imagesRgbIntensity: расслоение при свайпе = скорость мыши × это число
+    rgbMax: 36,            // но не больше, px: иначе резкий рывок разводит цвета на сотни пикселей
+    slip: 0.12,            // как сильно вся картинка проскальзывает за мышью (край карты линзы не серый)
+    dragScale: 2,          // swipeScaleIntensity: сила рваной карты при свайпе
+    swipeDistance: 0.4,    // протащить на эту долю ширины — переход на следующую картинку
     transitionScale: 160,  // transitionScaleAmplitude: насколько рвёт картинку при переходе, px
     transitionRgb: 80,     // navImagesRgbIntensity: расслоение при переходе, px
     transition: 2,         // длительность перехода, с (в оригинале 1 с туда и 1 с обратно)
@@ -53,7 +57,7 @@
   var lastChange = 0;
   var p = { x: 0, y: 0, vx: 0, vy: 0, inside: false };      // курсор (x, y) и догоняющая его точка (vx, vy)
   var lens = { x: 0, y: 0 };                                // сила линзы, плавно догоняет скорость (как TweenMax 0.5 с)
-  var drag = { on: false, x: 0, y: 0, sx: 0, amount: 0, moved: false };
+  var drag = { on: false, x: 0, y: 0, sx: 0, tx: 0, ty: 0, moved: false };   // tx, ty — сила рваной карты по осям
 
   /* ---------- шейдер ---------- */
   var VERT = "attribute vec2 a;varying vec2 uv;void main(){uv=a*.5+.5;uv.y=1.-uv.y;gl_Position=vec4(a,0.,1.);}";
@@ -64,7 +68,8 @@
     "uniform vec2 sizeA, sizeB, box;",       // размеры картинок и блока (CSS px)
     "uniform vec2 mouse, lens, rgb;",        // точка у курсора, сила линзы и расслоение (px)
     "uniform vec2 center;",                  // откуда рвёт карта: середина блока или курсор при перетаскивании
-    "uniform float tear, mapScale, mixT;",   // сила рваной карты (px), её масштаб, доля новой картинки
+    "uniform vec2 tear;",                    // сила рваной карты по осям (px)
+    "uniform float mapScale, mixT;",         // масштаб карты и доля новой картинки
     "float h(vec2 q){return fract(sin(dot(q,vec2(127.1,311.7)))*43758.5453);}",
     "float n(vec2 q){vec2 i=floor(q),f=fract(q);f=f*f*(3.-2.*f);",
     "  return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+1.),f.x),f.y);}",
@@ -82,9 +87,12 @@
     "vec2 cover(vec2 px,vec2 img){",
     "  float s=max(box.x/img.x,box.y/img.y)*1.06;",
     "  return (px-box*.5)/(img*s)+.5;}",
-    // Линза у курсора (как displace-circle.png): в центре тянет сильнее всего, к краю сходит на нет
+    // Линза у курсора (как displace-circle.png): в центре тянет сильнее всего, к краю слабее.
+    // За краем кружка карта не нейтрально-серая, поэтому вся картинка чуть съезжает за мышью.
     "vec2 lensShift(vec2 px){",
-    "  float v=.5*smoothstep(0.," + SETTINGS.cursorRadius.toFixed(1) + ",length(px-mouse));",
+    "  float R=" + SETTINGS.cursorRadius.toFixed(1) + ";",
+    "  float d=length(px-mouse);",
+    "  float v=mix(.5*smoothstep(0.,R,d)," + (0.5 - SETTINGS.slip).toFixed(3) + ",smoothstep(R*.7,R,d));",
     "  return (vec2(v)-.5)*lens;}",
     "vec3 pick(sampler2D t,vec2 img,vec2 px){",
     "  vec2 pr=px+rgb, pb=px-rgb;",                              // красный в одну сторону, голубой в другую
@@ -95,7 +103,7 @@
     "void main(){",
     "  vec2 px=uv*box;",
     "  float m=tearMap(px-center);",
-    "  px+=(vec2(m)-.5)*tear;",                                  // рвём по карте (Pixi DisplacementFilter)
+    "  px+=(vec2(m)-.5)*tear;",                                  // рвём по карте отдельно по x и y (Pixi DisplacementFilter)
     "  vec3 a=pick(texA,sizeA,px);",
     "  vec3 b=pick(texB,sizeB,px);",
     "  gl_FragColor=vec4(mix(a,b,smoothstep(.3,.7,mixT)),1.);",
@@ -186,6 +194,9 @@
     if (!p.inside && q.inside) { p.vx = q.x; p.vy = q.y; }           // вошли: хвост начинается отсюда, без рывка
     p.x = q.x; p.y = q.y; p.inside = q.inside;
     if (drag.on && Math.abs(q.x - drag.sx) > 6) drag.moved = true;
+    if (drag.on && Math.abs(q.x - drag.sx) > cssW * SETTINGS.swipeDistance) {   // дотянули: следующая картинка
+      drag.on = false; transition(textures.length > 1);
+    }
     kick();
   }, { passive: true });
   hero.addEventListener("pointerleave", function () { p.inside = false; drag.on = false; kick(); });
@@ -195,6 +206,7 @@
   hero.addEventListener("pointerdown", function (e) {
     if (onControl(e.target)) return;
     var q = local(e);
+    if (tr.start >= 0) return;                          // во время перехода свайп не начинаем (как в оригинале)
     drag.on = true; drag.moved = false; drag.sx = q.x;
     kick();
   });
@@ -238,9 +250,11 @@
     lens.x += (kx * SETTINGS.cursorScale - lens.x) * 0.12;
     lens.y += (ky * SETTINGS.cursorScale - lens.y) * 0.12;
 
-    // Перетаскивание: рваная карта едет за курсором, сила по скорости; отпустили — стихает
-    var dragTarget = drag.on && drag.moved ? Math.hypot(kx, ky) * SETTINGS.dragScale : 0;
-    drag.amount += (dragTarget - drag.amount) * (drag.on ? 0.3 : 0.1);
+    // Свайп: рваная карта едет за курсором, сила по скорости отдельно по осям; отпустили — стихает за ~0,5 с
+    var swiping = drag.on && drag.moved;
+    drag.tx += ((swiping ? kx * SETTINGS.dragScale : 0) - drag.tx) * (swiping ? 0.5 : 0.12);
+    drag.ty += ((swiping ? ky * SETTINGS.dragScale : 0) - drag.ty) * (swiping ? 0.5 : 0.12);
+    var dragAmount = Math.abs(drag.tx) + Math.abs(drag.ty);
     drag.x += ((drag.on ? p.x : drag.x) - drag.x) * 0.5;
     drag.y += ((drag.on ? p.y : drag.y) - drag.y) * 0.5;
 
@@ -254,20 +268,22 @@
     }
     if (SETTINGS.change && textures.length > 1 && tr.start < 0 && t - lastChange > SETTINGS.change) transition(true);
 
-    var tear = burst * SETTINGS.transitionScale + drag.amount;
-    var useDrag = drag.amount > burst * SETTINGS.transitionScale;
+    var burstTear = burst * SETTINGS.transitionScale;
+    var useDrag = dragAmount > burstTear;
+    // Цвета расходятся только при свайпе и при переходе, просто от движения мыши — нет
+    var rgb = swiping ? Math.max(-SETTINGS.rgbMax, Math.min(SETTINGS.rgbMax, kx * SETTINGS.rgb)) : 0;
     bind(0, current); bind(1, tr.swap ? next : current);
     gl.uniform2f(u.mouse, p.vx, p.vy);
     gl.uniform2f(u.lens, lens.x, lens.y);
-    gl.uniform2f(u.rgb, kx * SETTINGS.rgb + burst * SETTINGS.transitionRgb, 0);
+    gl.uniform2f(u.rgb, rgb + burst * SETTINGS.transitionRgb, 0);
     gl.uniform2f(u.center, useDrag ? drag.x : cssW / 2, useDrag ? drag.y : cssH / 2);
-    gl.uniform1f(u.tear, tear);
+    gl.uniform2f(u.tear, burstTear + drag.tx, burstTear + drag.ty);
     gl.uniform1f(u.mapScale, 0.6 + progress * 2.4);
     gl.uniform1f(u.mixT, mixT);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
     // Крутим кадры, пока что-то движется; всё стихло — стоим и не тратим батарею
-    var busy = tr.start >= 0 || drag.on || drag.amount > 0.3 ||
+    var busy = tr.start >= 0 || drag.on || dragAmount > 0.3 ||
                Math.abs(kx) + Math.abs(ky) > 0.3 || Math.abs(lens.x) + Math.abs(lens.y) > 0.3 ||
                (SETTINGS.change && textures.length > 1);
     if (busy) raf = requestAnimationFrame(frame);
