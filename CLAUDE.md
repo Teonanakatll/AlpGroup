@@ -11,7 +11,7 @@ Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .e
 - config/ — настройки и urls
 - apps/inventory/ — Category, Tool, ToolPhoto, HandTool, BaseMovement (abstract), ToolMovement, HandToolMovement
 - apps/sites/ — Site, WorkType (минимальный справочник)
-- apps/web/ — сайт: страницы, шаблоны, стили (app.css, темы summit и nexora на переменных), иконки, логотип; формы операций: выдача, приём, не найден, списание, ремонт (views.py, forms.py, positions.py); журнал с отменой и история позиции
+- apps/web/ — сайт: страницы, шаблоны, стили (app.css, темы на переменных: summit тёмная, nexora светлая), иконки, логотип; формы операций: выдача, приём, не найден, списание, ремонт (views.py, forms.py, positions.py); журнал с отменой и история позиции
 - в каждом приложении services.py (изменения), selectors.py (выборки), tests/
 
 ## Ключевые правила (подробности в DECISIONS.md)
