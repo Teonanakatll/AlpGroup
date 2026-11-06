@@ -151,6 +151,8 @@
   --blue-rgb: 139 233 253;
   --red-rgb: 255 85 85;
   --writeoff-rgb: 255 121 198;
+  --sub-rgb: 189 147 249;
+  --meta-rgb: 255 121 198;
   --text: #f8f8f2;
   --text-dim: #b5b9d1;
   --text-faint: #8d90a1;
@@ -177,6 +179,8 @@
   --blue-rgb: 54 249 246;
   --red-rgb: 254 68 80;
   --writeoff-rgb: 249 126 114;
+  --sub-rgb: 54 249 246;
+  --meta-rgb: 254 222 93;
   --text: #ffffff;
   --text-dim: #b6b1c9;
   --text-faint: #8f8a9f;
@@ -203,6 +207,8 @@
   --blue-rgb: 0 240 255;
   --red-rgb: 255 42 109;
   --writeoff-rgb: 255 107 53;
+  --sub-rgb: 0 240 255;
+  --meta-rgb: 255 42 109;
   --text: #f2f0ff;
   --text-dim: #a39dce;
   --text-faint: #7e7a9d;
@@ -229,6 +235,8 @@
   --blue-rgb: 120 220 232;
   --red-rgb: 255 97 136;
   --writeoff-rgb: 252 152 103;
+  --sub-rgb: 120 220 232;
+  --meta-rgb: 255 97 136;
   --text: #fcfcfa;
   --text-dim: #a9a8a9;
   --text-faint: #929192;
@@ -255,6 +263,8 @@
   --blue-rgb: 137 221 255;
   --red-rgb: 255 83 112;
   --writeoff-rgb: 247 140 108;
+  --sub-rgb: 137 221 255;
+  --meta-rgb: 255 203 107;
   --text: #eeffff;
   --text-dim: #a6accd;
   --text-faint: #8e95ac;
@@ -281,6 +291,8 @@
   --blue-rgb: 131 165 152;
   --red-rgb: 251 73 52;
   --writeoff-rgb: 214 93 14;
+  --sub-rgb: 142 192 124;
+  --meta-rgb: 254 128 25;
   --text: #ebdbb2;
   --text-dim: #bdae93;
   --text-faint: #988e79;
@@ -314,6 +326,8 @@
   --blue-rgb: 1 121 173;
   --red-rgb: 196 74 63;
   --writeoff-rgb: 152 104 1;
+  --sub-rgb: 166 38 164;
+  --meta-rgb: 1 121 173;
   --text: #383a42;
   --text-dim: #53565f;
   --text-faint: #6a6c74;
@@ -344,6 +358,8 @@
   --blue-rgb: 32 117 176;
   --red-rgb: 211 48 45;
   --writeoff-rgb: 198 51 122;
+  --sub-rgb: 32 117 176;
+  --meta-rgb: 198 51 122;
   --text: #073642;
   --text-dim: #395962;
   --text-faint: #556e74;
@@ -374,6 +390,8 @@
   --blue-rgb: 7 102 120;
   --red-rgb: 157 0 6;
   --writeoff-rgb: 148 97 16;
+  --sub-rgb: 7 102 120;
+  --meta-rgb: 143 63 113;
   --text: #3c3836;
   --text-dim: #504945;
   --text-faint: #6c655a;
@@ -1384,15 +1402,22 @@ label.pick { cursor: pointer; }
    цветные значки и подписи в меню, заголовки и второстепенный текст в цветах темы. */
 
 /* все яркие темы: меню, заголовки, второстепенный текст в цветах темы */
-:root:not([data-theme="summit"], [data-theme="nexora"]) .nav-item:not(.is-active) { color: color-mix(in srgb, rgb(var(--tone, var(--accent-rgb))) 60%, var(--text)); }
-:root:not([data-theme="summit"], [data-theme="nexora"]) .nav-item:not(.is-active) .icon { color: rgb(var(--tone, var(--accent-rgb))); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .nav-item:not(.is-active) { color: var(--text); }                      /* подписи одного цвета */
+:root:not([data-theme="summit"], [data-theme="nexora"]) .nav-item:not(.is-active) .icon { color: rgb(var(--tone, var(--accent-rgb))); stroke-width: 2.4; }   /* значки разноцветные */
+:root:not([data-theme="summit"], [data-theme="nexora"])[data-mode="dark"] .nav-item:not(.is-active) .icon { color: color-mix(in srgb, rgb(var(--tone, var(--accent-rgb))) 85%, #fff); filter: drop-shadow(0 0 3px rgb(var(--tone, var(--accent-rgb)))) drop-shadow(0 0 7px rgb(var(--tone, var(--accent-rgb)) / .6)); }
 :root:not([data-theme="summit"], [data-theme="nexora"]) .nav-item:not(.is-active):hover {
-  color: var(--text); border-color: rgb(var(--tone, var(--accent-rgb))); background: rgb(var(--tone, var(--accent-rgb)) / .12);
-  box-shadow: 0 0 0 1px rgb(var(--tone, var(--accent-rgb)) / .5), 0 0 16px rgb(var(--tone, var(--accent-rgb)) / .45);
+  color: var(--text); border-color: var(--accent); background: rgb(var(--accent-rgb) / .1);
+  box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / .45), 0 0 14px rgb(var(--accent-rgb) / .35);
 }
-:root:not([data-theme="summit"], [data-theme="nexora"]) .nav-item:not(.is-active):hover .icon { color: rgb(var(--tone, var(--accent-rgb))); filter: drop-shadow(0 0 5px rgb(var(--tone, var(--accent-rgb)))); }
 :root:not([data-theme="summit"], [data-theme="nexora"]) .block-head h2, :root:not([data-theme="summit"], [data-theme="nexora"]) .section-title { color: var(--accent-text); }
-:root:not([data-theme="summit"], [data-theme="nexora"]) :is(.row-sub, .item-meta, .stat-label, .meter-caption, .muted, .field label) { color: color-mix(in srgb, var(--accent-text) 28%, var(--text-dim)); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) :is(.stat-label, .muted, .field label) { color: color-mix(in srgb, var(--accent-text) 28%, var(--text-dim)); }
+/* строки списков: под названием — второй цвет темы, время, адрес и счётчики — третий */
+:root:not([data-theme="summit"], [data-theme="nexora"]) :is(.row-sub, .item-meta) { color: rgb(var(--sub-rgb, var(--blue-rgb))); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) :is(.row-end, .item-site, .meter-caption) { color: rgb(var(--meta-rgb, var(--violet-rgb))); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .item-site .icon { color: rgb(var(--meta-rgb, var(--violet-rgb))); }
+:root:not([data-theme="summit"], [data-theme="nexora"]) .meter-caption b { color: var(--text); }
+/* без пятна подсветки под курсором */
+:root:not([data-theme="summit"], [data-theme="nexora"]) .card::after { display: none; }
 :root:not([data-theme="summit"], [data-theme="nexora"]) .item[data-status="available"] .icon-tile, :root:not([data-theme="summit"], [data-theme="nexora"]) .pick[data-status="available"] .icon-tile { --tone: var(--ok-rgb); }
 :root:not([data-theme="summit"], [data-theme="nexora"]) .pill:not([class*="pill--"]) { --tone: var(--ok-rgb); }
 
