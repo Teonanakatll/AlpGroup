@@ -1,9 +1,8 @@
-  <nav class="toolbar reveal" style="--i:1" aria-label="Вид операции">
-    <a class="chip {% if mode == 'add' %}is-active{% endif %}" href="{% url 'web:add' %}">На баланс</a>
-    <a class="chip {% if mode == 'issue' %}is-active{% endif %}" href="{% url 'web:issue' %}">Выдача</a>
-    <a class="chip {% if mode == 'receive' %}is-active{% endif %}" href="{% url 'web:receive' %}">Приём</a>
-    <a class="chip {% if mode == 'missing' %}is-active{% endif %}" href="{% url 'web:missing' %}">Не найден</a>
-    <a class="chip {% if mode == 'write_off' %}is-active{% endif %}" href="{% url 'web:write_off' %}">Списание</a>
-    <a class="chip {% if mode == 'servicing' %}is-active{% endif %}" href="{% url 'web:servicing' %}">В ремонт</a>
-    <a class="chip {% if mode == 'from_servicing' %}is-active{% endif %}" href="{% url 'web:from_servicing' %}">Из ремонта</a>
+  {# Вкладки операций: у каждой своя иконка и цвет (OPERATION_TABS во views.py) #}
+  <nav class="toolbar op-tabs reveal" style="--i:1" aria-label="Вид операции">
+    {% for tab in op_tabs %}
+      <a class="chip op-tab {{ tab.tone }}{% if tab.mode == mode %} is-active{% endif %}" href="{{ tab.url }}"{% if tab.mode == mode %} aria-current="page"{% endif %}>
+        <svg class="icon" aria-hidden="true"><use href="#i-{{ tab.icon }}"/></svg>{{ tab.label }}
+      </a>
+    {% endfor %}
   </nav>

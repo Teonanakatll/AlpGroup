@@ -22,6 +22,8 @@
     {% endif %}
 
     <div class="panel op-head">
+      {# Знак операции: та же иконка и цвет, что у вкладки #}
+      <span class="op-badge icon-tile {{ op_tone }}" aria-hidden="true"><svg class="icon"><use href="#i-{{ op_icon }}"/></svg></span>
       {% for field in form %}
         <div class="field">
           <label for="{{ field.id_for_label }}">{{ field.label }}</label>

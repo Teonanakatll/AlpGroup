@@ -34,6 +34,28 @@ OPERATION_STYLE = {
 }
 
 
+# Вкладки операций: (mode, адрес, подпись, тип операции в журнале — от него иконка и цвет)
+OPERATION_TABS = [
+    ("add", "web:add", "На баланс", "added"),
+    ("issue", "web:issue", "Выдача", "issued"),
+    ("receive", "web:receive", "Приём", "returned"),
+    ("missing", "web:missing", "Не найден", "missing"),
+    ("write_off", "web:write_off", "Списание", "written_off"),
+    ("servicing", "web:servicing", "В ремонт", "servicing"),
+    ("from_servicing", "web:from_servicing", "Из ремонта", "returned"),
+]
+
+
+def _op_nav(mode):
+    """Вкладки операций и иконка с цветом текущей: для шапки и панели формы."""
+    tabs = []
+    for tab_mode, url_name, label, kind in OPERATION_TABS:
+        icon, tone = OPERATION_STYLE[kind]
+        tabs.append({"mode": tab_mode, "url": reverse(url_name), "label": label, "icon": icon, "tone": tone})
+    current = next(tab for tab in tabs if tab["mode"] == mode)
+    return {"op_tabs": tabs, "op_icon": current["icon"], "op_tone": current["tone"]}
+
+
 @login_required
 def home(request):
     recent = selectors.recent_entries(limit=6)
@@ -125,6 +147,7 @@ def _operation_context(request, *, mode, form, positions, site, errors):
     title, hint, button = OPERATION_TEXT[mode]
     on_site = mode == "receive" or (mode in ("missing", "write_off", "servicing") and site is not None)
     return {
+        **_op_nav(mode),
         "mode": mode,
         "title": title, "hint": hint, "button": button,
         "form": form,
@@ -250,6 +273,7 @@ def add(request):
     else:
         form = AddForm(initial={"kind": "tool"})
     return render(request, "web/add.html", {
+        **_op_nav("add"),
         "mode": "add", "title": "Постановка на баланс",
         "hint": "Новый инструмент или пополнение количественной позиции. Запись попадёт в журнал.",
         "form": form, "errors": errors,
