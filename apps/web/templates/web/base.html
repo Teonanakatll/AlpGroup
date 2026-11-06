@@ -46,6 +46,11 @@
     </div>
   </div>
   <div class="scrim"></div>
+  {# Сколько страницы прокручено: полоса сверху; кнопка «Наверх» появляется после первого экрана (app.js) #}
+  <div class="scroll-progress" aria-hidden="true"><i></i></div>
+  <button class="icon-btn to-top" type="button" data-to-top aria-label="Наверх" title="Наверх">
+    <svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg>
+  </button>
   {% endblock %}
 
   {# Сообщения Django (messages.success и т.д.) показываются всплывающими плашками #}

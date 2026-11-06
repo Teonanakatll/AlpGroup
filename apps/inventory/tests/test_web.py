@@ -78,6 +78,20 @@ def test_home_includes_theme_assets(admin_client):
     assert "logo-alp.png" in html
 
 
+def test_pages_have_scroll_progress_and_back_to_top(admin_client):
+    html = page(admin_client, "/inventory/")
+
+    assert 'class="scroll-progress"' in html
+    assert "data-to-top" in html and 'id="i-arrow-up"' in html
+    assert 'class="topbar"' in html                           # шапка с меню, поиском и темами на месте
+
+
+def test_login_page_has_no_back_to_top(client):
+    html = client.get("/login/").content.decode()
+
+    assert "data-to-top" not in html                          # у страницы входа нет каркаса и прокрутки
+
+
 def test_home_hero_has_parallax_layers_and_logo(admin_client):
     html = page(admin_client, "/")
 

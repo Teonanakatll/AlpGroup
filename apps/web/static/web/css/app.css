@@ -608,7 +608,22 @@ html.lenis, html.lenis body { height: auto; }
 .user-chip .icon-btn { width: 36px; height: 36px; }
 
 /* ---------- Верхняя панель ---------- */
-.topbar { display: flex; align-items: center; gap: 14px; }
+/* Шапка прилипает к верху при прокрутке: меню, поиск и темы всегда под рукой.
+   z-index выше контента, но ниже выезжающего меню и затемнения (55–60).
+   Пока шапка у самого верха, подложки нет; прилипла (is-stuck из app.js) — подложка цвета страницы. */
+.topbar {
+  display: flex; align-items: center; gap: 14px;
+  position: sticky; top: 0; z-index: 50; margin: -10px 0; padding: 10px 0;
+  transition: background-color .35s var(--ease-soft), box-shadow .35s var(--ease-soft);
+}
+.topbar.is-stuck {
+  background: color-mix(in srgb, var(--page-bg) 88%, transparent);
+  box-shadow: 0 1px 0 var(--card-border), 0 10px 24px -14px rgb(0 0 0 / .5);
+}
+@media (min-width: 901px) {
+  /* на компьютере подложка размыта (на телефоне без размытия: оно ломало бы выезжающее меню тем, см. ниже) */
+  .topbar.is-stuck { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+}
 .burger { display: none; }
 .search {
   flex: 1; max-width: 480px; display: flex; align-items: center; gap: 12px;
@@ -1458,6 +1473,23 @@ label.pick { cursor: pointer; }
     background: var(--card-bg-solid);
   }
   .nav-open .sidebar { transform: none; }
+  .topbar { margin: -14px 0 0; padding: 10px 0; }   /* у каркаса здесь отступ 14px: шапка прилипает без щели сверху */
+
+  /* Меню тем выезжает справа, как основное меню слева. Блок fixed внутри шапки, поэтому у шапки
+     не должно быть backdrop-filter и transform: с ними fixed считался бы от шапки, а не от экрана. */
+  .themes-open .topbar { z-index: 70; }             /* выше затемнения: иначе оно легло бы поверх меню тем */
+  .theme-list, .theme-list[hidden] {
+    display: flex; position: fixed; z-index: 60; right: 12px; top: 12px; bottom: 12px; left: auto;
+    width: min(290px, calc(100vw - 24px)); max-height: none; padding: 16px 12px; border-radius: var(--radius-xl);
+    transform: translateX(120%); visibility: hidden;
+    transition: transform .65s var(--ease-soft), visibility 0s linear .65s;
+  }
+  .themes-open .theme-list {
+    transform: none; visibility: visible; transition: transform .65s var(--ease-soft), visibility 0s;
+    box-shadow: var(--shadow-pop), 0 0 0 100vmax rgb(0 0 0 / .6);   /* тень на весь экран затемняет и саму шапку */
+  }
+  .themes-open .scrim { display: block; position: fixed; inset: 0; z-index: 55; background: transparent; }   /* ловит клик мимо меню */
+}
   .nav-open .scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgb(0 0 0 / .6); animation: reveal .3s ease both; }
   :root { --card-blur: 8px; }        /* слабым телефонам тяжело большое размытие */
 }
@@ -1524,6 +1556,28 @@ label.pick { cursor: pointer; }
 @media (max-width: 330px) {
   .stats { grid-template-columns: 1fr; }
 }
+
+/* ---------- Полоса прогресса прокрутки и кнопка «Наверх» ---------- */
+.scroll-progress { position: fixed; z-index: 90; top: 0; left: 0; right: 0; height: 3px; pointer-events: none; }
+.scroll-progress i {
+  display: block; height: 100%; transform: scaleX(0); transform-origin: left;
+  background: linear-gradient(90deg, rgb(var(--accent-rgb)), rgb(var(--violet-rgb)), rgb(var(--deco-rgb, var(--red-rgb))));
+}
+:root[data-mode="dark"] .scroll-progress i { box-shadow: 0 0 10px rgb(var(--accent-rgb) / .6); }
+
+.to-top {
+  position: fixed; z-index: 45; right: 20px; bottom: 20px; width: 48px; height: 48px;
+  background: var(--card-bg-solid); border: 2px solid var(--accent); color: var(--accent-text);
+  box-shadow: var(--shadow-lift);
+  opacity: 0; transform: translateY(16px); pointer-events: none;
+  transition: opacity .35s var(--ease-soft), transform .35s var(--ease-soft);
+}
+.to-top.is-visible { opacity: 1; transform: none; pointer-events: auto; }
+.to-top .icon { width: 22px; height: 22px; }
+.to-top:hover .icon { animation: none; transform: translateY(-2px); }   /* стрелка поднимается, а не крутится, как у других кнопок */
+body:has(.op-bar) .to-top { bottom: 96px; }                             /* в формах операций внизу липкая панель с кнопкой */
+.nav-open .to-top, .themes-open .to-top { opacity: 0; pointer-events: none; }
+@media (max-width: 520px) { .to-top { right: 14px; bottom: 14px; width: 44px; height: 44px; } body:has(.op-bar) .to-top { bottom: 88px; } }
 
 /* ---------- 6. Режим «меньше движения» ----------
    Включается только явно: localStorage.setItem("motion", "reduced") в консоли браузера

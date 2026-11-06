@@ -32,6 +32,7 @@
     if (!themeMenu) return;
     themeMenu.querySelector("[data-theme-open]").setAttribute("aria-expanded", String(open));
     themeMenu.querySelector(".theme-list").hidden = !open;
+    document.body.classList.toggle("themes-open", open);   // на планшете и телефоне меню тем выезжает справа (CSS)
     if (open) {
       markTheme();
       var current = themeMenu.querySelector('[aria-checked="true"]');
@@ -99,7 +100,8 @@
     requestAnimationFrame(raf);
     // Пока открыто меню на телефоне, страница под ним не прокручивается
     new MutationObserver(function () {
-      if (document.body.classList.contains("nav-open")) lenis.stop(); else lenis.start();
+      var drawer = document.body.classList.contains("nav-open") || document.body.classList.contains("themes-open");
+      if (drawer) lenis.stop(); else lenis.start();
     }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   })();
 
@@ -153,6 +155,31 @@
     box.appendChild(toast);
     arm(toast);
   };
+
+  // ---- Прокрутка: полоса прогресса, шапка с фоном, кнопка «Наверх» ---------
+  // Один обработчик scroll, работа раз в кадр (requestAnimationFrame), чтобы не дёргать стили на каждое событие.
+  var progressBar = document.querySelector(".scroll-progress i");
+  var topbar = document.querySelector(".topbar");
+  var toTop = document.querySelector("[data-to-top]");
+  var scrollQueued = false;
+  function onScroll() {
+    scrollQueued = false;
+    var y = window.scrollY;
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    if (progressBar) progressBar.style.transform = "scaleX(" + (max > 0 ? Math.min(y / max, 1) : 0) + ")";
+    if (topbar) topbar.classList.toggle("is-stuck", y > 4);                    // прилипла к верху: подложка под шапкой
+    if (toTop) toTop.classList.toggle("is-visible", y > window.innerHeight * 0.8);
+  }
+  window.addEventListener("scroll", function () {
+    if (!scrollQueued) { scrollQueued = true; requestAnimationFrame(onScroll); }
+  }, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+  onScroll();
+  document.addEventListener("click", function (event) {
+    if (!event.target.closest("[data-to-top]")) return;
+    if (window.lenis && !reduceMotion) window.lenis.scrollTo(0);               // плавно, тем же Lenis, что и колесо
+    else window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+  });
 
   // ---- Меню на телефоне, поиск по клавише "/" ---------------------------
   document.addEventListener("click", function (event) {
