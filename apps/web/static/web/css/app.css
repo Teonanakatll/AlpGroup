@@ -2,18 +2,20 @@
    AlpGroup: стили сайта.
 
    Как устроено:
-   1. Весь внешний вид задаётся переменными в блоках темы (summit, nexora).
-      Чтобы поменять цвет, фон или стеклянность карточек, правится только тема.
+   1. Тема — это палитра (data-theme на <html>) и режим (data-mode: dark или light).
+      Палитра задаёт только переменные цветов; режим — всё оформление: тёмные темы
+      оформлены как Summit (стекло, неон), светлые — как светлая Nexora (3D-кнопки, тени).
+      Список тем: apps/web/themes.py. Новая тема = блок переменных ниже + строка в themes.py.
    2. Компоненты (карточки, кнопки, меню) используют только переменные и
       не знают, какая тема включена.
-   3. Тема переключается атрибутом data-theme на <html> (кнопка в верхней панели).
+   3. Тема выбирается в меню в верхней панели и запоминается в браузере.
    4. Анимации отключаются у тех, кто включил «уменьшить движение» (в конце файла).
    ========================================================================== */
 
 /* Для плавной анимации угла у бегущей подсветки рамки (Chrome, Edge, Safari) */
 @property --a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 
-/* ---------- 1. Тема по умолчанию: summit (горы, стекло, лайм) ---------- */
+/* ---------- 1. Тёмный режим, база = палитра Summit (горы, стекло, лайм); она же по умолчанию ---------- */
 :root,
 :root[data-theme="summit"] {
   --font: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -24,6 +26,7 @@
   --accent-ink: #0a1400;           /* цвет текста на лаймовой кнопке */
   --accent-text-rgb: var(--accent-rgb);   /* акцент как цвет текста, тонких иконок и рамок полей (в светлой теме темнее) */
   --accent-text: rgb(var(--accent-text-rgb));
+  --ok-rgb: var(--accent-text-rgb);       /* статус «на складе»: по умолчанию цвет акцента */
 
   --violet-rgb: 160 112 255;
   --orange-rgb: 255 138 42;
@@ -66,8 +69,8 @@
   --ease-soft: cubic-bezier(.33, .1, .25, 1);   /* мягкий старт и финиш для hover */
 }
 
-/* ---------- Тема nexora: светлая (серый фон, белые карточки, ядовитый лайм) ---------- */
-:root[data-theme="nexora"] {
+/* ---------- Светлый режим, база = палитра Nexora (серый фон, белые карточки, ядовитый лайм) ---------- */
+:root[data-mode="light"] {
   color-scheme: light;               /* светлые полосы прокрутки и системные элементы форм */
 
   /* Ядовитый лайм — заливки (кнопки, меню, плитки иконок, плашки, счётчики) и все эффекты наведения;
@@ -94,6 +97,13 @@
   --card-bg: #ffffff;
   --card-bg-solid: #ffffff;
   --card-border: #8a919c;            /* рамка блоков: 3.2:1 на белом (была 1.4:1, не видна) */
+  --line: #a6acb5;                   /* рамки строк, полей, фильтров: светлее рамки блоков */
+  --accent-deep-rgb: 63 138 0;       /* тёмный край акцента: бортик и рамка 3D-кнопок */
+  --accent-deep: rgb(var(--accent-deep-rgb));
+  --hero-accent-rgb: 150 255 0;      /* акцент поверх фото на заставке: всегда яркий */
+  --hero-accent-ink: #0a1400;        /* текст на кнопке заставки */
+  --ok-fill-rgb: var(--accent-rgb);  /* плашка «на складе» залита этим цветом */
+  --ok-ink: var(--accent-ink);
   --card-blur: 0px;
   --card-shadow: 6px 10px 22px rgb(20 24 32 / .2), 2px 3px 6px rgb(20 24 32 / .12);   /* мягкая косая тень вправо-вниз */
   --outline-hover: var(--accent);
@@ -114,12 +124,12 @@
 }
 /* Заставка и в светлой теме остаётся тёмным «фото-плакатом»: светлый текст и неоновый лайм поверх фото.
    --accent и --outline-hover пересчитываем здесь же: они вычисляются там, где объявлены */
-:root[data-theme="nexora"] .hero {
-  --accent-rgb: 150 255 0;
+:root[data-mode="light"] .hero {
+  --accent-rgb: var(--hero-accent-rgb);
   --accent: rgb(var(--accent-rgb));
-  --accent-2: rgb(96 214 0);
-  --accent-ink: #0a1400;
-  --accent-text-rgb: 150 255 0;
+  --accent-2: color-mix(in srgb, var(--accent) 82%, #000);
+  --accent-ink: var(--hero-accent-ink);
+  --accent-text-rgb: var(--hero-accent-rgb);
   --accent-text: rgb(var(--accent-text-rgb));
   --outline-hover: rgb(var(--accent-rgb) / .75);
   --text: #f1f5ee;
@@ -128,6 +138,256 @@
   --card-border: rgb(255 255 255 / .08);
   --ink-rgb: 255 255 255;
   color: var(--text);
+}
+
+/* ---------- Тёмные палитры: всё оформление Summit, свои цвета ---------- */
+:root[data-theme="dracula"] {   /* Dracula */
+  --accent-rgb: 80 250 123;
+  --accent-2: #3ec360;
+  --accent-ink: #191a21;
+  --accent-bright: #8dfca9;
+  --violet-rgb: 189 147 249;
+  --orange-rgb: 255 184 108;
+  --blue-rgb: 139 233 253;
+  --red-rgb: 255 85 85;
+  --writeoff-rgb: 255 121 198;
+  --text: #f8f8f2;
+  --text-dim: #b5b9d1;
+  --text-faint: #8d90a1;
+  --page-bg: #191a21;
+  --card-bg: linear-gradient(145deg, rgb(255 255 255 / .06), rgb(255 255 255 / .015)), rgb(40 42 54 / .8);
+  --card-bg-solid: #282a36;
+  --card-border: #565969;
+  --popover-bg: rgb(40 42 54 / .94);
+  --option-bg: #282a36;
+  --option-text: #f8f8f2;
+  --hero-bg: #191a21;
+  --hero-shade: linear-gradient(90deg, rgb(25 26 33 / .94) 0%, rgb(25 26 33 / .55) 42%, transparent 75%);
+  --aurora-1: rgb(80 250 123 / .18);
+  --aurora-2: rgb(189 147 249 / .14);
+}
+:root[data-theme="synthwave"] {   /* Synthwave '84 */
+  --accent-rgb: 255 126 219;
+  --accent-2: #c762ab;
+  --accent-ink: #241b2f;
+  --accent-bright: #ffabe8;
+  --ok-rgb: 114 241 184;
+  --violet-rgb: 54 249 246;
+  --orange-rgb: 254 222 93;
+  --blue-rgb: 54 249 246;
+  --red-rgb: 254 68 80;
+  --writeoff-rgb: 249 126 114;
+  --text: #ffffff;
+  --text-dim: #b6b1c9;
+  --text-faint: #8f8a9f;
+  --page-bg: #1b1729;
+  --card-bg: linear-gradient(145deg, rgb(255 255 255 / .06), rgb(255 255 255 / .015)), rgb(38 35 53 / .8);
+  --card-bg-solid: #262335;
+  --card-border: #585070;
+  --popover-bg: rgb(38 35 53 / .94);
+  --option-bg: #262335;
+  --option-text: #ffffff;
+  --hero-bg: #1b1729;
+  --hero-shade: linear-gradient(90deg, rgb(27 23 41 / .94) 0%, rgb(27 23 41 / .55) 42%, transparent 75%);
+  --aurora-1: rgb(255 126 219 / .18);
+  --aurora-2: rgb(54 249 246 / .14);
+}
+:root[data-theme="cyber"] {   /* Неон киберпанк */
+  --accent-rgb: 252 238 10;
+  --accent-2: #c5ba08;
+  --accent-ink: #12101f;
+  --accent-bright: #fdf460;
+  --ok-rgb: 5 255 161;
+  --violet-rgb: 0 240 255;
+  --orange-rgb: 255 159 28;
+  --blue-rgb: 0 240 255;
+  --red-rgb: 255 42 109;
+  --writeoff-rgb: 255 107 53;
+  --text: #f2f0ff;
+  --text-dim: #a39dce;
+  --text-faint: #7e7a9d;
+  --page-bg: #07060d;
+  --card-bg: linear-gradient(145deg, rgb(255 255 255 / .06), rgb(255 255 255 / .015)), rgb(18 16 31 / .8);
+  --card-bg-solid: #12101f;
+  --card-border: #494668;
+  --popover-bg: rgb(18 16 31 / .94);
+  --option-bg: #12101f;
+  --option-text: #f2f0ff;
+  --hero-bg: #07060d;
+  --hero-shade: linear-gradient(90deg, rgb(7 6 13 / .94) 0%, rgb(7 6 13 / .55) 42%, transparent 75%);
+  --aurora-1: rgb(252 238 10 / .18);
+  --aurora-2: rgb(0 240 255 / .14);
+}
+:root[data-theme="monokai"] {   /* Monokai Pro */
+  --accent-rgb: 255 216 102;
+  --accent-2: #c7a850;
+  --accent-ink: #2d2a2e;
+  --accent-bright: #ffe69c;
+  --ok-rgb: 169 220 118;
+  --violet-rgb: 171 157 242;
+  --orange-rgb: 252 152 103;
+  --blue-rgb: 120 220 232;
+  --red-rgb: 255 97 136;
+  --writeoff-rgb: 252 152 103;
+  --text: #fcfcfa;
+  --text-dim: #a9a8a9;
+  --text-faint: #929192;
+  --page-bg: #19181a;
+  --card-bg: linear-gradient(145deg, rgb(255 255 255 / .06), rgb(255 255 255 / .015)), rgb(45 42 46 / .8);
+  --card-bg-solid: #2d2a2e;
+  --card-border: #5c595c;
+  --popover-bg: rgb(45 42 46 / .94);
+  --option-bg: #2d2a2e;
+  --option-text: #fcfcfa;
+  --hero-bg: #19181a;
+  --hero-shade: linear-gradient(90deg, rgb(25 24 26 / .94) 0%, rgb(25 24 26 / .55) 42%, transparent 75%);
+  --aurora-1: rgb(255 216 102 / .18);
+  --aurora-2: rgb(171 157 242 / .14);
+}
+:root[data-theme="palenight"] {   /* Material Palenight */
+  --accent-rgb: 199 146 234;
+  --accent-2: #9b72b7;
+  --accent-ink: #1b1e2b;
+  --accent-bright: #dbb8f1;
+  --ok-rgb: 195 232 141;
+  --violet-rgb: 130 170 255;
+  --orange-rgb: 255 203 107;
+  --blue-rgb: 137 221 255;
+  --red-rgb: 255 83 112;
+  --writeoff-rgb: 247 140 108;
+  --text: #eeffff;
+  --text-dim: #a6accd;
+  --text-faint: #8e95ac;
+  --page-bg: #1b1e2b;
+  --card-bg: linear-gradient(145deg, rgb(255 255 255 / .06), rgb(255 255 255 / .015)), rgb(41 45 62 / .8);
+  --card-bg-solid: #292d3e;
+  --card-border: #555c75;
+  --popover-bg: rgb(41 45 62 / .94);
+  --option-bg: #292d3e;
+  --option-text: #eeffff;
+  --hero-bg: #1b1e2b;
+  --hero-shade: linear-gradient(90deg, rgb(27 30 43 / .94) 0%, rgb(27 30 43 / .55) 42%, transparent 75%);
+  --aurora-1: rgb(199 146 234 / .18);
+  --aurora-2: rgb(130 170 255 / .14);
+}
+:root[data-theme="gruvdark"] {   /* Gruvbox Dark */
+  --accent-rgb: 250 189 47;
+  --accent-2: #c39325;
+  --accent-ink: #1d2021;
+  --accent-bright: #fcd478;
+  --ok-rgb: 184 187 38;
+  --violet-rgb: 211 134 155;
+  --orange-rgb: 254 128 25;
+  --blue-rgb: 131 165 152;
+  --red-rgb: 251 73 52;
+  --writeoff-rgb: 214 93 14;
+  --text: #ebdbb2;
+  --text-dim: #bdae93;
+  --text-faint: #988e79;
+  --page-bg: #1d2021;
+  --card-bg: linear-gradient(145deg, rgb(255 255 255 / .06), rgb(255 255 255 / .015)), rgb(40 40 40 / .8);
+  --card-bg-solid: #282828;
+  --card-border: #5c554e;
+  --popover-bg: rgb(40 40 40 / .94);
+  --option-bg: #282828;
+  --option-text: #ebdbb2;
+  --hero-bg: #1d2021;
+  --hero-shade: linear-gradient(90deg, rgb(29 32 33 / .94) 0%, rgb(29 32 33 / .55) 42%, transparent 75%);
+  --aurora-1: rgb(250 189 47 / .18);
+  --aurora-2: rgb(211 134 155 / .14);
+}
+
+/* ---------- Светлые палитры: всё оформление светлой Nexora, свои цвета ----------
+   Рамки, подписи, зелёный текст и статусы подтянуты расчётом до читаемого контраста на блоках */
+:root[data-theme="onelight"] {   /* Atom One Light */
+  --accent-rgb: 64 120 242;
+  --accent-2: #3666ce;
+  --accent-ink: #0d1014;
+  --accent-text-rgb: 58 108 218;
+  --accent-bright: #315cb9;
+  --accent-deep-rgb: 38 72 145;
+  --ok-rgb: 64 129 63;
+  --ok-fill-rgb: 80 161 79;
+  --ok-ink: #0d1014;
+  --violet-rgb: 166 38 164;
+  --orange-rgb: 154 106 1;
+  --blue-rgb: 1 121 173;
+  --red-rgb: 196 74 63;
+  --writeoff-rgb: 152 104 1;
+  --text: #383a42;
+  --text-dim: #53565f;
+  --text-faint: #6a6c74;
+  --page-bg: #dbdbdc;
+  --card-bg: #fafafa;
+  --card-bg-solid: #fafafa;
+  --card-border: #8e8f95;
+  --line: #b2b3b8;
+  --ink-rgb: 56 58 66;
+  --popover-bg: rgb(250 250 250 / .96);
+  --option-bg: #fafafa;
+  --option-text: #383a42;
+  --hero-accent-rgb: 106 150 245;
+  --hero-accent-ink: #0d1014;
+}
+:root[data-theme="solarlight"] {   /* Solarized Light */
+  --accent-rgb: 181 137 0;
+  --accent-2: #9a7400;
+  --accent-ink: #0d1014;
+  --accent-text-rgb: 141 107 0;
+  --accent-bright: #785b00;
+  --accent-deep-rgb: 109 82 0;
+  --ok-rgb: 104 119 0;
+  --ok-fill-rgb: 133 153 0;
+  --ok-ink: #0d1014;
+  --violet-rgb: 102 106 184;
+  --orange-rgb: 195 72 21;
+  --blue-rgb: 32 117 176;
+  --red-rgb: 211 48 45;
+  --writeoff-rgb: 198 51 122;
+  --text: #073642;
+  --text-dim: #395962;
+  --text-faint: #556e74;
+  --page-bg: #dcdac9;
+  --card-bg: #fdf6e3;
+  --card-bg-solid: #fdf6e3;
+  --card-border: #879284;
+  --line: #afaf99;
+  --ink-rgb: 7 54 66;
+  --popover-bg: rgb(253 246 227 / .96);
+  --option-bg: #fdf6e3;
+  --option-text: #073642;
+  --hero-accent-rgb: 187 146 20;
+  --hero-accent-ink: #0d1014;
+}
+:root[data-theme="gruvlight"] {   /* Gruvbox Light */
+  --accent-rgb: 214 93 14;
+  --accent-2: #b64f0c;
+  --accent-ink: #0d1014;
+  --accent-text-rgb: 180 78 12;
+  --accent-bright: #99420a;
+  --accent-deep-rgb: 128 56 8;
+  --ok-rgb: 116 111 13;
+  --ok-fill-rgb: 121 116 14;
+  --ok-ink: #ffffff;
+  --violet-rgb: 143 63 113;
+  --orange-rgb: 175 58 3;
+  --blue-rgb: 7 102 120;
+  --red-rgb: 157 0 6;
+  --writeoff-rgb: 148 97 16;
+  --text: #3c3836;
+  --text-dim: #504945;
+  --text-faint: #6c655a;
+  --page-bg: #e0d1ab;
+  --card-bg: #fbf1c7;
+  --card-bg-solid: #fbf1c7;
+  --card-border: #938772;
+  --line: #b8a98a;
+  --ink-rgb: 60 56 54;
+  --popover-bg: rgb(251 241 199 / .96);
+  --option-bg: #fbf1c7;
+  --option-text: #3c3836;
+  --hero-accent-rgb: 222 125 62;
+  --hero-accent-ink: #0d1014;
 }
 
 /* ---------- 2. База ---------- */
@@ -385,8 +645,32 @@ html.lenis, html.lenis body { height: auto; }
 .top-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 /* Тема: показываем нужную иконку */
 .theme-toggle .i-sun { display: none; }
-:root[data-theme="nexora"] .theme-toggle .i-sun { display: block; }
-:root[data-theme="nexora"] .theme-toggle .i-moon { display: none; }
+
+/* Меню тем: выпадающий список под кнопкой, у каждой темы три кружка её цветов */
+.theme-menu { position: relative; }
+.theme-list {
+  position: absolute; z-index: 60; right: 0; top: calc(100% + 10px); width: 250px;
+  max-height: min(82vh, 600px); overflow-y: auto; padding: 8px; border-radius: 18px;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--card-bg-solid); border: 2px solid var(--card-border); box-shadow: var(--shadow-pop);
+}
+.theme-list[hidden] { display: none; }
+.theme-group { padding: 8px 10px 4px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
+.theme-opt {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border-radius: 11px;
+  border: 2px solid transparent; background: none; color: var(--text); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+  transition: background .2s var(--ease-soft), border-color .2s var(--ease-soft);
+}
+.theme-opt:hover, .theme-opt:focus-visible { background: rgb(var(--accent-rgb) / .12); border-color: rgb(var(--accent-rgb) / .6); outline: 0; }
+.theme-opt[aria-checked="true"] { border-color: var(--accent); font-weight: 700; }
+.theme-opt-name { flex: 1; min-width: 0; }
+.theme-opt .icon { width: 16px; height: 16px; color: var(--accent-text); opacity: 0; }
+.theme-opt[aria-checked="true"] .icon { opacity: 1; }
+.theme-dots { display: inline-flex; flex: none; }
+.theme-dots i { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid rgb(var(--ink-rgb) / .35); }
+.theme-dots i + i { margin-left: -4px; }
+:root[data-mode="light"] .theme-toggle .i-sun { display: block; }
+:root[data-mode="light"] .theme-toggle .i-moon { display: none; }
 
 /* ---------- Заголовок страницы ---------- */
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -442,28 +726,28 @@ html.lenis, html.lenis body { height: auto; }
   object-fit: cover; object-position: 50% 18%;
   will-change: transform; pointer-events: none; user-select: none;
 }
-[data-theme="nexora"] .scene { display: none; }                /* у Nexora на этом месте кристалл */
+[data-mode="light"] .scene { display: none; }                /* у Nexora на этом месте кристалл */
 
 /* «Жидкая» картинка Nexora (liquid-fx.js): на весь блок, появляется, когда WebGL готов */
 .liquid { display: none; }
-[data-theme="nexora"] .liquid {
+[data-mode="light"] .liquid {
   display: block; position: absolute; inset: 0; z-index: -2; overflow: hidden;
   opacity: 0; transition: opacity .9s var(--ease-soft);
 }
-[data-theme="nexora"] .liquid.is-gl { opacity: 1; }
+[data-mode="light"] .liquid.is-gl { opacity: 1; }
 .liquid-fx { display: block; width: 100%; height: 100%; }
 .liquid::after {                       /* затемнение только под текстом слева; правая часть фото чистая */
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(90deg, rgb(4 5 7 / .82) 0%, rgb(4 5 7 / .6) 28%, rgb(4 5 7 / .22) 48%, transparent 62%);
 }
 /* текст поверх фотографии: тени, чтобы читался и на светлых местах */
-[data-theme="nexora"] .hero.has-liquid h1 { text-shadow: 0 1px 2px rgb(0 0 0 / .6), 0 4px 22px rgb(0 0 0 / .55); }
-[data-theme="nexora"] .hero.has-liquid h1 .accent-text { text-shadow: none; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .6)) drop-shadow(0 3px 12px rgb(0 0 0 / .5)); }
-[data-theme="nexora"] .hero.has-liquid p { color: #e3e8e0; text-shadow: 0 1px 2px rgb(0 0 0 / .8), 0 2px 14px rgb(0 0 0 / .6); }
+[data-mode="light"] .hero.has-liquid h1 { text-shadow: 0 1px 2px rgb(0 0 0 / .6), 0 4px 22px rgb(0 0 0 / .55); }
+[data-mode="light"] .hero.has-liquid h1 .accent-text { text-shadow: none; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .6)) drop-shadow(0 3px 12px rgb(0 0 0 / .5)); }
+[data-mode="light"] .hero.has-liquid p { color: #e3e8e0; text-shadow: 0 1px 2px rgb(0 0 0 / .8), 0 2px 14px rgb(0 0 0 / .6); }
 /* Пока виден эффект, слои старой заставки Nexora не нужны: кристалл-SVG и зелёное свечение под ним
    (--hero-shade) легли бы на фотографию зелёными пятнами */
-[data-theme="nexora"] .hero.has-liquid::before,
-[data-theme="nexora"] .hero.has-liquid::after { opacity: 0; }
+[data-mode="light"] .hero.has-liquid::before,
+[data-mode="light"] .hero.has-liquid::after { opacity: 0; }
 .hero::before, .hero::after { transition: opacity .9s var(--ease-soft); }
 
 /* Логотип: картинка и поверх неё канвас с бликами; оба с одной раскладкой */
@@ -674,6 +958,7 @@ html.lenis, html.lenis body { height: auto; }
 .pick[data-status="servicing"] .icon-tile { --tone: var(--orange-rgb); }
 .pick[data-status="missing"] .icon-tile { --tone: var(--red-rgb); }
 .pick > .pill { flex: none; margin-left: auto; }
+.pill--available { --tone: var(--ok-rgb); }
 .pill--issued { --tone: var(--violet-rgb); }
 .pill--servicing { --tone: var(--orange-rgb); }
 .pill--missing { --tone: var(--red-rgb); }
@@ -907,71 +1192,71 @@ label.pick { cursor: pointer; }
 .op-head > .field { flex: 1 1 210px; min-width: 0; }
 .op-badge { align-self: center; }
 .op-badge.icon-tile .icon { width: 30px; height: 30px; }
-[data-theme="nexora"] .op-tab { padding: 10px 18px; font-size: 15px; }
-[data-theme="nexora"] .panel.op-head.panel { border-left: 8px solid rgb(var(--op-tone, var(--accent-rgb))); padding-left: 20px; }   /* полоса цвета операции; вес выше общего правила рамок */
-[data-theme="nexora"] .op-head:has(.tone-blue) { --op-tone: var(--blue-rgb); }
-[data-theme="nexora"] .op-head:has(.tone-violet) { --op-tone: var(--violet-rgb); }
-[data-theme="nexora"] .op-head:has(.tone-orange) { --op-tone: var(--orange-rgb); }
-[data-theme="nexora"] .op-head:has(.tone-red) { --op-tone: var(--red-rgb); }
-[data-theme="nexora"] .op-head:has(.tone-writeoff) { --op-tone: var(--writeoff-rgb); }
-[data-theme="nexora"] .field label { color: var(--text); font-weight: 600; }
+[data-mode="light"] .op-tab { padding: 10px 18px; font-size: 15px; }
+[data-mode="light"] .panel.op-head.panel { border-left: 8px solid rgb(var(--op-tone, var(--accent-rgb))); padding-left: 20px; }   /* полоса цвета операции; вес выше общего правила рамок */
+[data-mode="light"] .op-head:has(.tone-blue) { --op-tone: var(--blue-rgb); }
+[data-mode="light"] .op-head:has(.tone-violet) { --op-tone: var(--violet-rgb); }
+[data-mode="light"] .op-head:has(.tone-orange) { --op-tone: var(--orange-rgb); }
+[data-mode="light"] .op-head:has(.tone-red) { --op-tone: var(--red-rgb); }
+[data-mode="light"] .op-head:has(.tone-writeoff) { --op-tone: var(--writeoff-rgb); }
+[data-mode="light"] .field label { color: var(--text); font-weight: 600; }
 
 /* ---------- Светлая тема (Nexora): чёткие цвета, лайм на заливках и наведении ----------
    Мягкое свечение, бегущие блики и полупрозрачные лаймовые подложки рассчитаны на тёмный фон:
    на белом это мутные пятна. Здесь: лайм сплошной заливкой с тёмным значком или текстом, рамки и значки
    на пиксель толще, при наведении — ядовитая лаймовая рамка и ореол. Заставка (.hero) остаётся тёмной,
    правила ниже её элементов не задевают (кроме тени кнопки). */
-:root[data-theme="nexora"] {
+:root[data-mode="light"] {
   --lime-hover: 0 0 0 2px var(--accent), 0 0 18px rgb(var(--accent-rgb) / .55);   /* ореол при наведении */
   --press-shadow: 0 2px 0 rgb(var(--accent-text-rgb) / .55), 0 6px 14px rgb(20 22 28 / .16);
 }
 
 /* бегущие блики по рамкам, пятно под курсором, блики по плиткам — убраны */
-[data-theme="nexora"] .card::before, [data-theme="nexora"] .card::after,
-[data-theme="nexora"] .row::before, [data-theme="nexora"] .pick::before,
-[data-theme="nexora"] .chip::before, [data-theme="nexora"] .nav-item::before,
-[data-theme="nexora"] .icon-tile::after,
-[data-theme="nexora"] .nav-item.is-active::after, [data-theme="nexora"] .chip.is-active::after { display: none; }
+[data-mode="light"] .card::before, [data-mode="light"] .card::after,
+[data-mode="light"] .row::before, [data-mode="light"] .pick::before,
+[data-mode="light"] .chip::before, [data-mode="light"] .nav-item::before,
+[data-mode="light"] .icon-tile::after,
+[data-mode="light"] .nav-item.is-active::after, [data-mode="light"] .chip.is-active::after { display: none; }
 /* мягкое свечение значков и текста — убрано */
-[data-theme="nexora"] .glow, [data-theme="nexora"] .nav-item:hover .icon,
-[data-theme="nexora"] .dd-caret, [data-theme="nexora"] .dd-opt[aria-selected="true"] .icon,
-[data-theme="nexora"] .qty-btn .icon, [data-theme="nexora"] .qty-btn:hover .icon { filter: none; }
-[data-theme="nexora"] .cat-title, [data-theme="nexora"] .cat-title:hover, [data-theme="nexora"] .qty input { text-shadow: none; }
-[data-theme="nexora"] .stat .icon-tile .icon,
-[data-theme="nexora"] .stat:hover .icon-tile .icon { animation: float 5s ease-in-out infinite; }
-[data-theme="nexora"] .pill::before { box-shadow: none; }
+[data-mode="light"] .glow, [data-mode="light"] .nav-item:hover .icon,
+[data-mode="light"] .dd-caret, [data-mode="light"] .dd-opt[aria-selected="true"] .icon,
+[data-mode="light"] .qty-btn .icon, [data-mode="light"] .qty-btn:hover .icon { filter: none; }
+[data-mode="light"] .cat-title, [data-mode="light"] .cat-title:hover, [data-mode="light"] .qty input { text-shadow: none; }
+[data-mode="light"] .stat .icon-tile .icon,
+[data-mode="light"] .stat:hover .icon-tile .icon { animation: float 5s ease-in-out infinite; }
+[data-mode="light"] .pill::before { box-shadow: none; }
 
 /* значки и рамки на пиксель толще */
-[data-theme="nexora"] .icon { stroke-width: 2.6; }
-[data-theme="nexora"] :is(.card, .panel, .btn-ghost, .icon-btn, .sidebar, .nav-item, .user-chip, .search, .kbd, .row, .btn-cancel,
+[data-mode="light"] .icon { stroke-width: 2.6; }
+[data-mode="light"] :is(.card, .panel, .btn-ghost, .icon-btn, .sidebar, .nav-item, .user-chip, .search, .kbd, .row, .btn-cancel,
   .chip, .dd-btn, .dd-panel, .pick, .pill, .cat-title span, .item-photo, .toast, .form-error, .photo-card):not(.hero, .hero *) { border-width: 2px; }
-[data-theme="nexora"] :is(input[type="text"], input[type="password"], input[type="search"], input[type="number"], select, textarea):not(.search input):not(.qty input) { border-width: 2px; }
-[data-theme="nexora"] .pick-check { border-width: 2.5px; }
+[data-mode="light"] :is(input[type="text"], input[type="password"], input[type="search"], input[type="number"], select, textarea):not(.search input):not(.qty input) { border-width: 2px; }
+[data-mode="light"] .pick-check { border-width: 2.5px; }
 
 /* наведение: ядовитая лаймовая рамка и ореол */
-[data-theme="nexora"] .card:hover, [data-theme="nexora"] .card:focus-within {
+[data-mode="light"] .card:hover, [data-mode="light"] .card:focus-within {
   border-color: var(--accent); box-shadow: var(--lime-hover), var(--shadow-lift);
 }
-[data-theme="nexora"] .row:hover, [data-theme="nexora"] .pick:hover {
+[data-mode="light"] .row:hover, [data-mode="light"] .pick:hover {
   border-color: var(--accent); background: rgb(var(--accent-rgb) / .12); box-shadow: var(--lime-hover);
 }
-[data-theme="nexora"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn, .user-chip, .search, .dd-btn):hover,
-[data-theme="nexora"] :is(input, select, textarea):not(.search input):not(.qty input):hover {
+[data-mode="light"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn, .user-chip, .search, .dd-btn):hover,
+[data-mode="light"] :is(input, select, textarea):not(.search input):not(.qty input):hover {
   border-color: var(--accent); box-shadow: var(--lime-hover);
 }
-[data-theme="nexora"] .search:focus-within, [data-theme="nexora"] :is(input, select, textarea):not(.search input):not(.qty input):focus,
-[data-theme="nexora"] .dd.is-open .dd-btn { border-color: var(--accent); box-shadow: var(--lime-hover); }
-[data-theme="nexora"] .nav-item:not(.is-active):hover { border-color: var(--accent); background: rgb(var(--accent-rgb) / .16); box-shadow: var(--lime-hover); }
-[data-theme="nexora"] .icon-btn:hover, [data-theme="nexora"] .search:focus-within { color: var(--accent-text); }
+[data-mode="light"] .search:focus-within, [data-mode="light"] :is(input, select, textarea):not(.search input):not(.qty input):focus,
+[data-mode="light"] .dd.is-open .dd-btn { border-color: var(--accent); box-shadow: var(--lime-hover); }
+[data-mode="light"] .nav-item:not(.is-active):hover { border-color: var(--accent); background: rgb(var(--accent-rgb) / .16); box-shadow: var(--lime-hover); }
+[data-mode="light"] .icon-btn:hover, [data-mode="light"] .search:focus-within { color: var(--accent-text); }
 
 /* Плитки значков в 3D: выпуклая белая «кнопка» (свет сверху-слева, тень снизу), рамка и бортик цвета значка,
    значок выдавлен (светлый край сверху, цветная грань снизу). Свет и наклон идут за курсором (--px, --py из app.js).
    При наведении плитка поворачивается к курсору и светится цветом значка. */
-[data-theme="nexora"] .icon-tile {
+[data-mode="light"] .icon-tile {
   --tone: var(--accent-text-rgb);
   --tone-glow: var(--accent-rgb);    /* цвет свечения: у зелёного — ядовитый лайм, у остальных — сам тон */
   color: rgb(var(--tone));
-  background: radial-gradient(circle at calc(35% + var(--px, 0) * 25%) calc(25% + var(--py, 0) * 25%), #fff 0, #fff 28%, #e7eaef 78%, #d6dae1 100%);
+  background: radial-gradient(circle at calc(35% + var(--px, 0) * 25%) calc(25% + var(--py, 0) * 25%), var(--card-bg-solid) 0, var(--card-bg-solid) 28%, color-mix(in srgb, var(--card-bg-solid) 91%, var(--text)) 78%, color-mix(in srgb, var(--card-bg-solid) 84%, var(--text)) 100%);
   border: 2px solid rgb(var(--tone));
   /* только объём кнопки: блик сверху, лёгкая тень снизу внутри, бортик и тень снаружи; без цветного свечения внутри */
   box-shadow:
@@ -982,22 +1267,22 @@ label.pick { cursor: pointer; }
   transform: perspective(260px) rotateX(calc(var(--py, 0) * -10deg)) rotateY(calc(var(--px, 0) * 10deg));
   transition: transform .35s var(--ease-soft), box-shadow .45s var(--ease-soft);
 }
-[data-theme="nexora"] .icon-tile .icon {
+[data-mode="light"] .icon-tile .icon {
   stroke-width: 2.6;
   filter: drop-shadow(0 -1px 0 rgb(255 255 255 / .95)) drop-shadow(1px 1.5px 0 rgb(var(--tone) / .3));   /* выдавленный значок */
   transition: filter .45s var(--ease-soft);
 }
-[data-theme="nexora"] .icon-tile.tone-violet { --tone: var(--violet-rgb); --tone-glow: var(--violet-rgb); }
-[data-theme="nexora"] .icon-tile.tone-orange { --tone: var(--orange-rgb); --tone-glow: var(--orange-rgb); }
-[data-theme="nexora"] .icon-tile.tone-blue { --tone: var(--blue-rgb); --tone-glow: var(--blue-rgb); }
-[data-theme="nexora"] .icon-tile.tone-red { --tone: var(--red-rgb); --tone-glow: var(--red-rgb); }
-[data-theme="nexora"] .icon-tile.tone-writeoff { --tone: var(--writeoff-rgb); --tone-glow: var(--writeoff-rgb); }
-[data-theme="nexora"] .icon-tile.tone-grey { --tone: 96 102 112; --tone-glow: 96 102 112; }
-[data-theme="nexora"] :is(.item, .pick)[data-status="servicing"] .icon-tile { --tone: var(--orange-rgb); --tone-glow: var(--orange-rgb); }
-[data-theme="nexora"] :is(.item, .pick)[data-status="missing"] .icon-tile { --tone: var(--red-rgb); --tone-glow: var(--red-rgb); }
-[data-theme="nexora"] :is(.item, .pick)[data-status="issued"] .icon-tile { --tone: var(--violet-rgb); --tone-glow: var(--violet-rgb); }
-[data-theme="nexora"] :is(.item, .pick)[data-status="written_off"] .icon-tile { --tone: 96 102 112; --tone-glow: 96 102 112; }
-[data-theme="nexora"] :is(.stat, .item, .row, .pick, .op-head):hover .icon-tile {
+[data-mode="light"] .icon-tile.tone-violet { --tone: var(--violet-rgb); --tone-glow: var(--violet-rgb); }
+[data-mode="light"] .icon-tile.tone-orange { --tone: var(--orange-rgb); --tone-glow: var(--orange-rgb); }
+[data-mode="light"] .icon-tile.tone-blue { --tone: var(--blue-rgb); --tone-glow: var(--blue-rgb); }
+[data-mode="light"] .icon-tile.tone-red { --tone: var(--red-rgb); --tone-glow: var(--red-rgb); }
+[data-mode="light"] .icon-tile.tone-writeoff { --tone: var(--writeoff-rgb); --tone-glow: var(--writeoff-rgb); }
+[data-mode="light"] .icon-tile.tone-grey { --tone: 96 102 112; --tone-glow: 96 102 112; }
+[data-mode="light"] :is(.item, .pick)[data-status="servicing"] .icon-tile { --tone: var(--orange-rgb); --tone-glow: var(--orange-rgb); }
+[data-mode="light"] :is(.item, .pick)[data-status="missing"] .icon-tile { --tone: var(--red-rgb); --tone-glow: var(--red-rgb); }
+[data-mode="light"] :is(.item, .pick)[data-status="issued"] .icon-tile { --tone: var(--violet-rgb); --tone-glow: var(--violet-rgb); }
+[data-mode="light"] :is(.item, .pick)[data-status="written_off"] .icon-tile { --tone: 96 102 112; --tone-glow: 96 102 112; }
+[data-mode="light"] :is(.stat, .item, .row, .pick, .op-head):hover .icon-tile {
   transform: perspective(260px) rotateX(calc(var(--py, 0) * -18deg)) rotateY(calc(var(--px, 0) * 18deg)) scale(1.08);
   /* плитка остаётся белой выпуклой кнопкой, светится только снаружи */
   box-shadow:
@@ -1008,89 +1293,89 @@ label.pick { cursor: pointer; }
     0 0 18px rgb(var(--tone-glow) / .6),
     calc(var(--px, 0) * -6px + 3px) 9px 14px rgb(20 24 32 / .26);
 }
-[data-theme="nexora"] :is(.stat, .item, .row, .pick, .op-head):hover .icon-tile .icon {
+[data-mode="light"] :is(.stat, .item, .row, .pick, .op-head):hover .icon-tile .icon {
   filter: drop-shadow(0 -1px 0 rgb(255 255 255 / .95)) drop-shadow(0 0 2px rgb(var(--tone-glow) / .9));   /* значок чуть светится своим цветом, без тёмного ореола */
 }
 
 /* плашки статусов: «на складе» — лаймовая, остальные — цветная рамка и текст */
-[data-theme="nexora"] .pill { background: rgb(var(--tone) / .1); border-color: rgb(var(--tone)); }
-[data-theme="nexora"] .pill:not([class*="pill--"]), [data-theme="nexora"] .pill--available {
-  background: var(--accent); border-color: rgb(var(--accent-text-rgb) / .6); color: var(--accent-ink);
+[data-mode="light"] .pill { background: rgb(var(--tone) / .1); border-color: rgb(var(--tone)); }
+[data-mode="light"] .pill:not([class*="pill--"]), [data-mode="light"] .pill--available {
+  background: rgb(var(--ok-fill-rgb)); border-color: rgb(var(--accent-deep-rgb) / .5); color: var(--ok-ink);
 }
 
 /* «Парк в строю»: кольцо и значок ядовитые */
 /* «Парк в строю»: вид как в тёмной теме (тонкое кольцо со свечением и галочка), цвет — ядовитый лайм.
    Тонкая тёмно-зелёная обводка, чтобы лайм не терялся на белом */
-[data-theme="nexora"] .ring-bg { stroke: rgb(var(--ink-rgb) / .14); }
-[data-theme="nexora"] .ring-fg { stroke: var(--accent); filter: drop-shadow(0 0 1px rgb(var(--accent-text-rgb))) drop-shadow(0 0 5px rgb(var(--accent-rgb) / .9)); }
-[data-theme="nexora"] .ring-icon { color: var(--accent); }
-[data-theme="nexora"] .ring-icon .icon { filter: drop-shadow(0 0 1px rgb(var(--accent-text-rgb))) drop-shadow(0 0 4px rgb(var(--accent-rgb) / .9)); }
+[data-mode="light"] .ring-bg { stroke: rgb(var(--ink-rgb) / .14); }
+[data-mode="light"] .ring-fg { stroke: var(--accent); filter: drop-shadow(0 0 1px rgb(var(--accent-text-rgb))) drop-shadow(0 0 5px rgb(var(--accent-rgb) / .9)); }
+[data-mode="light"] .ring-icon { color: var(--accent); }
+[data-mode="light"] .ring-icon .icon { filter: drop-shadow(0 0 1px rgb(var(--accent-text-rgb))) drop-shadow(0 0 4px rgb(var(--accent-rgb) / .9)); }
 
 /* строки, поля, выбор позиций — белые, без серой полупрозрачной подложки */
 /* строки списков внутри блоков: видимая рамка (2:1, было 1.3:1) и маленькая косая тень */
-[data-theme="nexora"] .row { background: #fff; border-color: #a6acb5; box-shadow: 3px 6px 12px rgb(20 24 32 / .14), 1px 2px 3px rgb(20 24 32 / .08); }
-[data-theme="nexora"] .pick { background: #fff; border-color: #a6acb5; box-shadow: 3px 6px 12px rgb(20 24 32 / .14), 1px 2px 3px rgb(20 24 32 / .08); }
-[data-theme="nexora"] .pick.is-selected { border-color: var(--accent); background: rgb(var(--accent-rgb) / .2); }
-[data-theme="nexora"] .pick-check { border-color: #6b727d; background: #fff; }
-[data-theme="nexora"] .pick.is-selected .pick-check { border-color: rgb(var(--accent-text-rgb) / .6); box-shadow: none; }
-[data-theme="nexora"] :is(input[type="text"], input[type="password"], input[type="search"], input[type="number"], select, textarea):not(.search input):not(.qty input),
-[data-theme="nexora"] .dd-btn, [data-theme="nexora"] .search, [data-theme="nexora"] .chip { background: #fff; border-color: #a6acb5; }
-[data-theme="nexora"] .chip { color: var(--text-dim); }
+[data-mode="light"] .row { background: var(--card-bg-solid); border-color: var(--line); box-shadow: 3px 6px 12px rgb(20 24 32 / .14), 1px 2px 3px rgb(20 24 32 / .08); }
+[data-mode="light"] .pick { background: var(--card-bg-solid); border-color: var(--line); box-shadow: 3px 6px 12px rgb(20 24 32 / .14), 1px 2px 3px rgb(20 24 32 / .08); }
+[data-mode="light"] .pick.is-selected { border-color: var(--accent); background: rgb(var(--accent-rgb) / .2); }
+[data-mode="light"] .pick-check { border-color: var(--text-faint); background: var(--card-bg-solid); }
+[data-mode="light"] .pick.is-selected .pick-check { border-color: rgb(var(--accent-text-rgb) / .6); box-shadow: none; }
+[data-mode="light"] :is(input[type="text"], input[type="password"], input[type="search"], input[type="number"], select, textarea):not(.search input):not(.qty input),
+[data-mode="light"] .dd-btn, [data-mode="light"] .search, [data-mode="light"] .chip { background: var(--card-bg-solid); border-color: var(--line); }
+[data-mode="light"] .chip { color: var(--text-dim); }
 
 /* Кнопки в 3D. Главные (кнопка формы, активный пункт меню и вкладка) — выпуклый лайм с тёмным бортиком,
    остальные (вкладки, фильтры, второстепенные) — выпуклые белые с серым бортиком.
    Блик ходит за курсором (--mx, --my из app.js), при нажатии кнопка «проседает» на бортик. */
-[data-theme="nexora"] :is(.btn-primary, .nav-item.is-active, .chip.is-active):not(.hero *) {
-  color: var(--accent-ink); border: 2px solid #3f8a00;
+[data-mode="light"] :is(.btn-primary, .nav-item.is-active, .chip.is-active):not(.hero *) {
+  color: var(--accent-ink); border: 2px solid var(--accent-deep);
   background:
     radial-gradient(90px circle at var(--mx, 30%) var(--my, 0%), rgb(255 255 255 / .6), transparent 70%),
-    linear-gradient(180deg, #d2ff7a 0%, #a6ff1f 40%, #7fe000 100%);
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / .7), inset 0 -3px 0 rgb(40 100 0 / .3), 0 4px 0 #3f8a00, 4px 9px 16px rgb(20 24 32 / .28);
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 55%, #fff) 0%, color-mix(in srgb, var(--accent) 88%, #fff) 40%, color-mix(in srgb, var(--accent) 84%, #000) 100%);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / .7), inset 0 -3px 0 rgb(var(--accent-deep-rgb) / .3), 0 4px 0 var(--accent-deep), 4px 9px 16px rgb(20 24 32 / .28);
   transition: transform .2s var(--ease-soft), box-shadow .25s var(--ease-soft), filter .3s var(--ease-soft);
 }
-[data-theme="nexora"] :is(.btn-primary, .nav-item.is-active, .chip.is-active):not(.hero *):hover {
+[data-mode="light"] :is(.btn-primary, .nav-item.is-active, .chip.is-active):not(.hero *):hover {
   filter: saturate(1.15) brightness(1.04);
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / .7), inset 0 -3px 0 rgb(40 100 0 / .3), 0 4px 0 #3f8a00,
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / .7), inset 0 -3px 0 rgb(var(--accent-deep-rgb) / .3), 0 4px 0 var(--accent-deep),
               0 0 0 3px rgb(var(--accent-rgb) / .45), 0 0 24px rgb(var(--accent-rgb) / .7), 4px 11px 20px rgb(20 24 32 / .3);
 }
-[data-theme="nexora"] :is(.btn-primary, .chip, .btn-ghost, .icon-btn):not(.hero *):active {
+[data-mode="light"] :is(.btn-primary, .chip, .btn-ghost, .icon-btn):not(.hero *):active {
   transform: translateY(3px);
 }
-[data-theme="nexora"] .btn-primary:not(.hero *):active { box-shadow: inset 0 2px 0 rgb(255 255 255 / .6), inset 0 -2px 0 rgb(40 100 0 / .3), 0 1px 0 #3f8a00, 2px 4px 8px rgb(20 24 32 / .25); }
-[data-theme="nexora"] .btn-primary::after { display: none; }      /* бегущий блик заменён бликом за курсором */
-[data-theme="nexora"] .btn-primary:disabled { filter: grayscale(.6); opacity: .55; }
+[data-mode="light"] .btn-primary:not(.hero *):active { box-shadow: inset 0 2px 0 rgb(255 255 255 / .6), inset 0 -2px 0 rgb(var(--accent-deep-rgb) / .3), 0 1px 0 var(--accent-deep), 2px 4px 8px rgb(20 24 32 / .25); }
+[data-mode="light"] .btn-primary::after { display: none; }      /* бегущий блик заменён бликом за курсором */
+[data-mode="light"] .btn-primary:disabled { filter: grayscale(.6); opacity: .55; }
 
-[data-theme="nexora"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn) {
-  color: var(--text); border: 2px solid #9aa1ab;
+[data-mode="light"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn) {
+  color: var(--text); border: 2px solid var(--card-border);
   background:
     radial-gradient(80px circle at var(--mx, 30%) var(--my, 0%), rgb(var(--accent-rgb) / 0), transparent 70%),
-    linear-gradient(180deg, #ffffff 0%, #f1f3f6 60%, #e2e6eb 100%);
-  box-shadow: inset 0 2px 0 #fff, inset 0 -3px 0 rgb(20 24 32 / .07), 0 3px 0 #a3a9b2, 3px 7px 12px rgb(20 24 32 / .18);
+    linear-gradient(180deg, var(--card-bg-solid) 0%, color-mix(in srgb, var(--card-bg-solid) 96%, var(--text)) 60%, color-mix(in srgb, var(--card-bg-solid) 90%, var(--text)) 100%);
+  box-shadow: inset 0 2px 0 #fff, inset 0 -3px 0 rgb(20 24 32 / .07), 0 3px 0 var(--card-border), 3px 7px 12px rgb(20 24 32 / .18);
   transition: transform .2s var(--ease-soft), box-shadow .25s var(--ease-soft), border-color .25s var(--ease-soft);
 }
-[data-theme="nexora"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn):hover {
+[data-mode="light"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn):hover {
   transform: translateY(-2px); border-color: var(--accent);
   background:
     radial-gradient(80px circle at var(--mx, 30%) var(--my, 0%), rgb(var(--accent-rgb) / .45), transparent 70%),
-    linear-gradient(180deg, #ffffff 0%, #f1f3f6 60%, #e2e6eb 100%);
-  box-shadow: inset 0 2px 0 #fff, 0 3px 0 #6fc400, 0 0 0 2px rgb(var(--accent-rgb) / .5), 0 0 18px rgb(var(--accent-rgb) / .55), 3px 9px 16px rgb(20 24 32 / .22);
+    linear-gradient(180deg, var(--card-bg-solid) 0%, color-mix(in srgb, var(--card-bg-solid) 96%, var(--text)) 60%, color-mix(in srgb, var(--card-bg-solid) 90%, var(--text)) 100%);
+  box-shadow: inset 0 2px 0 #fff, 0 3px 0 var(--accent-deep), 0 0 0 2px rgb(var(--accent-rgb) / .5), 0 0 18px rgb(var(--accent-rgb) / .55), 3px 9px 16px rgb(20 24 32 / .22);
 }
-[data-theme="nexora"] .nav-item.is-active:hover { transform: translateX(3px); }
+[data-mode="light"] .nav-item.is-active:hover { transform: translateX(3px); }
 
 /* заголовки категорий: счётчик — лаймовая плашка, стрелка на лайме */
-[data-theme="nexora"] .cat-title span { background: var(--accent); border-color: rgb(var(--accent-text-rgb) / .5); color: var(--accent-ink); }
-[data-theme="nexora"] .cat-title .chev { color: var(--accent-ink); background: var(--accent); border-radius: 50%; padding: 3px; }
+[data-mode="light"] .cat-title span { background: var(--accent); border-color: rgb(var(--accent-text-rgb) / .5); color: var(--accent-ink); }
+[data-mode="light"] .cat-title .chev { color: var(--accent-ink); background: var(--accent); border-radius: 50%; padding: 3px; }
 
 /* счётчики, фото, количество, выпадающие списки, сообщения */
-[data-theme="nexora"] .meter { height: 10px; background: rgb(var(--ink-rgb) / .12); }
-[data-theme="nexora"] .meter i { background: var(--accent); box-shadow: inset 0 0 0 1.5px rgb(var(--accent-text-rgb) / .5); }
-[data-theme="nexora"] .item-photo, [data-theme="nexora"] .item:hover .item-photo { border-color: rgb(var(--ink-rgb) / .2); box-shadow: var(--card-shadow); }
-[data-theme="nexora"] .qty input::placeholder { color: rgb(var(--accent-text-rgb) / .45); }
-[data-theme="nexora"] .dd-panel { border-color: var(--accent); box-shadow: var(--lime-hover), var(--shadow-pop); }
-[data-theme="nexora"] .dd-opt.is-active { background: rgb(var(--accent-rgb) / .22); box-shadow: inset 0 0 0 2px var(--accent); }
-[data-theme="nexora"] .toast { box-shadow: var(--shadow-pop); }
-[data-theme="nexora"] .toast-icon, [data-theme="nexora"] .toast::after { box-shadow: none; }
-[data-theme="nexora"] .btn-cancel:hover { box-shadow: none; }
+[data-mode="light"] .meter { height: 10px; background: rgb(var(--ink-rgb) / .12); }
+[data-mode="light"] .meter i { background: var(--accent); box-shadow: inset 0 0 0 1.5px rgb(var(--accent-text-rgb) / .5); }
+[data-mode="light"] .item-photo, [data-mode="light"] .item:hover .item-photo { border-color: rgb(var(--ink-rgb) / .2); box-shadow: var(--card-shadow); }
+[data-mode="light"] .qty input::placeholder { color: rgb(var(--accent-text-rgb) / .45); }
+[data-mode="light"] .dd-panel { border-color: var(--accent); box-shadow: var(--lime-hover), var(--shadow-pop); }
+[data-mode="light"] .dd-opt.is-active { background: rgb(var(--accent-rgb) / .22); box-shadow: inset 0 0 0 2px var(--accent); }
+[data-mode="light"] .toast { box-shadow: var(--shadow-pop); }
+[data-mode="light"] .toast-icon, [data-mode="light"] .toast::after { box-shadow: none; }
+[data-mode="light"] .btn-cancel:hover { box-shadow: none; }
 
 /* ---------- 5. Адаптивность ---------- */
 .scrim { display: none; }
@@ -1105,7 +1390,7 @@ label.pick { cursor: pointer; }
   /* Гора видна целиком: лёгкое затемнение сверху и снизу вместо сплошной заливки,
      а читаемость текста держат тени и размытое пятно прямо под ним (.hero-mid::before) */
   .liquid::after { background: none; }   /* в узком блоке текст поверх всего фото: читаемость дают пятно под текстом и тени, фото без затемнения */
-  [data-theme="summit"] .hero::after { background: linear-gradient(180deg, rgb(5 7 10 / .35) 0%, rgb(5 7 10 / .1) 45%, rgb(5 7 10 / .55) 100%); }
+  [data-mode="dark"] .hero::after { background: linear-gradient(180deg, rgb(5 7 10 / .35) 0%, rgb(5 7 10 / .1) 45%, rgb(5 7 10 / .55) 100%); }
   .hero-mid { isolation: isolate; }
   .hero-mid::before {
     content: ""; position: absolute; z-index: -1; inset: -18px -26px; border-radius: 40px; pointer-events: none;

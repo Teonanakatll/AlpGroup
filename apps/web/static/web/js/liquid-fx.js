@@ -1,4 +1,4 @@
-/* Заставка темы Nexora: «жидкая» картинка с RGB-расслоением и помехами (WebGL, без библиотек).
+/* Заставка светлых тем (Nexora и других светлых): «жидкая» картинка с RGB-расслоением и помехами (WebGL, без библиотек).
    Повторяет эффект rgbKineticSlider (PixiJS + GSAP, ~600 КБ) одним шейдером, с теми же коэффициентами:
    - мышь без нажатия: картинка у курсора тянется за ним (радиальная линза), а вся картинка чуть
      проскальзывает вслед за мышью и пружинит обратно (по обеим осям);
@@ -304,9 +304,9 @@
     if (!raf && visible && onScreen && !document.hidden) raf = requestAnimationFrame(frame);
   }
 
-  /* ---------- запуск только в теме Nexora ---------- */
+  /* ---------- запуск только в светлых темах (data-mode="light") ---------- */
   function themeChanged() {
-    var want = root.dataset.theme === "nexora" && root.dataset.motion !== "reduced";
+    var want = root.dataset.mode === "light" && root.dataset.motion !== "reduced";   // заставка с фото у всех светлых тем
     if (want && !started) { start(); return; }
     var was = visible;
     visible = want && textures.length > 0;              // рисуем, только когда картинки уже в видеокарте
@@ -325,7 +325,7 @@
     }).catch(function () { /* картинка не загрузилась: остаётся обычный фон темы */ });
   }
 
-  new MutationObserver(themeChanged).observe(root, { attributes: true, attributeFilter: ["data-theme", "data-motion"] });
+  new MutationObserver(themeChanged).observe(root, { attributes: true, attributeFilter: ["data-theme", "data-mode", "data-motion"] });
   window.addEventListener("resize", function () { if (textures.length) { resize(); kick(); } });
   document.addEventListener("visibilitychange", kick);
   if ("IntersectionObserver" in window) {
