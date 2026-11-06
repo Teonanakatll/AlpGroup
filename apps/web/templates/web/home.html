@@ -11,9 +11,10 @@
       {# То же фото в WebGL: под курсором вода и RGB-сдвиг (scene-fx.js). Нет WebGL: остаётся картинка выше #}
       <canvas class="layer layer-fx" data-depth="0.5" width="1024" height="1536"></canvas>
     </div>
-    {# Тема Nexora: «жидкая» картинка на весь блок (liquid-fx.js). Картинки любые, несколько — через «|», клик переключает.
+    {% comment %} Тема Nexora: «жидкая» картинка на весь блок (liquid-fx.js). Картинки любые, несколько — через «|», клик переключает.
        data-images-narrow — свой набор для узкого вертикального блока (телефон).
-       Нет WebGL или «меньше движения»: вместо неё кристалл темы #}
+       Нет WebGL или «меньше движения»: вместо неё кристалл темы
+    {% endcomment %}
     <div class="liquid" aria-hidden="true">
       <canvas class="liquid-fx"
               data-images="{% static 'web/img/hero/nexora-fjord.webp' %}|{% static 'web/img/hero/nexora-mountains.webp' %}"
