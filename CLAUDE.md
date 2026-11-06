@@ -31,8 +31,16 @@ Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .e
 3. `python manage.py migrate`, `python manage.py createsuperuser`.
 4. `python manage.py runserver`, сайт на http://127.0.0.1:8000/ (вход тем же логином, что в админке), админка на /admin/, API на /api/.
 5. Тесты: `pytest`.
-6. Деплой на сервер (Docker, Caddy, бэкапы): docs/DEPLOY.md; пошагово с нуля на Hetzner с Windows: docs/SERVER.md (тестовый стенд: Hetzner CX23, адрес через sslip.io). Показ тестового стенда без входа: DEMO_USER=гость в .env (docs/DEPLOY.md, раздел 7).
+6. Деплой на сервер (Docker, Caddy, бэкапы): docs/DEPLOY.md; пошагово с нуля на Hetzner с Windows: docs/SERVER.md (тестовый стенд: Hetzner CX23, Helsinki). Показ тестового стенда без входа: DEMO_USER=гость в .env (docs/DEPLOY.md, раздел 7).
 7. Тестовые данные (45 штучных и 35 ручных позиций, из них снаряжение: 20 штучных и 10 количественных): `python manage.py seed_demo` (повторный запуск ничего не дублирует).
+
+## Окружение и как работаем
+- Владелец: Windows, командная строка cmd; живёт в Батуми (Грузия). Отвечать по-русски.
+- Ветки: Claude делает `claude/<тема>` от свежего main и пушит; владелец сам мержит, гоняет `pytest` у себя и пушит main. Шпаргалка владельца: docs/tips.md.
+- У Claude в облачной сессии PyPI закрыт: зависимости не ставятся, pytest и сайт не запускаются. Тесты проверяет владелец; в ответе честно писать, что не запускалось.
+- Тестовый стенд: https://alpgroup.ezolab.dev (Hetzner CX23, Helsinki, IP 135.181.195.12, Ubuntu 24.04, Docker Compose из репозитория, `.env` только на сервере). Домен ezolab.dev куплен в Cloudflare, A-запись в режиме DNS only, сертификат выпускает Caddy. База стенда тестовая (seed_demo).
+- Обновить стенд после мержа (на сервере): `cd ~/alpgroup && git pull && docker compose up -d --build`.
+- Боевого сервера пока нет; когда будет, отдельным сервером с чистой базой (DEPLOY.md, раздел 5).
 
 ## Текущее состояние
 Сделано:
