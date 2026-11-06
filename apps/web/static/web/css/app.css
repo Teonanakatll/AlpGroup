@@ -558,7 +558,9 @@ html.lenis, html.lenis body { height: auto; }
   display: flex; align-items: baseline; gap: 14px; margin-top: 8px;
   font-size: clamp(22px, 2.4vw, 32px); font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
   color: var(--accent); text-shadow: 0 0 24px rgb(var(--accent-rgb) / .35);
+  min-width: 0; overflow-wrap: anywhere;      /* длинное название категории переносится, а не уводит стрелку за край */
 }
+.cat-title span, .cat-title .chev { flex: none; }
 .cat-title span { font-size: clamp(18px, 1.8vw, 24px); font-weight: 700; letter-spacing: 0; color: var(--text); text-shadow: none; padding: 2px 12px; border-radius: 99px; background: rgb(var(--accent-rgb) / .14); border: 1px solid rgb(var(--accent-rgb) / .4); }
 .section-title { display: flex; align-items: baseline; gap: 10px; font-size: 18px; font-weight: 600; }
 .section-title span { font-size: 13px; font-weight: 500; color: var(--text-dim); }
@@ -819,10 +821,10 @@ label.pick { cursor: pointer; }
 .scrim { display: none; }
 @media (max-width: 1180px) {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .cols { grid-template-columns: 1fr; }
+  .cols { grid-template-columns: minmax(0, 1fr); }   /* просто 1fr растягивается по самой длинной строке и даёт горизонтальный скролл */
 }
 @media (max-width: 900px) {
-  .shell { grid-template-columns: 1fr; padding: 14px; gap: 16px; }
+  .shell { grid-template-columns: minmax(0, 1fr); padding: 14px; gap: 16px; }
   .burger { display: grid; }
   .sidebar {
     position: fixed; z-index: 60; left: 12px; top: 12px; bottom: 12px; height: auto; width: min(290px, calc(100vw - 24px));
@@ -832,18 +834,54 @@ label.pick { cursor: pointer; }
   .nav-open .sidebar { transform: none; }
   .nav-open .scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgb(0 0 0 / .6); animation: reveal .3s ease both; }
   .hero { padding: 26px 22px; min-height: 380px; }
-  .scene { width: 100%; opacity: .72; -webkit-mask-image: none; mask-image: none; }
+  .scene { width: 100%; -webkit-mask-image: none; mask-image: none; }
   .logo3d-hero { position: static; order: -1; align-self: flex-start; width: min(240px, 66%); margin-bottom: 4px; }   /* на телефоне логотип над текстом, а не поверх него */
-  .hero::after { background: linear-gradient(90deg, rgb(5 7 10 / .95) 0%, rgb(5 7 10 / .7) 100%); }
+  /* Гора видна целиком: лёгкое затемнение сверху и снизу вместо сплошной заливки,
+     а читаемость текста держат тени и размытое пятно прямо под ним (.hero-mid::before) */
+  .hero::after { background: linear-gradient(180deg, rgb(5 7 10 / .35) 0%, rgb(5 7 10 / .1) 45%, rgb(5 7 10 / .55) 100%); }
+  .hero-mid { isolation: isolate; }
+  .hero-mid::before {
+    content: ""; position: absolute; z-index: -1; inset: -18px -26px; border-radius: 40px; pointer-events: none;
+    background: radial-gradient(closest-side, rgb(5 7 10 / .55), rgb(5 7 10 / .25) 70%, transparent);
+    filter: blur(14px);
+  }
+  .hero h1 { text-shadow: 0 1px 2px rgb(0 0 0 / .7), 0 4px 22px rgb(0 0 0 / .65); }
+  .hero h1 .accent-text { text-shadow: none; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .6)) drop-shadow(0 3px 12px rgb(0 0 0 / .55)); }   /* у текста с градиентом text-shadow лёг бы поверх букв */
+  .hero p { color: #dfe6dc; text-shadow: 0 1px 2px rgb(0 0 0 / .85), 0 2px 14px rgb(0 0 0 / .7); }
+  .hero .eyebrow { background: rgb(8 12 8 / .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .hero .btn-primary { box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / .55), 0 8px 26px rgb(0 0 0 / .5); }
   :root { --card-blur: 8px; }        /* слабым телефонам тяжело большое размытие */
 }
 @media (max-width: 700px) {
-  .item { flex-wrap: wrap; gap: 12px 14px; }
-  .item-meter { order: 3; width: 100%; }
+  /* Компактные строки: меньше отступы и иконки, название максимум в две строки,
+     чтобы на экран телефона влезало больше позиций */
+  .item { flex-wrap: wrap; gap: 6px 12px; padding: 10px 12px; border-radius: var(--radius-md); }
+  .item .icon-tile, .item-photo { width: 38px; height: 38px; border-radius: 12px; }
+  .item .icon-tile .icon { width: 19px; height: 19px; }
   .item-main { flex: 1 1 0; }
-  .item-extra { order: 2; flex: 1 1 100%; }
-  .item > .pill { min-width: 0; }
-  .item-name, .item-meta { white-space: normal; }
+  .item-name { font-size: 15px; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+  .item-meta { font-size: 12px; }
+  .item > .pill { min-width: 0; padding: 3px 9px; font-size: 11px; }
+  .item-extra { order: 2; flex: 1 1 100%; padding-left: 50px; }     /* адрес под названием, с отступом на ширину иконки */
+  .item-site { font-size: 13px; white-space: normal; align-items: flex-start; }   /* длинный адрес переносится, а не обрезается */
+  .item-site .icon { margin-top: 2px; }
+  .cat-title { font-size: clamp(17px, 5.2vw, 22px); letter-spacing: .02em; gap: 10px; }   /* «ЭЛЕКТРОИНСТРУМЕНТ» влезает в строку целиком */
+  .cat-title span { font-size: 15px; padding: 1px 10px; }
+  .cat-title .chev { width: 22px; height: 22px; }
+  .item-meter { order: 3; width: 100%; gap: 4px; }
+  .meter { height: 6px; }
+  .meter-caption { font-size: 12px; }
+
+  .rows { gap: 6px; }
+  .row { gap: 10px; padding: 8px 10px; border-radius: 14px; }
+  .row .icon-tile, .pick .icon-tile { width: 36px; height: 36px; border-radius: 12px; }
+  .row .icon-tile .icon, .pick .icon-tile .icon { width: 18px; height: 18px; }
+  .row-title { font-size: 14px; }
+  .row-sub { font-size: 12px; }
+
+  .pick-list { gap: 8px; }
+  .pick { gap: 10px; padding: 8px 12px; border-radius: 14px; }
+  .grid-items { gap: 8px; }
 }
 @media (max-width: 520px) {
   .stats { gap: 12px; }
@@ -854,6 +892,24 @@ label.pick { cursor: pointer; }
   .kbd { display: none; }
   .block { padding: 16px; }
   .row-end { display: none; }
+}
+@media (max-width: 520px) {
+  /* Журнал: кнопки отмены поменьше, вложенный список набора с меньшим отступом, чтобы осталось место под текст */
+  .entry.block { padding: 10px; }
+  .btn-cancel { padding: 5px 10px; font-size: 12px; }
+  .sub-rows { margin-left: 8px; padding-left: 8px; }
+}
+@media (max-width: 420px) {
+  /* Статус уходит строкой ниже, под название: само название получает всю ширину */
+  .item-main { flex: 1 1 calc(100% - 50px); }                          /* название на всю строку: остальное переносится ниже */
+  .item > .pill { order: 2; margin-left: 50px; }
+  .item-extra { order: 3; flex: 1 1 0; padding-left: 0; }              /* адрес рядом со статусом, в той же строке */
+  .item-meter { order: 3; flex: 1 1 0; width: auto; min-width: 0; }    /* у количественных счётчик тоже рядом со статусом */
+  .cat-title { font-size: clamp(15px, 4.9vw, 20px); letter-spacing: 0; }
+}
+@media (max-width: 360px) {
+  .item-extra { flex: 1 1 100%; padding-left: 50px; }     /* совсем узко: адрес и счётчик своей строкой */
+  .item-meter { flex: 1 1 100%; }
 }
 @media (max-width: 330px) {
   .stats { grid-template-columns: 1fr; }
