@@ -23,7 +23,7 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     # Браузер сам запрашивает /favicon.ico там, где в <head> нет иконки (например, в админке)
-    path('favicon.ico', RedirectView.as_view(url=static_url('web/img/favicon-32.png'), permanent=False)),
+    path('favicon.ico', RedirectView.as_view(url=static_url('web/img/favicon.ico'), permanent=False)),
     path('admin/', admin.site.urls),
     path('api/', include('apps.inventory.urls')),
     path('', include('apps.web.urls')),
