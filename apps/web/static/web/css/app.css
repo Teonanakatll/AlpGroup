@@ -80,23 +80,23 @@
   --accent-bright: #2a6f00;
 
   --violet-rgb: 104 46 214;          /* статусы насыщенные, на белом от 5:1 */
-  --orange-rgb: 226 0 55;            /* «в ремонте», предупреждения: ярко-алый вместо оранжевого (на белом выглядел коричневым) */
+  --orange-rgb: 232 32 0;            /* «в ремонте», предупреждения: алый (оранжево-красный, как #FF2400), 4.5:1 на белом */
   --blue-rgb: 16 88 196;
-  --red-rgb: 180 0 20;               /* «не найден», «списан»: тёмно-красный, чтобы отличался от алого */
+  --red-rgb: 170 0 25;               /* «не найден», «списан»: тёмно-красный, чтобы отличался от алого */
 
   --text: #0f1114;                   /* нейтральные серые, без зелёного оттенка: 18.9:1 */
-  --text-dim: #30343b;               /* 12.5:1 */
-  --text-faint: #59606a;             /* 6.4:1 */
+  --text-dim: #1f232a;               /* подписи и мелкий текст: 15.8:1 */
+  --text-faint: #3d434b;             /* самый бледный текст: 10:1 */
 
-  --page-bg: #e4e6ea;                /* нейтральный светло-серый, без зелени */
+  --page-bg: #cdd1d8;                /* нейтральный серый: белые карточки на нём заметно выделяются */
   --card-bg: #ffffff;
   --card-bg-solid: #ffffff;
-  --card-border: rgb(20 22 28 / .16);
+  --card-border: #8a919c;            /* рамка блоков: 3.2:1 на белом (была 1.4:1, не видна) */
   --card-blur: 0px;
-  --card-shadow: 0 1px 2px rgb(20 22 28 / .08), 0 6px 18px rgb(20 22 28 / .07);
+  --card-shadow: 5px 7px 0 rgb(20 24 32 / .14), 2px 3px 10px rgb(20 24 32 / .18);   /* косая тень вправо-вниз */
   --outline-hover: var(--accent);
   --ink-rgb: 20 22 28;
-  --shadow-lift: 0 14px 34px rgb(20 22 28 / .14);
+  --shadow-lift: 8px 11px 0 rgb(20 24 32 / .16), 3px 5px 16px rgb(20 24 32 / .22);
   --shadow-pop: 0 18px 44px rgb(20 22 28 / .18);
   --popover-bg: rgb(255 255 255 / .96);
   --option-bg: #ffffff;
@@ -911,9 +911,9 @@ label.pick { cursor: pointer; }
 [data-theme="nexora"] .icon-tile::after,
 [data-theme="nexora"] .nav-item.is-active::after, [data-theme="nexora"] .chip.is-active::after { display: none; }
 /* мягкое свечение значков и текста — убрано */
-[data-theme="nexora"] .glow, [data-theme="nexora"] .icon-tile .icon, [data-theme="nexora"] .nav-item:hover .icon,
+[data-theme="nexora"] .glow, [data-theme="nexora"] .nav-item:hover .icon,
 [data-theme="nexora"] .dd-caret, [data-theme="nexora"] .dd-opt[aria-selected="true"] .icon,
-[data-theme="nexora"] .qty-btn .icon, [data-theme="nexora"] .qty-btn:hover .icon, [data-theme="nexora"] .ring-fg { filter: none; }
+[data-theme="nexora"] .qty-btn .icon, [data-theme="nexora"] .qty-btn:hover .icon { filter: none; }
 [data-theme="nexora"] .cat-title, [data-theme="nexora"] .cat-title:hover, [data-theme="nexora"] .qty input { text-shadow: none; }
 [data-theme="nexora"] .stat .icon-tile .icon,
 [data-theme="nexora"] .stat:hover .icon-tile .icon { animation: float 5s ease-in-out infinite; }
@@ -942,19 +942,31 @@ label.pick { cursor: pointer; }
 [data-theme="nexora"] .nav-item:not(.is-active):hover { border-color: var(--accent); background: rgb(var(--accent-rgb) / .16); box-shadow: var(--lime-hover); }
 [data-theme="nexora"] .icon-btn:hover, [data-theme="nexora"] .search:focus-within { color: var(--accent-text); }
 
-/* плитки значков: по умолчанию ядовитый лайм с тёмным значком, у статусов — свой цвет */
+/* Плитки значков: белые, без бледной заливки. Чёткая рамка и внутренняя тень цвета значка.
+   По умолчанию значок тёмно-зелёный с лаймовым свечением внутри; у статусов — свой цвет.
+   При наведении значок и плитка светятся своим цветом */
 [data-theme="nexora"] .icon-tile {
-  background: rgb(var(--tone) / .16); border: 2.5px solid rgb(var(--tone)); box-shadow: none;
+  --tone: var(--accent-text-rgb);
+  --tone-glow: var(--accent-rgb);    /* цвет свечения: у зелёного — ядовитый лайм, у остальных — сам тон */
+  background: #fff; color: rgb(var(--tone)); border: 2px solid rgb(var(--tone));
+  box-shadow: inset 0 0 12px rgb(var(--tone-glow) / .55), inset 0 0 3px rgb(var(--tone-glow) / .5);
 }
-[data-theme="nexora"] .icon-tile:not(.tone-violet, .tone-orange, .tone-blue, .tone-red, .tone-grey) {
-  --tone: var(--accent-rgb);
-  background: var(--accent); border-color: rgb(var(--accent-text-rgb) / .6); color: var(--accent-ink);
+[data-theme="nexora"] .icon-tile .icon { filter: none; transition: filter .45s var(--ease-soft); }
+[data-theme="nexora"] .icon-tile.tone-violet { --tone: var(--violet-rgb); --tone-glow: var(--violet-rgb); }
+[data-theme="nexora"] .icon-tile.tone-orange { --tone: var(--orange-rgb); --tone-glow: var(--orange-rgb); }
+[data-theme="nexora"] .icon-tile.tone-blue { --tone: var(--blue-rgb); --tone-glow: var(--blue-rgb); }
+[data-theme="nexora"] .icon-tile.tone-red { --tone: var(--red-rgb); --tone-glow: var(--red-rgb); }
+[data-theme="nexora"] .icon-tile.tone-grey { --tone: 96 102 112; --tone-glow: 96 102 112; }
+[data-theme="nexora"] :is(.item, .pick)[data-status="servicing"] .icon-tile { --tone: var(--orange-rgb); --tone-glow: var(--orange-rgb); }
+[data-theme="nexora"] :is(.item, .pick)[data-status="missing"] .icon-tile { --tone: var(--red-rgb); --tone-glow: var(--red-rgb); }
+[data-theme="nexora"] :is(.item, .pick)[data-status="issued"] .icon-tile { --tone: var(--violet-rgb); --tone-glow: var(--violet-rgb); }
+[data-theme="nexora"] :is(.item, .pick)[data-status="written_off"] .icon-tile { --tone: 96 102 112; --tone-glow: 96 102 112; }
+[data-theme="nexora"] :is(.stat, .item, .row, .pick):hover .icon-tile {
+  box-shadow: inset 0 0 14px rgb(var(--tone-glow) / .7), 0 0 0 2px rgb(var(--tone-glow) / .5), 0 0 18px rgb(var(--tone-glow) / .65);
 }
-[data-theme="nexora"] :is(.item, .pick)[data-status="servicing"] .icon-tile { --tone: var(--orange-rgb); background: rgb(var(--tone) / .14); border-color: rgb(var(--tone)); color: rgb(var(--tone)); }
-[data-theme="nexora"] :is(.item, .pick)[data-status="missing"] .icon-tile { --tone: var(--red-rgb); background: rgb(var(--tone) / .14); border-color: rgb(var(--tone)); color: rgb(var(--tone)); }
-[data-theme="nexora"] :is(.item, .pick)[data-status="issued"] .icon-tile { --tone: var(--violet-rgb); background: rgb(var(--tone) / .14); border-color: rgb(var(--tone)); color: rgb(var(--tone)); }
-[data-theme="nexora"] :is(.item, .pick)[data-status="written_off"] .icon-tile { --tone: 110 116 126; background: rgb(var(--tone) / .14); border-color: rgb(var(--tone)); color: rgb(var(--tone)); }
-[data-theme="nexora"] :is(.stat, .item, .row, .pick):hover .icon-tile { box-shadow: 0 0 0 2px var(--accent), 0 0 16px rgb(var(--accent-rgb) / .6); }
+[data-theme="nexora"] :is(.stat, .item, .row, .pick):hover .icon-tile .icon {
+  filter: drop-shadow(0 0 3px rgb(var(--tone-glow))) drop-shadow(0 0 8px rgb(var(--tone-glow) / .8));
+}
 
 /* плашки статусов: «на складе» — лаймовая, остальные — цветная рамка и текст */
 [data-theme="nexora"] .pill { background: rgb(var(--tone) / .1); border-color: rgb(var(--tone)); }
@@ -963,20 +975,22 @@ label.pick { cursor: pointer; }
 }
 
 /* «Парк в строю»: кольцо и значок ядовитые */
-[data-theme="nexora"] .ring circle { stroke-width: 5.5; }
-[data-theme="nexora"] .ring-bg { stroke: rgb(var(--ink-rgb) / .12); }
-[data-theme="nexora"] .ring-fg { stroke: var(--accent); }
-[data-theme="nexora"] .ring-icon { inset: 13px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); }
-[data-theme="nexora"] .ring-icon .icon { width: 20px; height: 20px; stroke-width: 3; }
+/* «Парк в строю»: вид как в тёмной теме (тонкое кольцо со свечением и галочка), цвет — ядовитый лайм.
+   Тонкая тёмно-зелёная обводка, чтобы лайм не терялся на белом */
+[data-theme="nexora"] .ring-bg { stroke: rgb(var(--ink-rgb) / .14); }
+[data-theme="nexora"] .ring-fg { stroke: var(--accent); filter: drop-shadow(0 0 1px rgb(var(--accent-text-rgb))) drop-shadow(0 0 5px rgb(var(--accent-rgb) / .9)); }
+[data-theme="nexora"] .ring-icon { color: var(--accent); }
+[data-theme="nexora"] .ring-icon .icon { filter: drop-shadow(0 0 1px rgb(var(--accent-text-rgb))) drop-shadow(0 0 4px rgb(var(--accent-rgb) / .9)); }
 
 /* строки, поля, выбор позиций — белые, без серой полупрозрачной подложки */
-[data-theme="nexora"] .row { background: #fff; border-color: rgb(var(--ink-rgb) / .14); }
-[data-theme="nexora"] .pick { background: #fff; border-color: rgb(var(--ink-rgb) / .16); }
+/* строки списков внутри блоков: видимая рамка (2:1, было 1.3:1) и маленькая косая тень */
+[data-theme="nexora"] .row { background: #fff; border-color: #a6acb5; box-shadow: 3px 4px 0 rgb(20 24 32 / .08); }
+[data-theme="nexora"] .pick { background: #fff; border-color: #a6acb5; box-shadow: 3px 4px 0 rgb(20 24 32 / .08); }
 [data-theme="nexora"] .pick.is-selected { border-color: var(--accent); background: rgb(var(--accent-rgb) / .2); }
-[data-theme="nexora"] .pick-check { border-color: rgb(var(--ink-rgb) / .5); background: #fff; }
+[data-theme="nexora"] .pick-check { border-color: #6b727d; background: #fff; }
 [data-theme="nexora"] .pick.is-selected .pick-check { border-color: rgb(var(--accent-text-rgb) / .6); box-shadow: none; }
 [data-theme="nexora"] :is(input[type="text"], input[type="password"], input[type="search"], input[type="number"], select, textarea):not(.search input):not(.qty input),
-[data-theme="nexora"] .dd-btn, [data-theme="nexora"] .search, [data-theme="nexora"] .chip { background: #fff; border-color: rgb(var(--ink-rgb) / .2); }
+[data-theme="nexora"] .dd-btn, [data-theme="nexora"] .search, [data-theme="nexora"] .chip { background: #fff; border-color: #a6acb5; }
 [data-theme="nexora"] .chip { color: var(--text-dim); }
 
 /* меню, фильтры, кнопки: лайм сплошной заливкой с тёмным текстом */
