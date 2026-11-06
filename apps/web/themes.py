@@ -28,9 +28,7 @@ THEMES = [
     Theme("gruvdark", "Gruvbox Dark", "dark", ("#1d2021", "#282828", "#fabd2f")),
     Theme("jellyfish", "JellyFish", "dark", ("#000124", "#0b0a3c", "#ff0055")),
     Theme("justblack", "Just Black", "dark", ("#000000", "#0f111a", "#80cbc4")),
-    Theme("hacker", "Hacker", "dark", ("#000000", "#030c03", "#00ff00")),
     Theme("nexora", "Nexora", "light", ("#cdd1d8", "#ffffff", "#96ff00")),
-    Theme("onelight", "Atom One Light", "light", ("#d9d9db", "#fafafa", "#4078f2")),
     Theme("solarlight", "Solarized Light", "light", ("#eee8d5", "#fdf6e3", "#b58900")),
     Theme("gruvlight", "Gruvbox Light", "light", ("#ebdbb2", "#fbf1c7", "#d65d0e")),
 ]
