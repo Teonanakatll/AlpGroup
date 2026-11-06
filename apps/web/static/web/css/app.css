@@ -93,10 +93,10 @@
   --card-bg-solid: #ffffff;
   --card-border: #8a919c;            /* рамка блоков: 3.2:1 на белом (была 1.4:1, не видна) */
   --card-blur: 0px;
-  --card-shadow: 5px 7px 0 rgb(20 24 32 / .14), 2px 3px 10px rgb(20 24 32 / .18);   /* косая тень вправо-вниз */
+  --card-shadow: 6px 10px 22px rgb(20 24 32 / .2), 2px 3px 6px rgb(20 24 32 / .12);   /* мягкая косая тень вправо-вниз */
   --outline-hover: var(--accent);
   --ink-rgb: 20 22 28;
-  --shadow-lift: 8px 11px 0 rgb(20 24 32 / .16), 3px 5px 16px rgb(20 24 32 / .22);
+  --shadow-lift: 10px 16px 30px rgb(20 24 32 / .26), 3px 5px 10px rgb(20 24 32 / .14);
   --shadow-pop: 0 18px 44px rgb(20 22 28 / .18);
   --popover-bg: rgb(255 255 255 / .96);
   --option-bg: #ffffff;
@@ -894,6 +894,24 @@ label.pick { cursor: pointer; }
 @keyframes toast-in { from { opacity: 0; transform: translateX(40px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes toast-out { to { opacity: 0; transform: translateX(40px) scale(.96); } }
 
+/* ---------- Вкладки операций и панель формы (обе темы) ----------
+   Вкладка — кнопка с иконкой операции в её цвете; в панели формы слева знак той же операции */
+.op-tab { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.op-tab .icon { width: 18px; height: 18px; color: rgb(var(--tone, var(--accent-text-rgb))); }
+.op-tab.is-active .icon { color: inherit; }
+.op-tabs { gap: 10px 12px; }
+.op-head { display: flex; flex-wrap: wrap; align-items: flex-end; }
+.op-head > .field { flex: 1 1 210px; min-width: 0; }
+.op-badge { align-self: center; }
+.op-badge.icon-tile .icon { width: 30px; height: 30px; }
+[data-theme="nexora"] .op-tab { padding: 10px 18px; font-size: 15px; }
+[data-theme="nexora"] .panel.op-head.panel { border-left: 8px solid rgb(var(--op-tone, var(--accent-rgb))); padding-left: 20px; }   /* полоса цвета операции; вес выше общего правила рамок */
+[data-theme="nexora"] .op-head:has(.tone-blue) { --op-tone: var(--blue-rgb); }
+[data-theme="nexora"] .op-head:has(.tone-violet) { --op-tone: var(--violet-rgb); }
+[data-theme="nexora"] .op-head:has(.tone-orange) { --op-tone: var(--orange-rgb); }
+[data-theme="nexora"] .op-head:has(.tone-red) { --op-tone: var(--red-rgb); }
+[data-theme="nexora"] .field label { color: var(--text); font-weight: 600; }
+
 /* ---------- Светлая тема (Nexora): чёткие цвета, лайм на заливках и наведении ----------
    Мягкое свечение, бегущие блики и полупрозрачные лаймовые подложки рассчитаны на тёмный фон:
    на белом это мутные пятна. Здесь: лайм сплошной заливкой с тёмным значком или текстом, рамки и значки
@@ -942,16 +960,29 @@ label.pick { cursor: pointer; }
 [data-theme="nexora"] .nav-item:not(.is-active):hover { border-color: var(--accent); background: rgb(var(--accent-rgb) / .16); box-shadow: var(--lime-hover); }
 [data-theme="nexora"] .icon-btn:hover, [data-theme="nexora"] .search:focus-within { color: var(--accent-text); }
 
-/* Плитки значков: белые, без бледной заливки. Чёткая рамка и внутренняя тень цвета значка.
-   По умолчанию значок тёмно-зелёный с лаймовым свечением внутри; у статусов — свой цвет.
-   При наведении значок и плитка светятся своим цветом */
+/* Плитки значков в 3D: выпуклая белая «кнопка» (свет сверху-слева, тень снизу), рамка и бортик цвета значка,
+   значок выдавлен (светлый край сверху, цветная грань снизу). Свет и наклон идут за курсором (--px, --py из app.js).
+   При наведении плитка поворачивается к курсору и светится цветом значка. */
 [data-theme="nexora"] .icon-tile {
   --tone: var(--accent-text-rgb);
   --tone-glow: var(--accent-rgb);    /* цвет свечения: у зелёного — ядовитый лайм, у остальных — сам тон */
-  background: #fff; color: rgb(var(--tone)); border: 2px solid rgb(var(--tone));
-  box-shadow: inset 0 0 12px rgb(var(--tone-glow) / .55), inset 0 0 3px rgb(var(--tone-glow) / .5);
+  color: rgb(var(--tone));
+  background: radial-gradient(circle at calc(35% + var(--px, 0) * 25%) calc(25% + var(--py, 0) * 25%), #fff 0, #fff 28%, #e7eaef 78%, #d6dae1 100%);
+  border: 2px solid rgb(var(--tone));
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / .95),
+    inset 0 -4px 6px rgb(var(--tone) / .22),
+    inset 0 0 10px rgb(var(--tone-glow) / .35),
+    0 3px 0 rgb(var(--tone) / .7),
+    3px 7px 12px rgb(20 24 32 / .24);
+  transform: perspective(260px) rotateX(calc(var(--py, 0) * -10deg)) rotateY(calc(var(--px, 0) * 10deg));
+  transition: transform .35s var(--ease-soft), box-shadow .45s var(--ease-soft);
 }
-[data-theme="nexora"] .icon-tile .icon { filter: none; transition: filter .45s var(--ease-soft); }
+[data-theme="nexora"] .icon-tile .icon {
+  stroke-width: 2.6;
+  filter: drop-shadow(0 -1px 0 rgb(255 255 255 / .95)) drop-shadow(1px 2px 0 rgb(var(--tone) / .4));
+  transition: filter .45s var(--ease-soft);
+}
 [data-theme="nexora"] .icon-tile.tone-violet { --tone: var(--violet-rgb); --tone-glow: var(--violet-rgb); }
 [data-theme="nexora"] .icon-tile.tone-orange { --tone: var(--orange-rgb); --tone-glow: var(--orange-rgb); }
 [data-theme="nexora"] .icon-tile.tone-blue { --tone: var(--blue-rgb); --tone-glow: var(--blue-rgb); }
@@ -961,11 +992,19 @@ label.pick { cursor: pointer; }
 [data-theme="nexora"] :is(.item, .pick)[data-status="missing"] .icon-tile { --tone: var(--red-rgb); --tone-glow: var(--red-rgb); }
 [data-theme="nexora"] :is(.item, .pick)[data-status="issued"] .icon-tile { --tone: var(--violet-rgb); --tone-glow: var(--violet-rgb); }
 [data-theme="nexora"] :is(.item, .pick)[data-status="written_off"] .icon-tile { --tone: 96 102 112; --tone-glow: 96 102 112; }
-[data-theme="nexora"] :is(.stat, .item, .row, .pick):hover .icon-tile {
-  box-shadow: inset 0 0 14px rgb(var(--tone-glow) / .7), 0 0 0 2px rgb(var(--tone-glow) / .5), 0 0 18px rgb(var(--tone-glow) / .65);
+[data-theme="nexora"] :is(.stat, .item, .row, .pick, .op-head):hover .icon-tile {
+  transform: perspective(260px) rotateX(calc(var(--py, 0) * -18deg)) rotateY(calc(var(--px, 0) * 18deg)) scale(1.08);
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / .95),
+    inset 0 -4px 6px rgb(var(--tone) / .22),
+    inset 0 0 14px rgb(var(--tone-glow) / .6),
+    0 3px 0 rgb(var(--tone) / .8),
+    0 0 0 2px rgb(var(--tone-glow) / .45),
+    0 0 20px rgb(var(--tone-glow) / .7),
+    calc(var(--px, 0) * -6px + 3px) 9px 14px rgb(20 24 32 / .26);
 }
-[data-theme="nexora"] :is(.stat, .item, .row, .pick):hover .icon-tile .icon {
-  filter: drop-shadow(0 0 3px rgb(var(--tone-glow))) drop-shadow(0 0 8px rgb(var(--tone-glow) / .8));
+[data-theme="nexora"] :is(.stat, .item, .row, .pick, .op-head):hover .icon-tile .icon {
+  filter: drop-shadow(0 -1px 0 rgb(255 255 255 / .95)) drop-shadow(0 0 3px rgb(var(--tone-glow))) drop-shadow(0 0 8px rgb(var(--tone-glow) / .85));
 }
 
 /* плашки статусов: «на складе» — лаймовая, остальные — цветная рамка и текст */
@@ -984,8 +1023,8 @@ label.pick { cursor: pointer; }
 
 /* строки, поля, выбор позиций — белые, без серой полупрозрачной подложки */
 /* строки списков внутри блоков: видимая рамка (2:1, было 1.3:1) и маленькая косая тень */
-[data-theme="nexora"] .row { background: #fff; border-color: #a6acb5; box-shadow: 3px 4px 0 rgb(20 24 32 / .08); }
-[data-theme="nexora"] .pick { background: #fff; border-color: #a6acb5; box-shadow: 3px 4px 0 rgb(20 24 32 / .08); }
+[data-theme="nexora"] .row { background: #fff; border-color: #a6acb5; box-shadow: 3px 6px 12px rgb(20 24 32 / .14), 1px 2px 3px rgb(20 24 32 / .08); }
+[data-theme="nexora"] .pick { background: #fff; border-color: #a6acb5; box-shadow: 3px 6px 12px rgb(20 24 32 / .14), 1px 2px 3px rgb(20 24 32 / .08); }
 [data-theme="nexora"] .pick.is-selected { border-color: var(--accent); background: rgb(var(--accent-rgb) / .2); }
 [data-theme="nexora"] .pick-check { border-color: #6b727d; background: #fff; }
 [data-theme="nexora"] .pick.is-selected .pick-check { border-color: rgb(var(--accent-text-rgb) / .6); box-shadow: none; }
@@ -993,10 +1032,45 @@ label.pick { cursor: pointer; }
 [data-theme="nexora"] .dd-btn, [data-theme="nexora"] .search, [data-theme="nexora"] .chip { background: #fff; border-color: #a6acb5; }
 [data-theme="nexora"] .chip { color: var(--text-dim); }
 
-/* меню, фильтры, кнопки: лайм сплошной заливкой с тёмным текстом */
-[data-theme="nexora"] .nav-item.is-active, [data-theme="nexora"] .chip.is-active,
-[data-theme="nexora"] .btn-primary { border-color: rgb(var(--accent-text-rgb) / .5); box-shadow: var(--press-shadow); }
-[data-theme="nexora"] .btn-primary:hover { box-shadow: var(--lime-hover), var(--press-shadow); }
+/* Кнопки в 3D. Главные (кнопка формы, активный пункт меню и вкладка) — выпуклый лайм с тёмным бортиком,
+   остальные (вкладки, фильтры, второстепенные) — выпуклые белые с серым бортиком.
+   Блик ходит за курсором (--mx, --my из app.js), при нажатии кнопка «проседает» на бортик. */
+[data-theme="nexora"] :is(.btn-primary, .nav-item.is-active, .chip.is-active):not(.hero *) {
+  color: var(--accent-ink); border: 2px solid #3f8a00;
+  background:
+    radial-gradient(90px circle at var(--mx, 30%) var(--my, 0%), rgb(255 255 255 / .6), transparent 70%),
+    linear-gradient(180deg, #d2ff7a 0%, #a6ff1f 40%, #7fe000 100%);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / .7), inset 0 -3px 0 rgb(40 100 0 / .3), 0 4px 0 #3f8a00, 4px 9px 16px rgb(20 24 32 / .28);
+  transition: transform .2s var(--ease-soft), box-shadow .25s var(--ease-soft), filter .3s var(--ease-soft);
+}
+[data-theme="nexora"] :is(.btn-primary, .nav-item.is-active, .chip.is-active):not(.hero *):hover {
+  filter: saturate(1.15) brightness(1.04);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / .7), inset 0 -3px 0 rgb(40 100 0 / .3), 0 4px 0 #3f8a00,
+              0 0 0 3px rgb(var(--accent-rgb) / .45), 0 0 24px rgb(var(--accent-rgb) / .7), 4px 11px 20px rgb(20 24 32 / .3);
+}
+[data-theme="nexora"] :is(.btn-primary, .chip, .btn-ghost, .icon-btn):not(.hero *):active {
+  transform: translateY(3px);
+}
+[data-theme="nexora"] .btn-primary:not(.hero *):active { box-shadow: inset 0 2px 0 rgb(255 255 255 / .6), inset 0 -2px 0 rgb(40 100 0 / .3), 0 1px 0 #3f8a00, 2px 4px 8px rgb(20 24 32 / .25); }
+[data-theme="nexora"] .btn-primary::after { display: none; }      /* бегущий блик заменён бликом за курсором */
+[data-theme="nexora"] .btn-primary:disabled { filter: grayscale(.6); opacity: .55; }
+
+[data-theme="nexora"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn) {
+  color: var(--text); border: 2px solid #9aa1ab;
+  background:
+    radial-gradient(80px circle at var(--mx, 30%) var(--my, 0%), rgb(var(--accent-rgb) / 0), transparent 70%),
+    linear-gradient(180deg, #ffffff 0%, #f1f3f6 60%, #e2e6eb 100%);
+  box-shadow: inset 0 2px 0 #fff, inset 0 -3px 0 rgb(20 24 32 / .07), 0 3px 0 #a3a9b2, 3px 7px 12px rgb(20 24 32 / .18);
+  transition: transform .2s var(--ease-soft), box-shadow .25s var(--ease-soft), border-color .25s var(--ease-soft);
+}
+[data-theme="nexora"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn):hover {
+  transform: translateY(-2px); border-color: var(--accent);
+  background:
+    radial-gradient(80px circle at var(--mx, 30%) var(--my, 0%), rgb(var(--accent-rgb) / .45), transparent 70%),
+    linear-gradient(180deg, #ffffff 0%, #f1f3f6 60%, #e2e6eb 100%);
+  box-shadow: inset 0 2px 0 #fff, 0 3px 0 #6fc400, 0 0 0 2px rgb(var(--accent-rgb) / .5), 0 0 18px rgb(var(--accent-rgb) / .55), 3px 9px 16px rgb(20 24 32 / .22);
+}
+[data-theme="nexora"] .nav-item.is-active:hover { transform: translateX(3px); }
 
 /* заголовки категорий: счётчик — лаймовая плашка, стрелка на лайме */
 [data-theme="nexora"] .cat-title span { background: var(--accent); border-color: rgb(var(--accent-text-rgb) / .5); color: var(--accent-ink); }
@@ -1126,6 +1200,7 @@ label.pick { cursor: pointer; }
 }
 :root[data-motion="reduced"] .reveal { animation: none; opacity: 1; }
 :root[data-motion="reduced"] .card:hover, :root[data-motion="reduced"] .item:hover { transform: none; }
+:root[data-motion="reduced"] .icon-tile, :root[data-motion="reduced"] :is(.stat, .item, .row, .pick, .op-head):hover .icon-tile { transform: none; }
 
 /* Фото на странице позиции */
 .photo-grid { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }

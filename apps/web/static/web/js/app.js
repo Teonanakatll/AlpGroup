@@ -24,13 +24,25 @@
     setTheme(root.dataset.theme === "nexora" ? "summit" : "nexora");
   });
 
-  // ---- Подсветка под курсором ------------------------------------------
+  // ---- Свет под курсором («шейдер» на CSS) -------------------------------
+  // Одна функция на всю страницу: элементу под курсором пишем, где курсор:
+  //   --mx, --my — в пикселях от левого верхнего угла (блик, подсветка);
+  //   --px, --py — от −1 до 1 относительно центра (наклон, сторона света).
+  // Переменные наследуются, поэтому плитка значка внутри строки наклоняется вслед за курсором над строкой.
+  // Сам свет, блик и наклон рисует CSS (видеокарта), WebGL не нужен.
+  var LIT = ".card, .row, .pick, .btn, .chip, .nav-item, .icon-btn, .user-chip";
+  var lit = null;
   document.addEventListener("pointermove", function (event) {
-    var card = event.target.closest(".card");
-    if (!card) return;
-    var rect = card.getBoundingClientRect();
-    card.style.setProperty("--mx", (event.clientX - rect.left) + "px");
-    card.style.setProperty("--my", (event.clientY - rect.top) + "px");
+    var el = event.target.closest(LIT);
+    if (lit && lit !== el) { lit.style.removeProperty("--px"); lit.style.removeProperty("--py"); }   // ушли: свет к центру
+    lit = el;
+    if (!el) return;
+    var rect = el.getBoundingClientRect();
+    var x = event.clientX - rect.left, y = event.clientY - rect.top;
+    el.style.setProperty("--mx", x + "px");
+    el.style.setProperty("--my", y + "px");
+    el.style.setProperty("--px", (x / rect.width * 2 - 1).toFixed(3));
+    el.style.setProperty("--py", (y / rect.height * 2 - 1).toFixed(3));
   }, { passive: true });
 
   // ---- Плавный скролл (Lenis) -------------------------------------------
