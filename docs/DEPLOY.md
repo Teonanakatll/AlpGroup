@@ -1,29 +1,30 @@
-# Деплой на сервер (DigitalOcean + Docker)
+# Деплой на сервер (Docker Compose)
 
 Три контейнера: **db** (PostgreSQL), **web** (Django + gunicorn), **caddy** (HTTPS, статика, фото).
 Сертификат Caddy получает и продлевает сам.
 
-## 0. Что понадобится
-- Аккаунт DigitalOcean. Если карта российская и не проходит, подойдёт любой хостер с обычным Ubuntu-сервером (Hetzner, Timeweb, Selectel, Beget), дальше всё то же самое.
-- Домен **или** бесплатный адрес по IP: `203-0-113-10.sslip.io` (IP через дефисы + `.sslip.io`), для него Caddy тоже выпускает настоящий сертификат.
+**Пошагово с нуля (Hetzner, команды с Windows): [SERVER.md](SERVER.md).** Ниже коротко, для любого
+хостера с Ubuntu-сервером.
 
 ## 1. Сервер
-1. Create → Droplets → Ubuntu 24.04 LTS, Basic, **2 ГБ RAM** (1 ГБ тесно для базы и Django). Регион ближе к пользователям (Frankfurt/Amsterdam). Авторизация: SSH-ключ.
-2. Если есть домен: A-запись `alp.example.com` → IP сервера.
-3. Подключитесь `ssh root@IP` и выполните:
-   ```bash
-   curl -fsSL https://get.docker.com | sh        # Docker и compose
-   ufw allow OpenSSH && ufw allow 80 && ufw allow 443 && ufw --force enable
-   ```
+- Ubuntu 24.04, от **2 ГБ RAM** (1 ГБ тесно для базы и Django), вход по SSH-ключу.
+- Адрес: свой домен (A-запись на IP сервера) **или** бесплатный `203-0-113-10.sslip.io`
+  (IP через дефисы + `.sslip.io`), для него Caddy тоже выпускает настоящий сертификат.
+- Docker, firewall и swap:
+  ```bash
+  curl -fsSL https://get.docker.com | sh
+  ufw allow OpenSSH && ufw allow 80 && ufw allow 443 && ufw --force enable
+  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  ```
 
 ## 2. Приложение
 ```bash
 git clone https://github.com/Teonanakatll/AlpGroup.git alpgroup && cd alpgroup
-git checkout claude/deploy        # пока ветка не влита в main
-cp .env.example .env && nano .env
 ```
-В `.env` для сервера заполните: `DB_NAME`, `DB_USER`, `DB_PASSWORD` (свой, длинный), `SECRET_KEY`
-(`python3 -c "import secrets; print(secrets.token_urlsafe(50))"`), `DOMAIN`. `DB_HOST` и `DEBUG` compose выставляет сам.
+`.env` для сервера: `DB_NAME`, `DB_USER`, `DB_PASSWORD` (длинный), `SECRET_KEY`, `DOMAIN`, `HTTPS=1`.
+`DB_HOST` и `DEBUG` compose выставляет сам. Команда, которая создаёт `.env` с готовыми паролем и ключом,
+есть в [SERVER.md](SERVER.md), шаг 5.
 
 ```bash
 docker compose up -d --build
@@ -36,7 +37,7 @@ docker compose exec web python manage.py seed_demo      # тестовые да�
 
 ## 3. Обновление
 ```bash
-cd alpgroup && git pull && docker compose up -d --build
+cd ~/alpgroup && git pull && docker compose up -d --build
 ```
 Миграции и сбор статики выполняются при каждом старте автоматически.
 
@@ -48,7 +49,7 @@ sh scripts/backup.sh
 По расписанию (каждую ночь в 3:00): `crontab -e`, строка
 `0 3 * * * cd /root/alpgroup && sh scripts/backup.sh >> backups/backup.log 2>&1`
 Хранить копии только на этом же сервере мало: периодически скачивайте их к себе
-(`scp root@IP:alpgroup/backups/*.gz .`) или включите «Backups» у дроплета в панели DigitalOcean.
+(`scp root@IP:alpgroup/backups/*.gz .`) или включите бэкапы сервера в панели хостера.
 Восстановление описано в начале `scripts/backup.sh`. Фото инструмента лежат в томе `media`, копируйте и их.
 
 ## 5. Тестовый и боевой стенды
