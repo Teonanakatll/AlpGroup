@@ -11,7 +11,7 @@ Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .e
 - config/ — настройки и urls
 - apps/inventory/ — Category, Tool, ToolPhoto, HandTool, BaseMovement (abstract), ToolMovement, HandToolMovement
 - apps/sites/ — Site, WorkType (минимальный справочник)
-- apps/web/ — сайт: страницы, шаблоны, стили (app.css, темы на переменных: summit тёмная, nexora светлая), иконки, логотип; формы операций: выдача, приём, не найден, списание, ремонт (views.py, forms.py, positions.py); журнал с отменой и история позиции
+- apps/web/ — сайт: страницы, шаблоны, стили (app.css, 11 тем на переменных: палитра data-theme + режим data-mode dark/light, список в themes.py), иконки, логотип; формы операций: выдача, приём, не найден, списание, ремонт (views.py, forms.py, positions.py); журнал с отменой и история позиции
 - в каждом приложении services.py (изменения), selectors.py (выборки), tests/
 
 ## Ключевые правила (подробности в DECISIONS.md)
@@ -74,6 +74,7 @@ Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .e
 - [x] тестовый сервер (Hetzner), автовход гостя DEMO_USER, ошибки 500 в консоль
 - [x] сайт: мобильная вёрстка (без горизонтального скролла, гора на заставке видна, компактные строки списков), иконка вкладки
 - [x] сайт: «жидкая» заставка темы Nexora на WebGL (liquid-fx.js)
+- [x] сайт: 11 тем оформления (палитры популярных тем редакторов), меню выбора темы
 - [ ] права, отчёты и бэкапы, оповещения
 
 ## Открытые вопросы
