@@ -31,7 +31,7 @@ Python 3.12, Django, Django REST Framework. PostgreSQL (настройки в .e
 3. `python manage.py migrate`, `python manage.py createsuperuser`.
 4. `python manage.py runserver`, сайт на http://127.0.0.1:8000/ (вход тем же логином, что в админке), админка на /admin/, API на /api/.
 5. Тесты: `pytest`.
-6. Деплой на сервер (Docker, Caddy, бэкапы): docs/DEPLOY.md; пошагово с нуля на Hetzner с Windows: docs/SERVER.md (тестовый стенд: Hetzner CX23, адрес через sslip.io). Показ со своего компьютера через Cloudflare Tunnel (в .env TUNNEL=1, для входа без пароля DEMO_USER=гость): там же, «Быстрый показ».
+6. Деплой на сервер (Docker, Caddy, бэкапы): docs/DEPLOY.md; пошагово с нуля на Hetzner с Windows: docs/SERVER.md (тестовый стенд: Hetzner CX23, адрес через sslip.io). Показ со своего компьютера через Cloudflare Tunnel (в .env TUNNEL=1, для входа без пароля DEMO_USER=гость): docs/DEPLOY.md, «Быстрый показ».
 7. Тестовые данные (45 штучных и 35 ручных позиций, из них снаряжение: 20 штучных и 10 количественных): `python manage.py seed_demo` (повторный запуск ничего не дублирует).
 
 ## Текущее состояние
