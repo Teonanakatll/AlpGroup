@@ -400,8 +400,15 @@ html.lenis, html.lenis body { height: auto; }
 .liquid-fx { display: block; width: 100%; height: 100%; }
 .liquid::after {                       /* затемнение слева под текст, поверх картинки */
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(90deg, rgb(5 6 5 / .82) 0%, rgb(5 6 5 / .45) 38%, transparent 68%);
+  /* картинки бывают и светлые (айсберг на дневном небе): под текстом слева темнее, справа лёгкая дымка */
+  background:
+    linear-gradient(90deg, rgb(5 6 5 / .9) 0%, rgb(5 6 5 / .72) 30%, rgb(5 6 5 / .32) 55%, rgb(5 6 5 / .12) 80%),
+    linear-gradient(0deg, rgb(5 6 5 / .35), transparent 40%);
 }
+/* текст поверх фотографии: тени, чтобы читался и на светлых местах */
+[data-theme="nexora"] .hero.has-liquid h1 { text-shadow: 0 1px 2px rgb(0 0 0 / .6), 0 4px 22px rgb(0 0 0 / .55); }
+[data-theme="nexora"] .hero.has-liquid h1 .accent-text { text-shadow: none; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .6)) drop-shadow(0 3px 12px rgb(0 0 0 / .5)); }
+[data-theme="nexora"] .hero.has-liquid p { color: #e3e8e0; text-shadow: 0 1px 2px rgb(0 0 0 / .8), 0 2px 14px rgb(0 0 0 / .6); }
 [data-theme="nexora"] .hero.has-liquid::before { opacity: 0; }   /* кристалл-SVG не нужен, пока виден эффект */
 .hero::before { transition: opacity .9s var(--ease-soft); }
 

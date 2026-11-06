@@ -7,7 +7,8 @@
      и расслаивает до 80 px, потом она собирается.
    Рваную карту (блочный радиальный шум + кольца с резкими краями) считает сам шейдер, файлов-карт нет.
    Картинки любые (JPG, PNG, WebP): вписываются как object-fit: cover, слишком большие уменьшаются.
-   Несколько картинок через «|» в data-images — клик и таймер переключают их.
+   Несколько картинок через «|» в data-images — клик и таймер переключают их;
+   data-images-narrow — отдельный набор для узкого вертикального блока (телефон).
    Нет WebGL, «меньше движения» или другая тема — эффект не запускается, остаётся обычный фон темы. */
 (function () {
   "use strict";
@@ -18,8 +19,13 @@
   if (!canvas) return;
   var hero = box.closest(".hero") || box;
 
-  var SOURCES = (canvas.dataset.images || "").split("|").filter(Boolean);
-  if (!SOURCES.length) return;
+  // Для узкого вертикального блока (телефон) можно дать свой набор: широкая картинка там обрезалась бы до полоски
+  function list(value) { return (value || "").split("|").filter(Boolean); }
+  function sources() {                                   // выбираем при запуске: блок уже виден, размер известен
+    var rect = box.getBoundingClientRect(), narrow = list(canvas.dataset.imagesNarrow);
+    return narrow.length && rect.width < rect.height * 1.1 ? narrow : list(canvas.dataset.images);
+  }
+  if (!list(canvas.dataset.images).length && !list(canvas.dataset.imagesNarrow).length) return;
 
   // Коэффициенты как в настройках оригинала; все смещения в CSS-пикселях
   var SETTINGS = {
@@ -285,7 +291,7 @@
   function start() {
     started = true;                                     // второй раз не запускаем, даже если что-то не вышло
     if (!setup()) return;
-    Promise.all(SOURCES.map(load)).then(function (imgs) {
+    Promise.all(sources().map(load)).then(function (imgs) {
       imgs.forEach(toTexture);
       resize();
       themeChanged();
