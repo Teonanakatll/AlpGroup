@@ -26,7 +26,7 @@
                   <div class="row-title">{{ entry.type_display }} · {% if entry.site %}{{ entry.site }}{% else %}Склад{% endif %} · {{ entry.count }} поз.{% if entry.is_cancelled %} <span class="tag-cancel">отменён</span>{% endif %}</div>
                   <div class="row-sub">{% for r in entry.rows|slice:":3" %}{{ r.item }}{% if r.quantity %} × {{ r.quantity }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% if entry.count > 3 %}…{% endif %}{% if entry.taken_by %} · {{ entry.taken_by }}{% endif %}</div>
                 </div>
-                <span class="row-end">{{ entry.created_at|date:"d.m.Y H:i" }} · {{ entry.created_by }}</span>
+                <span class="row-end"><time class="row-time" datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:"d.m.Y H:i" }}</time> · {{ entry.created_by }}</span>
                 {% if entry.can_cancel_batch %}
                   <button class="btn-cancel" type="submit" form="cb-{{ entry.batch }}" data-confirm="Отменить весь набор?">Отменить набор</button>
                 {% elif entry.cancel_batch_hint %}

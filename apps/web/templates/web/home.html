@@ -94,7 +94,7 @@
                     <div class="row-title">{{ entry.type_display }} · {% if entry.site %}{{ entry.site }}{% else %}Склад{% endif %} · {{ entry.count }} поз.{% if entry.is_cancelled %} <span class="tag-cancel">отменён</span>{% endif %}</div>
                     <div class="row-sub">{% if entry.taken_by %}{{ entry.taken_by }}{% else %}Открыть список{% endif %}</div>
                   </div>
-                  <span class="row-end">{{ entry.created_at|timesince }} назад</span>
+                  <span class="row-end"><time class="row-time" datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|timesince }} назад</time></span>
                   <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
                 </a>
               </li>
@@ -106,7 +106,7 @@
                     <div class="row-title">{{ op.type_display }} · {{ op.item }}{% if op.quantity %} × {{ op.quantity }}{% endif %}{% if op.is_cancelled %} <span class="tag-cancel">отменена</span>{% endif %}</div>
                     <div class="row-sub">{% if op.site %}{{ op.site }}{% else %}Склад{% endif %}{% if op.taken_by %} · {{ op.taken_by }}{% endif %}</div>
                   </div>
-                  <span class="row-end">{{ op.created_at|timesince }} назад</span>
+                  <span class="row-end"><time class="row-time" datetime="{{ op.created_at|date:'c' }}">{{ op.created_at|timesince }} назад</time></span>
                 </li>
               {% endwith %}
             {% endif %}

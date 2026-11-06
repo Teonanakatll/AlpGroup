@@ -10,7 +10,7 @@
     </div>
     <div class="row-sub">{% if row.site %}{{ row.site }}{% else %}Склад{% endif %}{% if row.taken_by %} · {{ row.taken_by }}{% endif %}{% if row.note %} · {{ row.note }}{% endif %}</div>
   </div>
-  <span class="row-end">{{ row.created_at|date:"d.m.Y H:i" }} · {{ row.created_by }}</span>
+  <span class="row-end"><time class="row-time" datetime="{{ row.created_at|date:'c' }}">{{ row.created_at|date:"d.m.Y H:i" }}</time> · {{ row.created_by }}</span>
   {% if row.can_cancel %}
     <form class="cancel-form" method="post" action="{% url 'web:cancel_movement' row.kind row.id %}">
       {% csrf_token %}
