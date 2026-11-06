@@ -3,6 +3,8 @@
 """
 from django.db.models import Case, Count, F, IntegerField, Max, Prefetch, Sum, Value, When
 
+from apps.sites.models import Site
+
 from .models import BaseMovement, HandTool, HandToolMovement, Tool, ToolMovement, ToolPhoto
 
 MovementType = BaseMovement.Type
@@ -72,6 +74,24 @@ def tools_for_write_off():
     return Tool.objects.filter(status__in=statuses).select_related("category").order_by("name")
 
 
+# Как каждая операция меняет количество ручного инструмента на объекте (DECISIONS, разделы 8 и 14).
+_ON_SITE_SIGN = {
+    MovementType.ISSUED: 1,
+    MovementType.RETURNED: -1,
+    MovementType.MISSING: -1,
+    MovementType.WRITTEN_OFF: -1,
+}
+
+
+def _on_site_delta():
+    """Выражение для Sum: +количество за выдачу, −количество за приём, потерю и списание на объекте."""
+    return Case(
+        *[When(type=kind, then=F("quantity") * factor) for kind, factor in _ON_SITE_SIGN.items()],
+        default=Value(0),
+        output_field=IntegerField(),
+    )
+
+
 def hand_tools_on_site(site):
     """
     Ручной инструмент, который числится на объекте: список пар (HandTool, количество).
@@ -79,26 +99,39 @@ def hand_tools_on_site(site):
     Считается по журналу так же, как hand_tool_on_site, но сразу по всем позициям
     объекта одним запросом. Позиции с нулём и меньше не попадают в список.
     """
-    sign = {
-        MovementType.ISSUED: 1,
-        MovementType.RETURNED: -1,
-        MovementType.MISSING: -1,
-        MovementType.WRITTEN_OFF: -1,
-    }
-    delta = Case(
-        *[When(type=kind, then=F("quantity") * factor) for kind, factor in sign.items()],
-        default=Value(0),
-        output_field=IntegerField(),
-    )
     rows = (
         HandToolMovement.objects.filter(site=site, is_cancelled=False)
         .values("hand_tool")
-        .annotate(on_site=Sum(delta))
+        .annotate(on_site=Sum(_on_site_delta()))
         .filter(on_site__gt=0)
     )
     quantities = {row["hand_tool"]: row["on_site"] for row in rows}
     hand_tools = HandTool.objects.filter(pk__in=quantities).select_related("category").order_by("name")
     return [(hand_tool, quantities[hand_tool.pk]) for hand_tool in hand_tools]
+
+
+def sites_with_items(tools_only=False):
+    """
+    Объекты, на которых сейчас что-то числится: выданная штучная позиция или ручной инструмент.
+
+    Для выпадающих списков приёма, «не найден», списания и ремонта: пустые объекты там не нужны.
+    tools_only=True: только объекты с выданными штучными (в ремонт ручной не отправляется).
+    """
+    ids = set(
+        Tool.objects.filter(status=Tool.Status.ISSUED, current_site__isnull=False)
+        .values_list("current_site", flat=True)
+    )
+    if not tools_only:
+        # Сумма по объекту больше нуля, только если хоть одна позиция там числится:
+        # по отдельной позиции количество на объекте не бывает отрицательным.
+        rows = (
+            HandToolMovement.objects.filter(is_cancelled=False, site__isnull=False)
+            .values("site")
+            .annotate(on_site=Sum(_on_site_delta()))
+            .filter(on_site__gt=0)
+        )
+        ids.update(row["site"] for row in rows)
+    return Site.objects.filter(pk__in=ids).order_by("name")
 
 
 # ---------------------------------------------------------------------------

@@ -4,6 +4,7 @@
 """
 from apps.inventory import selectors, services
 from apps.inventory.models import HandToolMovement, Tool, ToolMovement
+from apps.sites.models import Site
 
 URLS = ("/operations/missing/", "/operations/write-off/", "/operations/servicing/", "/operations/from-servicing/")
 
@@ -52,13 +53,16 @@ def test_selectors_for_servicing_and_write_off(user, category, site, tool):
 # Не найден
 # ---------------------------------------------------------------------------
 
-def test_missing_page_asks_for_site_then_lists_site_items(admin_client, user, tool, stocked_hand_tool, site):
-    assert "Выберите объект" in page(admin_client, "/operations/missing/")
-    services.issue_to_site(user=user, site=site, tools=[tool], hand_tools=[(stocked_hand_tool, 4)])
+def test_missing_page_defaults_to_warehouse_then_lists_site_items(admin_client, user, tool, stocked_hand_tool, category, site):
+    busy = services.register_tool(user=user, name="Болгарка", category=category)
+    services.issue_to_site(user=user, site=site, tools=[busy], hand_tools=[(stocked_hand_tool, 4)])
+
+    html = page(admin_client, "/operations/missing/")            # по умолчанию склад: то, что лежит на складе
+    assert "Перфоратор" in html and "Болгарка" not in html and 'max="6"' in html
+    assert "data-dd-keep" in html                                # «Склад» это настоящий выбор
 
     html = page(admin_client, f"/operations/missing/?site={site.pk}")
-
-    assert "Перфоратор" in html and "Молоток" in html and 'max="4"' in html
+    assert "Болгарка" in html and "Перфоратор" not in html and 'max="4"' in html
 
 
 def test_missing_marks_items_and_reduces_hand_total(admin_client, user, tool, stocked_hand_tool, site):
@@ -75,14 +79,36 @@ def test_missing_marks_items_and_reduces_hand_total(admin_client, user, tool, st
     assert "Не найдено на «Объект на Ленина, 5»" in page(admin_client, "/operations/missing/")
 
 
-def test_missing_needs_site(admin_client, user, tool, site):
+def test_missing_on_warehouse_refuses_issued_tool(admin_client, user, tool, site):
     services.issue_to_site(user=user, site=site, tools=[tool])
 
-    response = admin_client.post("/operations/missing/", {"tools": [tool.pk]})
+    response = admin_client.post("/operations/missing/", {"tools": [tool.pk]})   # без объекта это склад
 
-    assert response.status_code == 200
+    assert response.status_code == 200 and "Операция не выполнена" in response.content.decode()
     tool.refresh_from_db()
     assert tool.status == "issued"
+
+
+def test_missing_on_warehouse(admin_client, tool, stocked_hand_tool):
+    response = post(admin_client, "/operations/missing/", site="", tools=[tool.pk],
+                    **{f"qty_{stocked_hand_tool.pk}": 2})
+
+    assert response.status_code == 302
+    tool.refresh_from_db()
+    stocked_hand_tool.refresh_from_db()
+    assert tool.status == "missing"
+    assert (stocked_hand_tool.total, stocked_hand_tool.issued) == (8, 0)
+    assert "Не найдено на складе" in page(admin_client, "/operations/missing/")
+
+
+def test_site_lists_offer_only_sites_with_items(admin_client, user, tool, site):
+    Site.objects.create(name="Пустой объект")
+    services.issue_to_site(user=user, site=site, tools=[tool])
+
+    for url in ("/operations/receive/", "/operations/missing/", "/operations/write-off/", "/operations/servicing/"):
+        html = page(admin_client, url)
+        assert "Объект на Ленина, 5" in html and "Пустой объект" not in html, url
+    assert "Пустой объект" in page(admin_client, "/operations/issue/")    # выдать можно на любой объект
 
 
 def test_missing_on_warehouse_item_is_rejected(admin_client, tool, site):
@@ -106,6 +132,7 @@ def test_write_off_page_defaults_to_warehouse_with_statuses(admin_client, user, 
     html = page(admin_client, "/operations/write-off/")
 
     assert "Перфоратор" in html and "Фрезер" in html and "В ремонте" in html
+    assert "pill pill--servicing" in html and "pill pill--available" in html   # статусы плашками, как в инвентаре
     assert "Болгарка" not in html                      # выданное со склада не списать
     assert 'max="10"' in html and "на складе 10" in html
     assert 'data-dd-keep' in html                      # «Склад» это настоящий выбор, а не подсказка

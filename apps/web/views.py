@@ -79,7 +79,7 @@ def _count_text(tools, hand_tools):
 OPERATION_TEXT = {
     "issue": ("Выдача на объект", "Отметьте штучный инструмент и укажите количество ручного, затем выберите объект.", "Выдать"),
     "receive": ("Приём с объекта", "Выберите объект: покажем всё, что на нём числится.", "Принять"),
-    "missing": ("Не найден на объекте", "Выберите объект и отметьте то, что не нашли. Запись останется в журнале как потеря.", "Отметить"),
+    "missing": ("Не найден", "Выберите склад или объект и отметьте то, что не нашли. Запись останется в журнале как потеря.", "Отметить"),
     "write_off": ("Списание", "Выберите склад или объект и отметьте списываемое: оно уходит из учёта, запись остаётся в журнале.", "Списать"),
     "servicing": ("Отправка в ремонт", "Только штучный инструмент: со склада или с объекта.", "В ремонт"),
     "from_servicing": ("Приём из ремонта", "Отметьте инструмент, который вернулся из ремонта на склад.", "Принять"),
@@ -97,7 +97,9 @@ def _lists(mode, site):
         return (selectors.tools_on_site(site) if site else selectors.available_tools()), []
     if mode == "write_off" and site is None:
         return selectors.tools_for_write_off(), warehouse_hands
-    if site is None:                      # приём и «не найден» работают только с объектом
+    if mode == "missing" and site is None:   # не нашли на складе: то, что там лежит
+        return selectors.available_tools(), warehouse_hands
+    if site is None:                      # приём работает только с объектом
         return [], []
     return selectors.tools_on_site(site), selectors.hand_tools_on_site(site)
 
@@ -109,16 +111,19 @@ def _empty_text(mode, site):
         return "Сейчас ничего не в ремонте."
     if site:
         return f"На объекте «{site}» ничего не числится."
-    if mode in ("receive", "missing"):
+    if mode == "receive":
         return "Выберите объект, чтобы увидеть, что на нём числится."
-    return "На складе нечего списывать." if mode == "write_off" else "На складе нечего отправлять в ремонт."
+    return {
+        "write_off": "На складе нечего списывать.",
+        "missing": "На складе сейчас ничего не лежит.",
+    }.get(mode, "На складе нечего отправлять в ремонт.")
 
 
 def _operation_context(request, *, mode, form, positions, site, errors):
     """Всё, что нужно странице любой операции (общая часть)."""
     tools, hand_rows = _lists(mode, site)
     title, hint, button = OPERATION_TEXT[mode]
-    on_site = mode in ("receive", "missing") or (mode in ("write_off", "servicing") and site is not None)
+    on_site = mode == "receive" or (mode in ("missing", "write_off", "servicing") and site is not None)
     return {
         "mode": mode,
         "title": title, "hint": hint, "button": button,
@@ -132,9 +137,31 @@ def _operation_context(request, *, mode, form, positions, site, errors):
         ],
         "selected_tools": positions.selected_tools,
         "hand_where": "на объекте" if on_site else "на складе",
-        "show_status": mode == "write_off" and site is None,   # со склада списывают и «в ремонте», и «не найден»
+        "show_status": mode == "write_off" and site is None,   # со склада списывают и «в ремонте», и «не найден»: статус плашкой
         "empty_text": _empty_text(mode, site),
     }
+
+
+# Какие объекты предлагать в поле «Объект» или «Откуда»: только те, где есть что взять.
+SITE_CHOICES = {
+    "receive": selectors.sites_with_items,
+    "missing": selectors.sites_with_items,
+    "write_off": selectors.sites_with_items,
+    "servicing": lambda: selectors.sites_with_items(tools_only=True),   # в ремонт только штучные
+}
+
+
+def _limit_sites(form, mode, site):
+    """
+    Оставить в выпадающем списке только объекты, где что-то числится (и выбранный, чтобы не пропал).
+
+    Вызывается после is_valid: проверка формы идёт по всем объектам, а правила учёта
+    (числится ли позиция на этом объекте) проверяет services и даёт понятный текст ошибки.
+    """
+    choices = SITE_CHOICES[mode]()
+    if site is not None:
+        choices = Site.objects.filter(pk__in=list(choices.values_list("pk", flat=True)) + [site.pk]).order_by("name")
+    form.fields["site"].queryset = choices
 
 
 def _site_from(value):
@@ -259,6 +286,7 @@ def receive(request):
     else:
         site = _site_from(request.GET.get("site"))
         form = ReceiveFromSiteForm(initial={"site": site})
+    _limit_sites(form, "receive", site)
     form.fields["site"].empty_label = "Выберите объект…"
     form.fields["site"].widget.attrs.update({
         "hx-get": reverse("web:receive"), "hx-target": "#positions", "hx-swap": "outerHTML",
@@ -310,7 +338,7 @@ def _place(site):
 # mode -> (форма, функция операции, адрес страницы, текст успеха)
 SITE_OPERATIONS = {
     "missing": (MissingForm, _run_missing, "web:missing",
-                lambda site, text: f"Не найдено на «{site}»: {text}."),
+                lambda site, text: f"Не найдено {f'на «{site}»' if site else 'на складе'}: {text}."),
     "write_off": (WriteOffForm, _run_write_off, "web:write_off",
                   lambda site, text: f"Списано {_place(site)}: {text}."),
     "servicing": (ServicingForm, _run_servicing, "web:servicing",
@@ -345,6 +373,7 @@ def _site_operation(request, mode):
         site = _site_from(request.GET.get("site")) if has_site else None
         form = form_class(initial={"site": site}) if has_site else form_class()
     if has_site:
+        _limit_sites(form, mode, site)
         widget = form.fields["site"].widget
         if form.fields["site"].required:
             form.fields["site"].empty_label = "Выберите объект…"      # у необязательного остаётся «Склад»

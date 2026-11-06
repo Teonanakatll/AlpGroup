@@ -26,14 +26,15 @@ class IssueForm(SiteOperationForm):
         return cleaned
 
 
-class MissingForm(SiteOperationForm):
-    """«Не найден»: объект обязателен, указываем, кто сообщил о пропаже."""
-    taken_by = forms.CharField(label="Кто сообщил", max_length=200, required=False)
-
-
 class _SourceForm(forms.Form):
     """Операции со склада или с объекта: пустой «Откуда» означает склад."""
     site = forms.ModelChoiceField(queryset=Site.objects.all(), label="Откуда", required=False, empty_label="Склад")
+
+
+class MissingForm(_SourceForm):
+    """«Не найден»: на объекте или на складе (не нашли при пересчёте); кто сообщил о пропаже."""
+    taken_by = forms.CharField(label="Кто сообщил", max_length=200, required=False)
+    note = forms.CharField(label="Примечание", max_length=300, required=False)
 
 
 class WriteOffForm(_SourceForm):

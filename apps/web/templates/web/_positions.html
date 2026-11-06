@@ -9,14 +9,16 @@
       <h2 class="section-title">Штучный инструмент <span>{{ tools|length }}</span></h2>
       <div class="pick-list">
         {% for tool in tools %}
-          <label class="pick" data-name="{{ tool.name|lower }}">
+          <label class="pick" data-name="{{ tool.name|lower }}"{% if show_status %} data-status="{{ tool.status }}"{% endif %}>
             <input type="checkbox" name="tools" value="{{ tool.pk }}"{% if tool.pk in selected_tools %} checked{% endif %}>
             <span class="pick-check"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span>
             <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-box"/></svg></span>
             <span class="item-main">
               <span class="item-name">{{ tool.name }}</span>
-              <span class="item-meta">{{ tool.category }}{% if show_status %} · {{ tool.get_status_display }}{% endif %}</span>
+              <span class="item-meta">{{ tool.category }}</span>
             </span>
+            {# В списании со склада рядом лежат «на складе», «в ремонте» и «не найден»: статус плашкой, как в инвентаре #}
+            {% if show_status %}<span class="pill pill--{{ tool.status }}">{{ tool.get_status_display }}</span>{% endif %}
           </label>
         {% endfor %}
       </div>

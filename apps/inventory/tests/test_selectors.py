@@ -226,3 +226,33 @@ def test_issued_in_period_skips_cancelled_and_non_issues(user, tool, stocked_han
 
     assert tool_rows.count() == 0                            # выдача отменена, приёмы не считаются
     assert [row.quantity for row in hand_rows] == [3]
+
+
+# ---------------------------------------------------------------------------
+# Объекты, на которых что-то числится (выпадающие списки операций)
+# ---------------------------------------------------------------------------
+
+def test_sites_with_items(user, category, tool, stocked_hand_tool, site):
+    with_tool = site
+    with_hand = Site.objects.create(name="Объект с молотками")
+    emptied = Site.objects.create(name="Всё вернули")
+    Site.objects.create(name="Пустой объект")
+    drill = services.register_tool(user=user, name="Дрель", category=category)
+
+    services.issue_to_site(user=user, site=with_tool, tools=[tool])
+    services.issue_to_site(user=user, site=with_hand, hand_tools=[(stocked_hand_tool, 3)])
+    services.issue_to_site(user=user, site=emptied, tools=[drill], hand_tools=[(stocked_hand_tool, 2)])
+    services.receive_from_site(user=user, site=emptied, tools=[drill], hand_tools=[(stocked_hand_tool, 2)])
+
+    assert set(selectors.sites_with_items()) == {with_tool, with_hand}
+    assert list(selectors.sites_with_items(tools_only=True)) == [with_tool]
+
+
+def test_sites_with_items_ignores_lost_and_cancelled(user, tool, stocked_hand_tool, site):
+    other = Site.objects.create(name="Второй объект")
+    services.issue_to_site(user=user, site=site, tools=[tool])
+    services.mark_missing(user=user, site=site, tools=[tool])          # потеряли: на объекте больше не числится
+    batch = services.issue_to_site(user=user, site=other, hand_tools=[(stocked_hand_tool, 2)])
+    services.cancel_batch(user=user, batch=batch)                       # выдачу отменили
+
+    assert list(selectors.sites_with_items()) == []
