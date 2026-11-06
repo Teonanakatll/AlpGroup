@@ -605,11 +605,6 @@ html.lenis, html.lenis body { height: auto; }
   mask-composite: exclude;
   opacity: 0; transition: opacity .5s var(--ease-soft); pointer-events: none;
 }
-.card::after {                        /* подсветка под курсором */
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: radial-gradient(46px circle at var(--mx, 50%) var(--my, 50%), rgb(var(--accent-rgb) / .42), transparent 72%);
-  opacity: 0; transition: opacity .5s var(--ease-soft);
-}
 .card:hover, .card:focus-within {
   transform: translateY(-4px);
   border-color: var(--outline-hover);
@@ -620,7 +615,6 @@ html.lenis, html.lenis body { height: auto; }
     0 0 36px rgb(var(--accent-rgb) / .16);
 }
 .card:hover::before, .card:focus-within::before { opacity: 1; animation: spin-a 3.2s linear infinite; }
-.card:hover::after { opacity: 1; }
 
 /* ---------- Кнопки ---------- */
 .btn {
@@ -1332,7 +1326,7 @@ label.pick { cursor: pointer; }
 }
 
 /* бегущие блики по рамкам, пятно под курсором, блики по плиткам — убраны */
-[data-mode="light"] .card::before, [data-mode="light"] .card::after,
+[data-mode="light"] .card::before,
 [data-mode="light"] .row::before, [data-mode="light"] .pick::before,
 [data-mode="light"] .chip::before, [data-mode="light"] .nav-item::before,
 [data-mode="light"] .icon-tile::after,
@@ -1444,11 +1438,10 @@ label.pick { cursor: pointer; }
 
 /* Кнопки в 3D. Главные (кнопка формы, активный пункт меню и вкладка) — выпуклый лайм с тёмным бортиком,
    остальные (вкладки, фильтры, второстепенные) — выпуклые белые с серым бортиком.
-   Блик ходит за курсором (--mx, --my из app.js), при нажатии кнопка «проседает» на бортик. */
+   При нажатии кнопка «проседает» на бортик. */
 [data-mode="light"] :is(.btn-primary, .nav-item.is-active, .chip.is-active):not(.hero *) {
   color: var(--accent-ink); border: 2px solid var(--accent-deep);
   background:
-    radial-gradient(90px circle at var(--mx, 30%) var(--my, 0%), rgb(255 255 255 / .6), transparent 70%),
     linear-gradient(180deg, color-mix(in srgb, var(--accent) 55%, #fff) 0%, color-mix(in srgb, var(--accent) 88%, #fff) 40%, color-mix(in srgb, var(--accent) 84%, #000) 100%);
   box-shadow: inset 0 2px 0 rgb(255 255 255 / .7), inset 0 -3px 0 rgb(var(--accent-deep-rgb) / .3), 0 4px 0 var(--accent-deep), 4px 9px 16px rgb(20 24 32 / .28);
   transition: transform .2s var(--ease-soft), box-shadow .25s var(--ease-soft), filter .3s var(--ease-soft);
@@ -1462,13 +1455,12 @@ label.pick { cursor: pointer; }
   transform: translateY(3px);
 }
 [data-mode="light"] .btn-primary:not(.hero *):active { box-shadow: inset 0 2px 0 rgb(255 255 255 / .6), inset 0 -2px 0 rgb(var(--accent-deep-rgb) / .3), 0 1px 0 var(--accent-deep), 2px 4px 8px rgb(20 24 32 / .25); }
-[data-mode="light"] .btn-primary::after { display: none; }      /* бегущий блик заменён бликом за курсором */
+[data-mode="light"] .btn-primary::after { display: none; }      /* бегущий блик в 3D-кнопках не нужен */
 [data-mode="light"] .btn-primary:disabled { filter: grayscale(.6); opacity: .55; }
 
 [data-mode="light"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn) {
   color: var(--text); border: 2px solid var(--card-border);
   background:
-    radial-gradient(80px circle at var(--mx, 30%) var(--my, 0%), rgb(var(--accent-rgb) / 0), transparent 70%),
     linear-gradient(180deg, var(--card-bg-solid) 0%, color-mix(in srgb, var(--card-bg-solid) 96%, var(--text)) 60%, color-mix(in srgb, var(--card-bg-solid) 90%, var(--text)) 100%);
   box-shadow: inset 0 2px 0 #fff, inset 0 -3px 0 rgb(20 24 32 / .07), 0 3px 0 var(--card-border), 3px 7px 12px rgb(20 24 32 / .18);
   transition: transform .2s var(--ease-soft), box-shadow .25s var(--ease-soft), border-color .25s var(--ease-soft);
@@ -1476,7 +1468,6 @@ label.pick { cursor: pointer; }
 [data-mode="light"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn):hover {
   transform: translateY(-2px); border-color: var(--accent);
   background:
-    radial-gradient(80px circle at var(--mx, 30%) var(--my, 0%), rgb(var(--accent-rgb) / .45), transparent 70%),
     linear-gradient(180deg, var(--card-bg-solid) 0%, color-mix(in srgb, var(--card-bg-solid) 96%, var(--text)) 60%, color-mix(in srgb, var(--card-bg-solid) 90%, var(--text)) 100%);
   box-shadow: inset 0 2px 0 #fff, 0 3px 0 var(--accent-deep), 0 0 0 2px rgb(var(--accent-rgb) / .5), 0 0 18px rgb(var(--accent-rgb) / .55), 3px 9px 16px rgb(20 24 32 / .22);
 }
@@ -1519,7 +1510,6 @@ label.pick { cursor: pointer; }
 :root:not([data-theme="summit"], [data-theme="nexora"]) .item-site .icon { color: rgb(var(--meta-rgb, var(--violet-rgb))); }
 :root:not([data-theme="summit"], [data-theme="nexora"]) .meter-caption b { color: var(--text); }
 /* без пятна подсветки под курсором */
-:root:not([data-theme="summit"], [data-theme="nexora"]) .card::after { display: none; }
 :root:not([data-theme="summit"], [data-theme="nexora"]) .item[data-status="available"] .icon-tile, :root:not([data-theme="summit"], [data-theme="nexora"]) .pick[data-status="available"] .icon-tile { --tone: var(--ok-rgb); }
 :root:not([data-theme="summit"], [data-theme="nexora"]) .pill:not([class*="pill--"]) { --tone: var(--ok-rgb); }
 
