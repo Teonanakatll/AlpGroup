@@ -18,7 +18,6 @@ from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 import os
-import secrets
 from dotenv import load_dotenv
 load_dotenv(BASE_DIR / ".env")
 
@@ -31,49 +30,31 @@ def env_list(name):
     return [item.strip() for item in os.getenv(name, "").split(",") if item.strip()]
 
 
-# TUNNEL=1: показ со своего компьютера через Cloudflare Tunnel (docs/DEPLOY.md, «Быстрый показ»).
-# Одна строка в .env включает всё нужное: DEBUG выключен (посетители не видят трейсбеков),
-# ключ генерируется при запуске, статику и фото отдаёт Django, адреса trycloudflare.com разрешены.
-TUNNEL = os.getenv("TUNNEL", "0") == "1"
-
 # На своём компьютере ничего задавать не нужно: DEBUG включён, ключ запасной.
 # На сервере в .env обязательно DEBUG=0 и свой SECRET_KEY (см. docs/DEPLOY.md).
-DEBUG = os.getenv("DEBUG", "0" if TUNNEL else "1") == "1"
+DEBUG = os.getenv("DEBUG", "1") == "1"
 
-# Запасной ключ лежит в репозитории, им можно подделать сессию (войти кем угодно, в том числе админом).
-# Поэтому наружу с ним нельзя. У туннеля ключ случайный на каждый запуск: после перезапуска runserver
-# все просто входят заново. На сервере так нельзя (у gunicorn несколько процессов, ключ должен быть
-# один и постоянный), там он задаётся в .env.
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY and TUNNEL:
-    SECRET_KEY = secrets.token_urlsafe(50)
-if not SECRET_KEY and DEBUG:
-    SECRET_KEY = "django-insecure-823n0s5p8+x98&kec4^63roy-#&$1)%53v%$0@ne5^!e+fj259"
+SECRET_KEY = os.getenv("SECRET_KEY") or (
+    "django-insecure-823n0s5p8+x98&kec4^63roy-#&$1)%53v%$0@ne5^!e+fj259" if DEBUG else None
+)
 if not SECRET_KEY:
     raise ImproperlyConfigured("Задайте SECRET_KEY в .env (при DEBUG=0 запасного ключа нет).")
 
 # DOMAIN: адрес сайта на сервере (например alp.example.com). Он сам попадает в разрешённые хосты.
 # Для других адресов можно добавить свои в ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS (через запятую).
 DOMAIN = os.getenv("DOMAIN", "")
-HTTPS = os.getenv("HTTPS", "1") == "1"       # сайт открывается по https (на сервере за Caddy и у туннеля: да)
+HTTPS = os.getenv("HTTPS", "1") == "1"       # сайт открывается по https (на сервере за Caddy: да)
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS") + ([DOMAIN] if DOMAIN else [])
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") + (
     [f"{'https' if HTTPS else 'http'}://{DOMAIN}"] if DOMAIN else []
 )
-if TUNNEL:
-    ALLOWED_HOSTS += ["localhost", "127.0.0.1", ".trycloudflare.com"]
-    CSRF_TRUSTED_ORIGINS += ["https://*.trycloudflare.com"]
-
-# Статику и фото на сервере отдаёт Caddy; у туннеля его нет, поэтому отдаёт Django (config/urls.py).
-SERVE_FILES = TUNNEL
 
 # DEMO_USER=гость: посетители входят без пароля под этим пользователем (создаётся сам, без is_staff).
-# Только для показа (apps/web/middleware.py). Пусто: обычный вход по логину.
+# Только для показа тестового стенда (apps/web/middleware.py). Пусто: обычный вход по логину.
 DEMO_USER = os.getenv("DEMO_USER", "")
 
 if not DEBUG:
-    # Перед Django стоит прокси (Caddy на сервере, cloudflared у туннеля): он терминирует https
-    # и передаёт схему в заголовке X-Forwarded-Proto.
+    # Перед Django стоит Caddy: он терминирует https и передаёт схему в заголовке.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = HTTPS
     CSRF_COOKIE_SECURE = HTTPS
