@@ -450,12 +450,9 @@ html.lenis, html.lenis body { height: auto; }
 }
 [data-theme="nexora"] .liquid.is-gl { opacity: 1; }
 .liquid-fx { display: block; width: 100%; height: 100%; }
-.liquid::after {                       /* затемнение слева под текст, поверх картинки */
+.liquid::after {                       /* затемнение только под текстом слева; правая часть фото чистая */
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  /* картинки бывают и светлые (айсберг на дневном небе): под текстом слева темнее, справа лёгкая дымка */
-  background:
-    linear-gradient(90deg, rgb(4 5 7 / .9) 0%, rgb(4 5 7 / .72) 30%, rgb(4 5 7 / .32) 55%, rgb(4 5 7 / .12) 80%),
-    linear-gradient(0deg, rgb(4 5 7 / .35), transparent 40%);
+  background: linear-gradient(90deg, rgb(4 5 7 / .82) 0%, rgb(4 5 7 / .6) 28%, rgb(4 5 7 / .22) 48%, transparent 62%);
 }
 /* текст поверх фотографии: тени, чтобы читался и на светлых местах */
 [data-theme="nexora"] .hero.has-liquid h1 { text-shadow: 0 1px 2px rgb(0 0 0 / .6), 0 4px 22px rgb(0 0 0 / .55); }
@@ -909,7 +906,7 @@ label.pick { cursor: pointer; }
   .logo3d-hero { position: static; order: -1; align-self: flex-start; width: min(240px, 66%); margin-bottom: 4px; }   /* в узком блоке логотип над текстом, а не поверх горы и заголовка */
   /* Гора видна целиком: лёгкое затемнение сверху и снизу вместо сплошной заливки,
      а читаемость текста держат тени и размытое пятно прямо под ним (.hero-mid::before) */
-  .liquid::after { background: linear-gradient(180deg, rgb(4 5 7 / .45) 0%, rgb(4 5 7 / .2) 45%, rgb(4 5 7 / .6) 100%); }
+  .liquid::after { background: none; }   /* в узком блоке текст поверх всего фото: читаемость дают пятно под текстом и тени, фото без затемнения */
   [data-theme="summit"] .hero::after { background: linear-gradient(180deg, rgb(5 7 10 / .35) 0%, rgb(5 7 10 / .1) 45%, rgb(5 7 10 / .55) 100%); }
   .hero-mid { isolation: isolate; }
   .hero-mid::before {
