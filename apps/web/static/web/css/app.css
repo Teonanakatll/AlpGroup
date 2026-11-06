@@ -29,6 +29,7 @@
   --orange-rgb: 255 138 42;
   --blue-rgb: 70 150 255;
   --red-rgb: 255 90 60;
+  --writeoff-rgb: var(--red-rgb);    /* списание: в Summit красное, в светлой Nexora ярко-оранжевое */
 
   --text: #f1f5ee;
   --text-dim: #9ba59a;
@@ -82,7 +83,8 @@
   --violet-rgb: 104 46 214;          /* статусы насыщенные, на белом от 5:1 */
   --orange-rgb: 232 32 0;            /* «в ремонте», предупреждения: алый (оранжево-красный, как #FF2400), 4.5:1 на белом */
   --blue-rgb: 16 88 196;
-  --red-rgb: 170 0 25;               /* «не найден», «списан»: тёмно-красный, чтобы отличался от алого */
+  --red-rgb: 170 0 25;               /* «не найден», ошибки: тёмно-красный, чтобы отличался от алого */
+  --writeoff-rgb: 255 115 0;         /* списание: ярко-оранжевый */
 
   --text: #0f1114;                   /* нейтральные серые, без зелёного оттенка: 18.9:1 */
   --text-dim: #1f232a;               /* подписи и мелкий текст: 15.8:1 */
@@ -518,6 +520,7 @@ html.lenis, html.lenis body { height: auto; }
 .tone-orange { --tone: var(--orange-rgb); }
 .tone-blue { --tone: var(--blue-rgb); }
 .tone-red { --tone: var(--red-rgb); }
+.tone-writeoff { --tone: var(--writeoff-rgb); }
 .tone-grey { --tone: 150 160 150; }
 
 .stat-value { font-size: 34px; font-weight: 700; line-height: 1.05; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -910,6 +913,7 @@ label.pick { cursor: pointer; }
 [data-theme="nexora"] .op-head:has(.tone-violet) { --op-tone: var(--violet-rgb); }
 [data-theme="nexora"] .op-head:has(.tone-orange) { --op-tone: var(--orange-rgb); }
 [data-theme="nexora"] .op-head:has(.tone-red) { --op-tone: var(--red-rgb); }
+[data-theme="nexora"] .op-head:has(.tone-writeoff) { --op-tone: var(--writeoff-rgb); }
 [data-theme="nexora"] .field label { color: var(--text); font-weight: 600; }
 
 /* ---------- Светлая тема (Nexora): чёткие цвета, лайм на заливках и наведении ----------
@@ -987,6 +991,7 @@ label.pick { cursor: pointer; }
 [data-theme="nexora"] .icon-tile.tone-orange { --tone: var(--orange-rgb); --tone-glow: var(--orange-rgb); }
 [data-theme="nexora"] .icon-tile.tone-blue { --tone: var(--blue-rgb); --tone-glow: var(--blue-rgb); }
 [data-theme="nexora"] .icon-tile.tone-red { --tone: var(--red-rgb); --tone-glow: var(--red-rgb); }
+[data-theme="nexora"] .icon-tile.tone-writeoff { --tone: var(--writeoff-rgb); --tone-glow: var(--writeoff-rgb); }
 [data-theme="nexora"] .icon-tile.tone-grey { --tone: 96 102 112; --tone-glow: 96 102 112; }
 [data-theme="nexora"] :is(.item, .pick)[data-status="servicing"] .icon-tile { --tone: var(--orange-rgb); --tone-glow: var(--orange-rgb); }
 [data-theme="nexora"] :is(.item, .pick)[data-status="missing"] .icon-tile { --tone: var(--red-rgb); --tone-glow: var(--red-rgb); }

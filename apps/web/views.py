@@ -30,7 +30,7 @@ OPERATION_STYLE = {
     "returned": ("arrow-left", "tone-blue"),
     "servicing": ("wrench", "tone-violet"),
     "missing": ("alert", "tone-orange"),
-    "written_off": ("trash", "tone-red"),
+    "written_off": ("trash", "tone-writeoff"),
 }
 
 
