@@ -258,35 +258,6 @@
   --aurora-1: rgb(255 216 102 / .18);
   --aurora-2: rgb(171 157 242 / .14);
 }
-:root[data-theme="palenight"] {   /* Material Palenight */
-  --accent-rgb: 199 146 234;
-  --accent-2: #9b72b7;
-  --accent-ink: #1b1e2b;
-  --accent-bright: #dbb8f1;
-  --ok-rgb: 195 232 141;
-  --violet-rgb: 130 170 255;
-  --orange-rgb: 255 203 107;
-  --blue-rgb: 137 221 255;
-  --red-rgb: 255 83 112;
-  --writeoff-rgb: 247 140 108;
-  --sub-rgb: 137 221 255;
-  --meta-rgb: 255 203 107;
-  --time-rgb: 255 214 90;
-  --text: #eeffff;
-  --text-dim: #a6accd;
-  --text-faint: #8e95ac;
-  --page-bg: #1b1e2b;
-  --card-bg: linear-gradient(145deg, rgb(255 255 255 / .06), rgb(255 255 255 / .015)), rgb(41 45 62 / .8);
-  --card-bg-solid: #292d3e;
-  --card-border: #555c75;
-  --popover-bg: rgb(41 45 62 / .94);
-  --option-bg: #292d3e;
-  --option-text: #eeffff;
-  --hero-bg: #1b1e2b;
-  --hero-shade: linear-gradient(90deg, rgb(27 30 43 / .94) 0%, rgb(27 30 43 / .55) 42%, transparent 75%);
-  --aurora-1: rgb(199 146 234 / .18);
-  --aurora-2: rgb(130 170 255 / .14);
-}
 :root[data-theme="gruvdark"] {   /* Gruvbox Dark */
   --accent-rgb: 250 189 47;
   --accent-2: #c39325;
@@ -319,35 +290,6 @@
 
 /* ---------- Светлые палитры: всё оформление светлой Nexora, свои цвета ----------
    Рамки, подписи, зелёный текст и статусы подтянуты расчётом до читаемого контраста на блоках */
-:root[data-theme="jellyfish"] {   /* JellyFish (PawelBorkar.jellyfish) */
-  --accent-rgb: 255 0 85;
-  --accent-2: #c90044;
-  --accent-ink: #00002c;
-  --accent-bright: #ff5c8f;
-  --ok-rgb: 0 255 255;
-  --violet-rgb: 250 113 255;
-  --orange-rgb: 255 126 52;
-  --blue-rgb: 0 217 255;
-  --red-rgb: 255 40 40;
-  --writeoff-rgb: 255 72 0;
-  --sub-rgb: 0 255 255;
-  --meta-rgb: 250 113 255;
-  --time-rgb: 238 255 0;
-  --text: #f4f4ff;
-  --text-dim: #a9abd9;
-  --text-faint: #7d80b0;
-  --page-bg: #000124;
-  --card-bg: linear-gradient(145deg, rgb(255 255 255 / .06), rgb(255 255 255 / .015)), rgb(11 10 60 / .8);
-  --card-bg-solid: #0b0a3c;
-  --card-border: #2e2c78;
-  --popover-bg: rgb(11 10 60 / .94);
-  --option-bg: #0b0a3c;
-  --option-text: #f4f4ff;
-  --hero-bg: #000124;
-  --hero-shade: linear-gradient(90deg, rgb(0 1 36 / .94) 0%, rgb(0 1 36 / .55) 42%, transparent 75%);
-  --aurora-1: rgb(255 0 85 / .18);
-  --aurora-2: rgb(0 255 255 / .14);
-}
 :root[data-theme="justblack"] {   /* Just Black (nur.just-black) */
   --accent-rgb: 128 203 196;
   --accent-2: #5fa39d;
