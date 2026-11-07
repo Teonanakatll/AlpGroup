@@ -282,37 +282,42 @@ class JournalSimulator:
         return True
 
     def _write_off(self):
-        """Чаще со склада (сломанное после ремонта или старое), иногда с объекта."""
+        """Со склада (сломанное, старое) или с объекта; если в выбранном месте пусто — из другого."""
         note = self.rng.choice(WRITE_OFF_NOTES)
-        on_site = [t for t in Tool.objects.filter(status=Tool.Status.ISSUED, current_site__isnull=False)]
-        if on_site and self.rng.random() < 0.4:
+        options = []
+        on_site = list(Tool.objects.filter(status=Tool.Status.ISSUED, current_site__isnull=False))
+        if on_site:
             tool = self.rng.choice(on_site)
-            services.write_off(user=self.author, site=tool.current_site, tools=[tool], note=note)
-            return True
-        tools = list(selectors.tools_for_write_off())
+            options.append(lambda: services.write_off(user=self.author, site=tool.current_site, tools=[tool], note=note))
+        warehouse = list(selectors.tools_for_write_off())
+        if warehouse:
+            tool_w = self.rng.choice(warehouse)
+            options.append(lambda: services.write_off(user=self.author, tools=[tool_w], note=note))
         hands = list(selectors.available_hand_tools())
-        if hands and (not tools or self.rng.random() < 0.4):
+        if hands:
             hand = self.rng.choice(hands)
-            services.write_off(user=self.author, hand_tools=[(hand, 1)], note=note)
-            return True
-        if not tools:
-            return False
-        services.write_off(user=self.author, tools=[self.rng.choice(tools)], note=note)
-        return True
+            options.append(lambda: services.write_off(user=self.author, hand_tools=[(hand, 1)], note=note))
+        return self._one_of(options)
 
     def _servicing(self):
-        """1-2 штучных: со склада или с объекта (ручной в ремонт не отправляется)."""
+        """1-2 штучных со склада или одна с объекта; если в выбранном месте пусто — из другого."""
         note = self.rng.choice(SERVICING_NOTES)
-        on_site = [t for t in Tool.objects.filter(status=Tool.Status.ISSUED, current_site__isnull=False)]
-        if on_site and self.rng.random() < 0.5:
+        options = []
+        on_site = list(Tool.objects.filter(status=Tool.Status.ISSUED, current_site__isnull=False))
+        if on_site:
             tool = self.rng.choice(on_site)
-            services.send_to_servicing(user=self.author, site=tool.current_site, tools=[tool],
-                                       taken_by=self.rng.choice(PEOPLE), note=note)
-            return True
-        tools = list(selectors.available_tools())
-        if not tools:
-            return False
-        picked = self.rng.sample(tools, min(len(tools), self.rng.randint(1, 2)))
-        services.send_to_servicing(user=self.author, tools=picked, note=note)
-        return True
+            options.append(lambda: services.send_to_servicing(
+                user=self.author, site=tool.current_site, tools=[tool], taken_by=self.rng.choice(PEOPLE), note=note,
+            ))
+        warehouse = list(selectors.available_tools())
+        if warehouse:
+            picked = self.rng.sample(warehouse, min(len(warehouse), self.rng.randint(1, 2)))
+            options.append(lambda: services.send_to_servicing(user=self.author, tools=picked, note=note))
+        return self._one_of(options)
 
+    def _one_of(self, options):
+        """Провести один из возможных вариантов (выбор случайный). False — вариантов нет."""
+        if not options:
+            return False
+        self.rng.choice(options)()
+        return True
