@@ -90,3 +90,71 @@ def test_seed_does_not_duplicate_gear_on_rerun(admin_user):
 
     assert Category.objects.filter(name="Высотное снаряжение").count() == 1
     assert Tool.objects.filter(name="Обвязка страховочная №1").count() == 1
+
+
+# ---------------------------------------------------------------------------
+# --journal: «живой журнал» из 15 операций
+# ---------------------------------------------------------------------------
+
+def _batches(model, movement_type):
+    return set(model.objects.filter(type=movement_type).values_list("batch", flat=True))
+
+
+def _all_batches(movement_type):
+    return _batches(ToolMovement, movement_type) | _batches(HandToolMovement, movement_type)
+
+
+def test_journal_creates_operations_of_each_kind(admin_user):
+    call_command("seed_demo", seed=3, journal=True)
+
+    assert len(_all_batches("issued")) == 5
+    assert len(_all_batches("returned")) == 3
+    assert len(_all_batches("written_off")) == 3
+    assert len(_batches(ToolMovement, "servicing")) == 4
+    assert not HandToolMovement.objects.filter(type="servicing").exists()   # ручной в ремонт не идёт
+
+
+def test_journal_issues_8_to_12_positions_to_different_sites(admin_user):
+    call_command("seed_demo", seed=3, journal=True)
+
+    sites = set()
+    for batch in _all_batches("issued"):
+        rows = (ToolMovement.objects.filter(batch=batch).count()
+                + HandToolMovement.objects.filter(batch=batch).count())
+        assert 8 <= rows <= 12
+        row = ToolMovement.objects.filter(batch=batch).first() or HandToolMovement.objects.filter(batch=batch).first()
+        sites.add(row.site_id)
+    assert len(sites) == 5
+
+
+def test_journal_state_matches_journal(admin_user):
+    """Кэш в моделях совпадает с пересчётом из журнала: операции шли через services."""
+    call_command("seed_demo", seed=3, journal=True)
+
+    for tool in Tool.objects.all():
+        before = (tool.status, tool.current_site_id)
+        services.recalc_tool(tool)
+        tool.refresh_from_db()
+        assert (tool.status, tool.current_site_id) == before
+    for hand in HandTool.objects.all():
+        before = (hand.total, hand.issued)
+        services.recalc_hand_tool(hand)
+        hand.refresh_from_db()
+        assert (hand.total, hand.issued) == before
+        assert 0 <= hand.issued <= hand.total
+
+
+def test_journal_without_flag_adds_no_operations(admin_user):
+    call_command("seed_demo", seed=3)
+    assert not ToolMovement.objects.exclude(type="added").exists()
+    assert not HandToolMovement.objects.exclude(type="added").exists()
+
+
+def test_journal_on_top_of_existing_operations(admin_user):
+    """База, где уже есть свои выдачи и ремонты (как на стенде): новый круг проходит без ошибок."""
+    call_command("seed_demo", seed=1, journal=True)
+    call_command("seed_demo", seed=2, journal=True)
+
+    assert Tool.objects.count() == 45                                     # справочники не задвоились
+    assert len(_all_batches("issued")) == 10
+    assert len(_batches(ToolMovement, "servicing")) == 8
