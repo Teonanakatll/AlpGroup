@@ -237,13 +237,18 @@ def test_inventory_search_by_name(admin_client, tool, stocked_hand_tool):
     assert "Молоток" in html and "Перфоратор" not in html
 
 
-def test_inventory_status_filter_hides_hand_tools(admin_client, user, tool, stocked_hand_tool, site):
+def test_inventory_status_filter_and_hand_tools(admin_client, user, tool, stocked_hand_tool, site):
     services.issue_to_site(user=user, site=site, tools=[tool])
 
     html = page(admin_client, "/inventory/?status=issued")
-
     assert "Перфоратор" in html
-    assert "Молоток" not in html            # у ручного инструмента статусов нет
+    assert "Молоток" not in html            # ручного не выдавали
+
+    html = page(admin_client, "/inventory/?status=available")
+    assert "Молоток" in html                # ручной в наличии виден в «На складе»
+    assert "Перфоратор" not in html
+
+    assert "Молоток" not in page(admin_client, "/inventory/?status=servicing")
 
 
 # Минимальный корректный GIF 1x1: настоящая картинка для ImageField без внешних файлов.
@@ -288,11 +293,16 @@ def test_search_inventory_by_name(tool, stocked_hand_tool):
     assert list(hand_tools) == []
 
 
-def test_search_inventory_status_applies_to_tools_only(tool, stocked_hand_tool):
+def test_search_inventory_status_for_hand_tools(user, tool, stocked_hand_tool, hand_tool, site):
     tools, hand_tools = selectors.search_inventory(status="available")
-
     assert [t.name for t in tools] == ["Перфоратор"]
-    assert list(hand_tools) == []
+    assert [h.name for h in hand_tools] == ["Молоток"]            # 10 на складе
+
+    assert list(selectors.search_inventory(status="issued")[1]) == []
+    services.issue_to_site(user=user, site=site, hand_tools=[(stocked_hand_tool, 10)])
+    assert list(selectors.search_inventory(status="available")[1]) == []   # всё выдано — на складе нет
+    assert [h.name for h in selectors.search_inventory(status="issued")[1]] == ["Молоток"]
+    assert list(selectors.search_inventory(status="missing")[1]) == []
 
 
 def test_search_inventory_without_filters_returns_everything(tool, stocked_hand_tool):

@@ -403,8 +403,9 @@ def search_inventory(query="", status=""):
     """
     Инвентарь для страницы: пара (штучные, ручные), по названию без учёта регистра.
 
-    status относится только к штучным позициям. У ручного инструмента статусов нет
-    (DECISIONS, раздел 14), поэтому при выбранном статусе ручной инструмент не показывается.
+    У ручного инструмента статусов нет (DECISIONS, раздел 14), но два фильтра для него имеют смысл:
+    «На складе» — есть в наличии (total > issued), «Выдан» — хоть сколько-то выдано (issued > 0).
+    При «В ремонте», «Не найден», «Списан» ручной не показывается: в таком состоянии его не бывает.
     """
     # Главное фото берём одним дополнительным запросом на всю страницу (а не по запросу на позицию).
     # В шаблоне: tool.main_photos (список из 0 или 1 фото).
@@ -416,7 +417,12 @@ def search_inventory(query="", status=""):
         hand_tools = hand_tools.filter(name__icontains=query)
     if status:
         tools = tools.filter(status=status)
-        hand_tools = hand_tools.none()
+        if status == Tool.Status.AVAILABLE:
+            hand_tools = hand_tools.filter(total__gt=F("issued"))
+        elif status == Tool.Status.ISSUED:
+            hand_tools = hand_tools.filter(issued__gt=0)
+        else:
+            hand_tools = hand_tools.none()
     return tools, hand_tools
 
 
