@@ -1726,28 +1726,41 @@ body:has(.op-bar) .to-top { bottom: 96px; }                             /* в ф
     0 0 28px rgb(var(--accent-rgb) / .16);
 }
 
-
-/* ---------- Заставка: мягкое свечение рамки при наведении ----------
-   Без подъёма (мешал бы параллаксу горы) и без бегущего блика (на большом блоке смотрится дёшево). */
+/* ---------- Заставка: при наведении свечение и бегущий блик по рамке, как у карточек ----------
+   Без подъёма: он мешал бы параллаксу горы. ::before заставки раньше держал картинку темы (--hero-art),
+   теперь картинки нет во всех темах, и он рисует кольцо-блик поверх фото (pointer-events: none). */
 .hero { transition: border-color .5s var(--ease-soft), box-shadow .6s var(--ease-soft); }
 .hero:hover {
-  border-color: rgb(var(--accent-rgb) / .6);
+  border-color: var(--outline-hover);
   box-shadow:
-    0 0 0 1px rgb(var(--accent-rgb) / .35),
-    0 0 14px 1px rgb(var(--accent-rgb) / .4),
-    0 0 40px rgb(var(--accent-rgb) / .14),
-    var(--card-shadow);
+    0 0 0 1px rgb(var(--accent-rgb) / .5),
+    0 0 12px 1px rgb(var(--accent-rgb) / .55),
+    var(--shadow-lift),
+    0 0 36px rgb(var(--accent-rgb) / .16);
 }
+.hero::before {
+  z-index: 3; inset: 0; border-radius: inherit; padding: 2px; pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0; transition: opacity .5s var(--ease-soft);
+}
+.hero:hover::before { opacity: 1; animation: spin-a 2.2s linear infinite; }
 
-/* ---------- Бегущий блик по рамке у блоков и строк: ярче и быстрее ----------
-   Белая сердцевина в акцентной полосе и оборот за 2,2 с вместо 3,2 с.
+/* ---------- Бегущий блик по рамке у блоков, строк и заставки: крупнее, ярче, быстрее ----------
+   Светлая полоса длиннее (почти треть контура), с белой сердцевиной, кольцо 2 px; оборот за 2,2 с.
    У пунктов меню и фильтров блик прежний. В светлых темах бликов нет (правила выше). */
-:is(.card, .row, .pick)::before {
+:is(.card, .row, .pick)::before { padding: 2px; inset: -1px; }
+:is(.card, .row, .pick, .hero)::before {
   background: conic-gradient(from var(--a),
-    transparent 0 58%,
-    rgb(var(--accent-rgb) / .9) 76%,
-    rgb(255 255 255 / .95) 83%,
-    rgb(var(--accent-rgb) / .9) 88%,
+    transparent 0 48%,
+    rgb(var(--accent-rgb) / .55) 62%,
+    rgb(var(--accent-rgb) / .95) 74%,
+    rgb(255 255 255 / .95) 82%,
+    rgb(var(--accent-rgb) / .95) 89%,
     transparent 100%);
 }
 :is(.card, .row, .pick):hover::before, .card:focus-within::before { animation-duration: 2.2s; }
+[data-mode="light"] .hero::before { display: none; }
+
