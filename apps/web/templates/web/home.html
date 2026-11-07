@@ -1,7 +1,7 @@
 {% extends "web/base.html" %}
 {% load static %}
 {% block title %}Главная · AlpGroup{% endblock %}
-{% block head_extra %}<script src="{% static 'web/js/hero.js' %}" defer></script><script src="{% static 'web/js/scene-fx.js' %}" defer></script><script src="{% static 'web/js/liquid-fx.js' %}" defer></script>{% endblock %}
+{% block head_extra %}<script src="{% static 'web/js/hero.js' %}" defer></script><script src="{% static 'web/js/scene-fx.js' %}" defer></script>{% endblock %}
 
 {% block content %}
   <section class="hero reveal" data-parallax>
@@ -10,15 +10,6 @@
       <img class="layer layer-photo" data-depth="0.5" src="{% static 'web/img/hero/matterhorn.webp' %}" alt="">
       {# То же фото в WebGL: под курсором вода и RGB-сдвиг (scene-fx.js). Нет WebGL: остаётся картинка выше #}
       <canvas class="layer layer-fx" data-depth="0.5" width="1024" height="1536"></canvas>
-    </div>
-    {% comment %} Тема Nexora: «жидкая» картинка на весь блок (liquid-fx.js). Картинки любые, несколько — через «|», клик переключает.
-       data-images-narrow — свой набор для узкого вертикального блока (телефон).
-       Нет WebGL или «меньше движения»: вместо неё кристалл темы
-    {% endcomment %}
-    <div class="liquid" aria-hidden="true">
-      <canvas class="liquid-fx"
-              data-images="{% static 'web/img/hero/nexora-fjord.webp' %}|{% static 'web/img/hero/nexora-mountains.webp' %}"
-              data-images-narrow="{% static 'web/img/hero/nexora-lake.webp' %}"></canvas>
     </div>
     {# Средний слой: текст и кнопка двигаются чуть сильнее фона #}
     <div class="hero-mid" data-depth="0.9">

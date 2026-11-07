@@ -120,10 +120,8 @@
   --option-bg: #ffffff;
   --option-text: #0f1114;
 
-  --hero-art: url("../img/gem.svg");
-  --hero-art-size: auto 92%;
-  --hero-art-pos: right 7% center;
-  --hero-shade: radial-gradient(ellipse 60% 120% at 80% 40%, rgb(150 255 0 / .16), transparent 70%);
+  --hero-art: none;                  /* заставка во всех темах одна: фото горы с рябью (.scene), как в Summit */
+  --hero-shade: linear-gradient(90deg, rgb(11 13 16 / .94) 0%, rgb(11 13 16 / .55) 42%, transparent 75%);
   --hero-bg: #0b0d10;
   --aurora-1: transparent;           /* цветных пятен на фоне нет */
   --aurora-2: transparent;
@@ -757,7 +755,7 @@ html.lenis, html.lenis body { height: auto; }
 .hero .btn { align-self: flex-start; margin-top: 6px; }
 
 
-/* Фото горы слоями (Summit): справа, левый край растворяется в тёмном фоне */
+/* Фото горы слоями (во всех темах): справа, левый край растворяется в тёмном фоне */
 .scene {
   position: absolute; z-index: -2; top: 0; right: 0; bottom: 0; width: min(62%, 780px); overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 38%);
@@ -770,28 +768,7 @@ html.lenis, html.lenis body { height: auto; }
   object-fit: cover; object-position: 50% 18%;
   will-change: transform; pointer-events: none; user-select: none;
 }
-[data-mode="light"] .scene { display: none; }                /* у Nexora на этом месте кристалл */
 
-/* «Жидкая» картинка Nexora (liquid-fx.js): на весь блок, появляется, когда WebGL готов */
-.liquid { display: none; }
-[data-mode="light"] .liquid {
-  display: block; position: absolute; inset: 0; z-index: -2; overflow: hidden;
-  opacity: 0; transition: opacity .9s var(--ease-soft);
-}
-[data-mode="light"] .liquid.is-gl { opacity: 1; }
-.liquid-fx { display: block; width: 100%; height: 100%; }
-.liquid::after {                       /* затемнение только под текстом слева; правая часть фото чистая */
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(90deg, rgb(4 5 7 / .82) 0%, rgb(4 5 7 / .6) 28%, rgb(4 5 7 / .22) 48%, transparent 62%);
-}
-/* текст поверх фотографии: тени, чтобы читался и на светлых местах */
-[data-mode="light"] .hero.has-liquid h1 { text-shadow: 0 1px 2px rgb(0 0 0 / .6), 0 4px 22px rgb(0 0 0 / .55); }
-[data-mode="light"] .hero.has-liquid h1 .accent-text { text-shadow: none; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .6)) drop-shadow(0 3px 12px rgb(0 0 0 / .5)); }
-[data-mode="light"] .hero.has-liquid p { color: #e3e8e0; text-shadow: 0 1px 2px rgb(0 0 0 / .8), 0 2px 14px rgb(0 0 0 / .6); }
-/* Пока виден эффект, слои старой заставки Nexora не нужны: кристалл-SVG и зелёное свечение под ним
-   (--hero-shade) легли бы на фотографию зелёными пятнами */
-[data-mode="light"] .hero.has-liquid::before,
-[data-mode="light"] .hero.has-liquid::after { opacity: 0; }
 .hero::before, .hero::after { transition: opacity .9s var(--ease-soft); }
 
 /* Логотип: картинка и поверх неё канвас с бликами; оба с одной раскладкой */
@@ -1534,8 +1511,7 @@ label.pick { cursor: pointer; }
   .logo3d-hero { position: static; order: -1; align-self: flex-start; width: min(240px, 66%); margin-bottom: 4px; }   /* в узком блоке логотип над текстом, а не поверх горы и заголовка */
   /* Гора видна целиком: лёгкое затемнение сверху и снизу вместо сплошной заливки,
      а читаемость текста держат тени и размытое пятно прямо под ним (.hero-mid::before) */
-  .liquid::after { background: none; }   /* в узком блоке текст поверх всего фото: читаемость дают пятно под текстом и тени, фото без затемнения */
-  [data-mode="dark"] .hero::after { background: linear-gradient(180deg, rgb(5 7 10 / .35) 0%, rgb(5 7 10 / .1) 45%, rgb(5 7 10 / .55) 100%); }
+  .hero::after { background: linear-gradient(180deg, rgb(5 7 10 / .35) 0%, rgb(5 7 10 / .1) 45%, rgb(5 7 10 / .55) 100%); }
   .hero-mid { isolation: isolate; }
   .hero-mid::before {
     content: ""; position: absolute; z-index: -1; inset: -18px -26px; border-radius: 40px; pointer-events: none;
