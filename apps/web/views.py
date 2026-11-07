@@ -62,7 +62,7 @@ def _op_nav(mode):
 
 @login_required
 def home(request):
-    recent = selectors.recent_entries(limit=6)
+    recent = selectors.recent_entries(limit=6, sites=roles.own_site_ids(request))
     for entry in recent:
         _style_entry(entry)
     return render(request, "web/home.html", {
@@ -491,12 +491,15 @@ def journal(request):
         pass
     # Фильтр: ?site=<id> и/или ?who=<Кто взял>. «Мои» — who = полное имя пользователя,
     # если оно встречается в журнале (пока ответственное лицо не привязано к объектам, SPEC 7.1).
-    filters = selectors.journal_filters()
+    own = roles.own_site_ids(request)              # ответственное лицо видит только свои объекты
+    filters = selectors.journal_filters(sites=own)
     site = _site_from(request.GET.get("site"))
+    if own is not None and site and site.pk not in own:
+        site = None
     who = request.GET.get("who", "").strip()
     my_name = request.user.get_full_name().strip()
     entries, has_more = selectors.journal_entries(
-        limit=limit, batch=only_batch, site=site.pk if site else None, taken_by=who or None,
+        limit=limit, batch=only_batch, site=site.pk if site else None, taken_by=who or None, sites=own,
     )
     for entry in entries:
         _style_entry(entry)
@@ -506,7 +509,8 @@ def journal(request):
         "only_batch": only_batch,
         "filter_sites": filters["sites"], "filter_people": filters["people"],
         "filter_site": site, "filter_who": who, "filter_query": urlencode(query),
-        "my_name": my_name if my_name in filters["people"] else "",
+        "my_name": my_name if own is None and my_name in filters["people"] else "",
+        "own_sites": list(Site.objects.filter(pk__in=own).order_by("name")) if own is not None else None,
     })
 
 

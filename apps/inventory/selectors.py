@@ -267,7 +267,7 @@ def _movement_dicts(tool_rows, hand_rows):
     return items
 
 
-def journal_entries(limit=40, batch=None, row_limit=None, site=None, taken_by=None):
+def journal_entries(limit=40, batch=None, row_limit=None, site=None, taken_by=None, sites=None):
     """
     Журнал операций для страницы: (записи, есть_ещё).
 
@@ -281,9 +281,12 @@ def journal_entries(limit=40, batch=None, row_limit=None, site=None, taken_by=No
     site, taken_by: фильтр журнала — только операции по этому объекту (id) и/или
     с этим «Кто взял / привёз» (точное совпадение текста). У строк одного набора объект
     и taken_by общие, поэтому набор под фильтр попадает целиком.
+    sites: ограничение видимости (id объектов ответственного лица); None — все операции.
     """
     tool_qs = ToolMovement.objects.select_related("tool", "site", "created_by", "cancelled_by")
     hand_qs = HandToolMovement.objects.select_related("hand_tool", "site", "created_by", "cancelled_by")
+    if sites is not None:
+        tool_qs, hand_qs = tool_qs.filter(site_id__in=sites), hand_qs.filter(site_id__in=sites)
     if site is not None:
         tool_qs, hand_qs = tool_qs.filter(site_id=site), hand_qs.filter(site_id=site)
     if taken_by:
@@ -350,21 +353,25 @@ def journal_entries(limit=40, batch=None, row_limit=None, site=None, taken_by=No
     return entries[:limit], has_more
 
 
-def journal_filters():
+def journal_filters(sites=None):
     """
     Варианты для фильтра журнала: объекты, по которым были операции, и все «Кто взял / привёз».
+    sites: только эти объекты (видимость ответственного лица); None — все.
     Возвращает {"sites": [Site, ...], "people": ["Имя Фамилия", ...]} (по алфавиту).
     """
-    site_ids = set(ToolMovement.objects.filter(site__isnull=False).values_list("site_id", flat=True))
-    site_ids |= set(HandToolMovement.objects.filter(site__isnull=False).values_list("site_id", flat=True))
-    people = set(ToolMovement.objects.exclude(taken_by="").values_list("taken_by", flat=True).distinct())
-    people |= set(HandToolMovement.objects.exclude(taken_by="").values_list("taken_by", flat=True).distinct())
+    tool_qs, hand_qs = ToolMovement.objects.all(), HandToolMovement.objects.all()
+    if sites is not None:
+        tool_qs, hand_qs = tool_qs.filter(site_id__in=sites), hand_qs.filter(site_id__in=sites)
+    site_ids = set(tool_qs.filter(site__isnull=False).values_list("site_id", flat=True))
+    site_ids |= set(hand_qs.filter(site__isnull=False).values_list("site_id", flat=True))
+    people = set(tool_qs.exclude(taken_by="").values_list("taken_by", flat=True).distinct())
+    people |= set(hand_qs.exclude(taken_by="").values_list("taken_by", flat=True).distinct())
     return {"sites": list(Site.objects.filter(pk__in=site_ids).order_by("name")), "people": sorted(people)}
 
 
-def recent_entries(limit=6):
+def recent_entries(limit=6, sites=None):
     """Последние операции для главной: те же записи, что в журнале (набор = одна запись)."""
-    entries, _ = journal_entries(limit=limit, row_limit=limit * 8)
+    entries, _ = journal_entries(limit=limit, row_limit=limit * 8, sites=sites)
     return entries
 
 

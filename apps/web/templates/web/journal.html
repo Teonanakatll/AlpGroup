@@ -8,7 +8,7 @@
       {% if only_batch %}
         <p class="muted"><a class="row-link" href="{% url 'web:journal' %}">← Весь журнал</a> · один набор</p>
       {% else %}
-        <p class="muted">Всё, что происходило с инструментом. {% if can_operate %}Отменить можно только последнюю операцию по позиции; отменённые остаются в журнале.{% else %}Только просмотр: операции и отмену делает кладовщик.{% endif %}</p>
+        <p class="muted">Всё, что происходило с инструментом. {% if own_sites is not None %}Операции по вашим объектам{% if own_sites %}: {% for s in own_sites %}<span class="site-name">{{ s.name }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}{% else %} — за вами пока не закреплено ни одного объекта (назначает администратор){% endif %}.{% elif can_operate %}Отменить можно только последнюю операцию по позиции; отменённые остаются в журнале.{% else %}Только просмотр: операции и отмену делает кладовщик.{% endif %}</p>
       {% endif %}
     </div>
   </div>

@@ -95,6 +95,17 @@ def can_manage(request):
     return effective_role(request) in MANAGERS
 
 
+def own_site_ids(request):
+    """
+    Какие объекты видит пользователь в журнале: None — все; иначе id его объектов.
+    Ограничение только у ответственного лица (объекты, где он указан ответственным, SPEC 7.1).
+    """
+    if effective_role(request) != RESPONSIBLE:
+        return None
+    from apps.sites.models import Site          # здесь, а не сверху: roles грузится в settings-процессоре рано
+    return set(Site.objects.filter(responsible=request.user).values_list("pk", flat=True))
+
+
 def assign_role(user, role):
     """Выдать пользователю роль: убрать из других ролевых групп, добавить в нужную."""
     user.groups.remove(*Group.objects.filter(name__in=GROUPS.values()))
