@@ -4,6 +4,7 @@ git merge origin/claude/,,,
 pytest
 git push origin main      # только если тесты зелёные
 
+.venv\Scripts\activate
 
 python manage.py seed_demo
 
