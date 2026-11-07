@@ -1,5 +1,5 @@
 {% comment %}
-Причина (списание, ремонт, не найден) в цвете операции. В строке видна только метка «Причина»;
+Причина (списание, ремонт, не найден): метка «Причина» в цвете операции, текст — зелёным темы;
 текст раскрывается под строкой при наведении на строку или касании метки (tabindex — для телефона).
 Нужны: note, tone.
-{% endcomment %}<div class="note"><span class="note-flag {{ tone }}" tabindex="0" title="{{ note }}">Причина</span><div class="row-note {{ tone }}"><span>{{ note }}</span></div></div>
+{% endcomment %}<div class="note"><span class="note-flag {{ tone }}" tabindex="0" title="{{ note }}">Причина</span><div class="row-note"><span><span>{{ note }}</span></span></div></div>

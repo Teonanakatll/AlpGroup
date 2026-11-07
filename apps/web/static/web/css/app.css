@@ -31,6 +31,7 @@
   --violet-rgb: 160 112 255;
   --orange-rgb: 255 138 42;
   --yellow-rgb: 255 214 10;             /* объект в журнале и списках */
+  --green-rgb: 182 255 46;             /* текст причины в журнале */
   --blue-rgb: 70 150 255;
   --red-rgb: 255 90 60;
   --time-rgb: 255 214 10;            /* время в строках списков: жёлтый темы */
@@ -89,6 +90,7 @@
   --violet-rgb: 104 46 214;          /* статусы насыщенные, на белом от 5:1 */
   --orange-rgb: 232 32 0;            /* «в ремонте», предупреждения: алый (оранжево-красный, как #FF2400), 4.5:1 на белом */
   --yellow-rgb: 142 104 0;   /* тёмное золото: жёлтый на белом не читается, ≥4.5:1 */
+  --green-rgb: 46 125 0;   /* текст причины в журнале; в светлых темах темнее для контраста ≥4.5:1 */
   --blue-rgb: 16 88 196;
   --red-rgb: 170 0 25;               /* «не найден», ошибки: тёмно-красный, чтобы отличался от алого */
   --writeoff-rgb: 255 115 0;         /* списание: ярко-оранжевый */
@@ -153,6 +155,7 @@
   --violet-rgb: 189 147 249;
   --orange-rgb: 255 184 108;
   --yellow-rgb: 241 250 140;             /* объект в журнале и списках */
+  --green-rgb: 80 250 123;             /* текст причины в журнале */
   --blue-rgb: 139 233 253;
   --red-rgb: 255 85 85;
   --writeoff-rgb: 255 121 198;
@@ -183,6 +186,7 @@
   --violet-rgb: 54 249 246;
   --orange-rgb: 254 222 93;
   --yellow-rgb: 254 222 93;             /* объект в журнале и списках */
+  --green-rgb: 114 241 184;             /* текст причины в журнале */
   --blue-rgb: 54 249 246;
   --red-rgb: 254 68 80;
   --writeoff-rgb: 249 126 114;
@@ -213,6 +217,7 @@
   --violet-rgb: 0 240 255;
   --orange-rgb: 255 159 28;
   --yellow-rgb: 252 238 10;             /* объект в журнале и списках */
+  --green-rgb: 0 255 159;             /* текст причины в журнале */
   --blue-rgb: 0 240 255;
   --red-rgb: 255 42 109;
   --writeoff-rgb: 255 107 53;
@@ -243,6 +248,7 @@
   --violet-rgb: 171 157 242;
   --orange-rgb: 252 152 103;
   --yellow-rgb: 255 216 102;             /* объект в журнале и списках */
+  --green-rgb: 169 220 118;             /* текст причины в журнале */
   --blue-rgb: 120 220 232;
   --red-rgb: 255 97 136;
   --writeoff-rgb: 252 152 103;
@@ -273,6 +279,7 @@
   --violet-rgb: 211 134 155;
   --orange-rgb: 254 128 25;
   --yellow-rgb: 250 189 47;             /* объект в журнале и списках */
+  --green-rgb: 184 187 38;             /* текст причины в журнале */
   --blue-rgb: 131 165 152;
   --red-rgb: 251 73 52;
   --writeoff-rgb: 214 93 14;
@@ -306,6 +313,7 @@
   --violet-rgb: 204 119 255;
   --orange-rgb: 255 119 0;
   --yellow-rgb: 255 203 107;             /* объект в журнале и списках */
+  --green-rgb: 195 232 141;             /* текст причины в журнале */
   --blue-rgb: 0 136 255;
   --red-rgb: 255 64 64;
   --writeoff-rgb: 255 0 119;
@@ -340,6 +348,7 @@
   --violet-rgb: 102 106 184;
   --orange-rgb: 195 72 21;
   --yellow-rgb: 142 106 0;   /* ≥4.5:1 на фоне */
+  --green-rgb: 98 115 0;   /* текст причины в журнале; в светлых темах темнее для контраста ≥4.5:1 */
   --blue-rgb: 32 117 176;
   --red-rgb: 211 48 45;
   --writeoff-rgb: 198 51 122;
@@ -374,6 +383,7 @@
   --violet-rgb: 143 63 113;
   --orange-rgb: 175 58 3;
   --yellow-rgb: 150 95 10;   /* ≥4.5:1 на фоне */
+  --green-rgb: 121 116 14;   /* текст причины в журнале; в светлых темах темнее для контраста ≥4.5:1 */
   --blue-rgb: 7 102 120;
   --red-rgb: 157 0 6;
   --writeoff-rgb: 148 97 16;
@@ -944,6 +954,7 @@ html.lenis, html.lenis body { height: auto; }
 /* Причина списания, ремонта, потери: строка в цвете операции; длинная обрезается «…»,
    при наведении или касании раскрывается целиком под строкой (как тогл) */
 .note { display: block; }
+/* Метка «Причина ▾» — в цвете операции; сам текст — зелёным темы (--green-rgb), чтобы не сливался с иконкой */
 .note-flag {
   --tone: var(--orange-rgb);
   display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; padding: 1px 9px; border-radius: 99px;
@@ -951,24 +962,23 @@ html.lenis, html.lenis body { height: auto; }
   border: 1px solid rgb(var(--tone) / .45); cursor: help; outline: 0;
 }
 .note-flag::after { content: "▾"; font-size: 10px; transition: rotate .3s var(--ease-soft); }
-.row-note {
-  --tone: var(--orange-rgb);
-  display: grid; grid-template-rows: 0fr; opacity: 0;
-  font-size: 14px; font-weight: 500; line-height: 1.4; color: rgb(var(--tone));
-  transition: grid-template-rows .35s var(--ease-soft), opacity .3s var(--ease-soft), margin .35s var(--ease-soft);
+:is(.note-flag).tone-writeoff { --tone: var(--writeoff-rgb); }
+:is(.note-flag).tone-violet { --tone: var(--violet-rgb); }
+/* Плавное раскрытие: анимируется только высота строки сетки (0fr → 1fr) и прозрачность;
+   отступы и рамка живут во внутреннем блоке и не меняются, поэтому без скачков */
+.row-note { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .4s var(--ease-soft), opacity .3s var(--ease-soft); }
+.row-note > span { overflow: hidden; min-height: 0; }
+.row-note > span > span {
+  display: block; margin-top: 6px; padding: 5px 10px; border-radius: 8px;
+  font-size: 14px; font-weight: 500; line-height: 1.4; color: rgb(var(--green-rgb));
+  border-left: 2px solid rgb(var(--green-rgb) / .8); background: rgb(var(--green-rgb) / .1);
 }
-.row-note > span {
-  overflow: hidden; min-height: 0; padding: 0 10px; border-radius: 8px;
-  border-left: 2px solid rgb(var(--tone) / .7); background: rgb(var(--tone) / .1);
-}
-:is(.note-flag, .row-note).tone-writeoff { --tone: var(--writeoff-rgb); }
-:is(.note-flag, .row-note).tone-violet { --tone: var(--violet-rgb); }
-/* Раскрыть: наведение на строку (или заголовок набора) либо касание метки (у неё tabindex) */
-:is(.row, summary):hover .row-note, .note:focus-within .row-note { grid-template-rows: 1fr; opacity: 1; margin-top: 6px; }
-:is(.row, summary):hover .row-note > span, .note:focus-within .row-note > span { padding: 5px 10px; }
+:is(.row, summary):hover .row-note, .note:focus-within .row-note { grid-template-rows: 1fr; opacity: 1; }
 :is(.row, summary):hover .note-flag::after, .note:focus-within .note-flag::after { rotate: 180deg; }
+/* В строке с причиной всё прижато к верху: при раскрытии иконка операции и кнопки остаются на месте */
+.row:has(.note) { align-items: flex-start; }
 /* Фильтр журнала */
-.journal-filter { margin-bottom: 4px; }
+.journal-filter { margin-bottom: 4px; position: relative; z-index: 40; }   /* списки фильтра поверх карточек журнала (у .reveal свой слой) */
 [data-mode="light"] .set-person-name { background: none; color: var(--accent-text); }   /* лайм на белом не читается */
 .journal-filter .dd, .journal-filter select { min-width: 200px; }
 
