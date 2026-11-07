@@ -1726,3 +1726,28 @@ body:has(.op-bar) .to-top { bottom: 96px; }                             /* в ф
     0 0 28px rgb(var(--accent-rgb) / .16);
 }
 
+
+/* ---------- Заставка: мягкое свечение рамки при наведении ----------
+   Без подъёма (мешал бы параллаксу горы) и без бегущего блика (на большом блоке смотрится дёшево). */
+.hero { transition: border-color .5s var(--ease-soft), box-shadow .6s var(--ease-soft); }
+.hero:hover {
+  border-color: rgb(var(--accent-rgb) / .6);
+  box-shadow:
+    0 0 0 1px rgb(var(--accent-rgb) / .35),
+    0 0 14px 1px rgb(var(--accent-rgb) / .4),
+    0 0 40px rgb(var(--accent-rgb) / .14),
+    var(--card-shadow);
+}
+
+/* ---------- Бегущий блик по рамке у блоков и строк: ярче и быстрее ----------
+   Белая сердцевина в акцентной полосе и оборот за 2,2 с вместо 3,2 с.
+   У пунктов меню и фильтров блик прежний. В светлых темах бликов нет (правила выше). */
+:is(.card, .row, .pick)::before {
+  background: conic-gradient(from var(--a),
+    transparent 0 58%,
+    rgb(var(--accent-rgb) / .9) 76%,
+    rgb(255 255 255 / .95) 83%,
+    rgb(var(--accent-rgb) / .9) 88%,
+    transparent 100%);
+}
+:is(.card, .row, .pick):hover::before, .card:focus-within::before { animation-duration: 2.2s; }
