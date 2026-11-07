@@ -88,10 +88,10 @@
             {% if entry.is_set %}
               {# Набор из нескольких позиций: одна строка-ссылка на весь список (журнал, раскрытый набор) #}
               <li>
-                <a class="row{% if entry.is_cancelled %} is-cancelled{% endif %}" href="{% url 'web:journal' %}?batch={{ entry.batch }}">
+                <a class="row{% if entry.is_cancelled %} is-cancelled{% endif %}" href="{% url 'web:journal' %}{% if not entry.day_group %}?batch={{ entry.batch }}{% endif %}">
                   <span class="icon-tile {{ entry.tone }}"><svg class="icon" aria-hidden="true"><use href="#i-{{ entry.icon }}"/></svg></span>
                   <div class="row-main">
-                    <div class="row-title">{{ entry.type_display }} · {% if entry.site %}{{ entry.site }}{% else %}Склад{% endif %} · {{ entry.count }} поз.{% if entry.is_cancelled %} <span class="tag-cancel">отменён</span>{% endif %}</div>
+                    <div class="row-title">{% if entry.day_group %}Поставлено на баланс · {{ entry.day|date:"j E" }}{% else %}{{ entry.type_display }} · {% if entry.site %}{{ entry.site }}{% else %}Склад{% endif %}{% endif %} · {{ entry.count }} поз.{% if entry.is_cancelled %} <span class="tag-cancel">отменён</span>{% endif %}</div>
                     <div class="row-sub">{% if entry.taken_by %}{{ entry.taken_by }}{% else %}Открыть список{% endif %}</div>
                   </div>
                   <span class="row-end"><time class="row-time" datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|timesince }} назад</time></span>

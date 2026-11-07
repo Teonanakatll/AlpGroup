@@ -2,6 +2,7 @@
 Выборки (только чтение, ничего не меняют). Считаются по журналу, а не по кэшу в моделях.
 """
 from django.db.models import Case, Count, F, IntegerField, Max, Prefetch, Sum, Value, When
+from django.utils import timezone
 
 from apps.sites.models import Site
 
@@ -307,6 +308,26 @@ def journal_entries(limit=40, batch=None, row_limit=None):
         if row["batch"]:
             by_batch[row["batch"]] = entry
 
+    # Постановки на баланс за один день — одной записью «Поставлено на баланс · <дата>»:
+    # их много и по одной отменить нельзя, поэтому в журнале они только засоряют ленту.
+    # Группируем одиночные added-записи по местной дате; порядок (новые сверху) сохраняется,
+    # группа встаёт на место самой свежей постановки этого дня, у неё своё время у каждой строки.
+    grouped, by_day = [], {}
+    for entry in entries:
+        # вся запись — постановка на баланс? (у неё свой batch на каждую позицию, группируем не по нему, а по дню)
+        if not all(r["type"] == MovementType.ADDED for r in entry["rows"]):
+            grouped.append(entry)
+            continue
+        day = timezone.localtime(entry["created_at"]).date()
+        if day in by_day:
+            by_day[day]["rows"].extend(entry["rows"])
+            continue
+        entry["day_group"] = True
+        entry["day"] = day
+        by_day[day] = entry
+        grouped.append(entry)
+    entries = grouped
+
     for entry in entries:
         active = [r for r in entry["rows"] if not r["is_cancelled"]]
         entry["is_set"] = len(entry["rows"]) > 1
@@ -316,6 +337,8 @@ def journal_entries(limit=40, batch=None, row_limit=None):
         entry["can_cancel_batch"] = bool(active) and all(r["can_cancel"] for r in active)
         entry["cancel_batch_hint"] = "" if entry["can_cancel_batch"] or not active else next(
             (f"«{r['item']}»: {r['hint'].lower()}" for r in active if not r["can_cancel"]), "")
+        if entry.get("day_group"):
+            entry["cancel_batch_hint"] = ""   # постановку на баланс не отменяют — кнопку не показываем
     return entries[:limit], has_more
 
 

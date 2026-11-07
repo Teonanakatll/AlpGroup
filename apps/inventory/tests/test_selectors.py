@@ -256,3 +256,24 @@ def test_sites_with_items_ignores_lost_and_cancelled(user, tool, stocked_hand_to
     services.cancel_batch(user=user, batch=batch)                       # выдачу отменили
 
     assert list(selectors.sites_with_items()) == []
+
+
+def test_journal_groups_added_by_day(user, category):
+    """Постановки на баланс за один день — одной записью-группой, у каждого дня своя."""
+    for name in ["Перфоратор", "Шуруповёрт", "Болгарка"]:
+        services.register_tool(user=user, name=name, category=category)
+    for name in ["Дрель", "Лобзик"]:                         # ещё две постановки «вчера»
+        services.register_tool(user=user, name=name, category=category)
+    ToolMovement.objects.filter(tool__name__in=["Дрель", "Лобзик"]).update(
+        created_at=timezone.now() - timedelta(days=1))
+
+    entries, _ = selectors.journal_entries(limit=40)
+
+    groups = [e for e in entries if e.get("day_group")]
+    assert len(groups) == 2                                   # два дня — две группы
+    today = next(e for e in groups if e["count"] == 3)
+    assert today["is_set"] is True
+    assert today["type_display"] == "Поставлен на баланс"
+    assert today["can_cancel_batch"] is False                # постановку на баланс не отменяют
+    assert today["cancel_batch_hint"] == ""                  # и заглушки-подсказки нет
+    assert {r["item"] for r in today["rows"]} == {"Перфоратор", "Шуруповёрт", "Болгарка"}
