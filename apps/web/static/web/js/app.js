@@ -426,3 +426,47 @@ document.addEventListener("change", function (e) {
   var form = e.target.closest && e.target.closest("form[data-autosubmit]");
   if (form) form.submit();
 });
+
+/* Значки меню мигают, как слегка неисправная неоновая вывеска (только тёмные темы).
+   У каждого значка свой таймер: раз в 1–2 минуты в случайный момент он коротко гаснет,
+   иногда 2–4 раза подряд, будто барахлит контакт. Значки мигают независимо друг от друга.
+   Пока вкладка скрыта, ничего не происходит; при «меньше движения» (data-motion="reduced") выключено. */
+(function () {
+  var root = document.documentElement;
+  if (root.dataset.motion === "reduced" || !Element.prototype.animate) return;
+  var MIN_WAIT = 60000, MAX_WAIT = 120000;
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  // Узор мигания: 1 раз чаще всего, иногда серия из 2–4 «провалов» разной длины
+  function pattern() {
+    var blinks = Math.random() < 0.55 ? 1 : 2 + Math.floor(Math.random() * 3);
+    var frames = [{ opacity: 1, offset: 0 }], t = 0, steps = [];
+    for (var i = 0; i < blinks; i++) {
+      var off = rand(40, 110), on = rand(40, 160);
+      steps.push([t, off, on]); t += off + on;
+    }
+    steps.forEach(function (s) {
+      var dim = rand(0.08, 0.35);                     // гаснет не всегда до конца
+      frames.push({ opacity: 1, offset: s[0] / t });
+      frames.push({ opacity: dim, offset: (s[0] + 8) / t });
+      frames.push({ opacity: dim, offset: (s[0] + s[1]) / t });
+      frames.push({ opacity: 1, offset: Math.min((s[0] + s[1] + 10) / t, 1) });
+    });
+    frames.push({ opacity: 1, offset: 1 });
+    frames.sort(function (a, b) { return a.offset - b.offset; });
+    return { frames: frames, duration: t };
+  }
+
+  function schedule(icon) {
+    setTimeout(function () {
+      if (!document.hidden && root.dataset.mode === "dark" && !icon.closest(".nav-item:hover")) {
+        var p = pattern();
+        icon.animate(p.frames, { duration: p.duration, easing: "steps(1, end)" });
+      }
+      schedule(icon);
+    }, rand(MIN_WAIT, MAX_WAIT));
+  }
+
+  document.querySelectorAll(".sidebar .nav-item .icon").forEach(schedule);
+})();
