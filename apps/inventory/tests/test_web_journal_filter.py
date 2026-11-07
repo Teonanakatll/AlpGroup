@@ -48,3 +48,11 @@ def test_journal_page_filter_and_my_requests(admin_client, admin_user, site, too
     filtered = admin_client.get("/journal/", {"who": "Нино Абашидзе"}).content.decode()
     assert "По этому фильтру операций нет" in filtered
     assert "Сбросить" in filtered
+
+
+def test_reason_is_toggle_and_template_comment_not_rendered(admin_client, admin_user, tool):
+    services.write_off(user=admin_user, tools=[tool], note="Трещина корпуса")
+    html = admin_client.get("/journal/").content.decode()
+
+    assert 'class="note-flag' in html and "Трещина корпуса" in html
+    assert "Нужны: note" not in html                        # служебный комментарий шаблона не выводится

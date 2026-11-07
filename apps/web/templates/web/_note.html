@@ -1,3 +1,5 @@
-{# Причина (списание, ремонт, не найден) в цвете операции. Длинная — в одну строку с «…»,
-   при наведении (или касании: tabindex) раскрывается целиком под строкой. Нужны: note, tone. #}
-<div class="row-note {{ tone }}" tabindex="0" title="{{ note }}">{{ note }}</div>
+{% comment %}
+Причина (списание, ремонт, не найден) в цвете операции. В строке видна только метка «Причина»;
+текст раскрывается под строкой при наведении на строку или касании метки (tabindex — для телефона).
+Нужны: note, tone.
+{% endcomment %}<div class="note"><span class="note-flag {{ tone }}" tabindex="0" title="{{ note }}">Причина</span><div class="row-note {{ tone }}"><span>{{ note }}</span></div></div>

@@ -943,19 +943,30 @@ html.lenis, html.lenis body { height: auto; }
 .site-name { color: rgb(var(--yellow-rgb)); font-weight: 600; }
 /* Причина списания, ремонта, потери: строка в цвете операции; длинная обрезается «…»,
    при наведении или касании раскрывается целиком под строкой (как тогл) */
+.note { display: block; }
+.note-flag {
+  --tone: var(--orange-rgb);
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; padding: 1px 9px; border-radius: 99px;
+  font-size: 12px; font-weight: 600; color: rgb(var(--tone)); background: rgb(var(--tone) / .1);
+  border: 1px solid rgb(var(--tone) / .45); cursor: help; outline: 0;
+}
+.note-flag::after { content: "▾"; font-size: 10px; transition: rotate .3s var(--ease-soft); }
 .row-note {
   --tone: var(--orange-rgb);
-  margin-top: 3px; font-size: 13px; font-weight: 500; color: rgb(var(--tone));
-  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; outline: 0; cursor: default;
-  padding: 2px 8px; border-radius: 8px; border-left: 2px solid rgb(var(--tone) / .7);
-  background: rgb(var(--tone) / .08);
-  transition: background .3s var(--ease-soft);
+  display: grid; grid-template-rows: 0fr; opacity: 0;
+  font-size: 14px; font-weight: 500; line-height: 1.4; color: rgb(var(--tone));
+  transition: grid-template-rows .35s var(--ease-soft), opacity .3s var(--ease-soft), margin .35s var(--ease-soft);
 }
-.row-note.tone-writeoff { --tone: var(--writeoff-rgb); }
-.row-note.tone-violet { --tone: var(--violet-rgb); }
-.row:hover .row-note, .row-note:focus, summary:hover .row-note {
-  white-space: normal; overflow: visible; background: rgb(var(--tone) / .14);
+.row-note > span {
+  overflow: hidden; min-height: 0; padding: 0 10px; border-radius: 8px;
+  border-left: 2px solid rgb(var(--tone) / .7); background: rgb(var(--tone) / .1);
 }
+:is(.note-flag, .row-note).tone-writeoff { --tone: var(--writeoff-rgb); }
+:is(.note-flag, .row-note).tone-violet { --tone: var(--violet-rgb); }
+/* Раскрыть: наведение на строку (или заголовок набора) либо касание метки (у неё tabindex) */
+:is(.row, summary):hover .row-note, .note:focus-within .row-note { grid-template-rows: 1fr; opacity: 1; margin-top: 6px; }
+:is(.row, summary):hover .row-note > span, .note:focus-within .row-note > span { padding: 5px 10px; }
+:is(.row, summary):hover .note-flag::after, .note:focus-within .note-flag::after { rotate: 180deg; }
 /* Фильтр журнала */
 .journal-filter { margin-bottom: 4px; }
 [data-mode="light"] .set-person-name { background: none; color: var(--accent-text); }   /* лайм на белом не читается */
@@ -1001,8 +1012,9 @@ html.lenis, html.lenis body { height: auto; }
 .item-main { flex: 0 1 260px; min-width: 0; }          /* статус стоит рядом с названием */
 .item-extra { flex: 1; min-width: 0; }
 .item-extra:empty { display: none; }
-.item-site { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; font-size: 14px; color: var(--text-dim); }
-.item-site .icon { width: 16px; height: 16px; flex: none; color: var(--accent-text); }
+/* Адрес (объект) у позиции — жёлтым цветом темы, как объекты в журнале */
+.item-site { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; font-size: 14px; font-weight: 600; color: rgb(var(--yellow-rgb)); }
+.item-site .icon { width: 16px; height: 16px; flex: none; color: rgb(var(--yellow-rgb)); }
 .item-site { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-photo { width: 52px; height: 52px; flex: none; object-fit: cover; border-radius: 14px; border: 1px solid rgb(var(--accent-rgb) / .35); box-shadow: 0 0 18px rgb(var(--accent-rgb) / .15); transition: transform .6s var(--ease-soft), box-shadow .55s var(--ease-soft); }
 .item:hover .item-photo { transform: scale(1.06); box-shadow: 0 0 26px rgb(var(--accent-rgb) / .4); }
@@ -1464,8 +1476,7 @@ label.pick { cursor: pointer; }
 :root:not([data-theme="summit"]) :is(.stat-label, .muted, .field label) { color: color-mix(in srgb, var(--accent-text) 28%, var(--text-dim)); }
 /* строки списков: под названием — второй цвет темы, время, адрес и счётчики — третий */
 :root:not([data-theme="summit"]) :is(.row-sub, .item-meta) { color: rgb(var(--sub-rgb, var(--blue-rgb))); }
-:root:not([data-theme="summit"]) :is(.row-end, .item-site, .meter-caption) { color: rgb(var(--meta-rgb, var(--violet-rgb))); }
-:root:not([data-theme="summit"]) .item-site .icon { color: rgb(var(--meta-rgb, var(--violet-rgb))); }
+:root:not([data-theme="summit"]) :is(.row-end, .meter-caption) { color: rgb(var(--meta-rgb, var(--violet-rgb))); }
 :root:not([data-theme="summit"]) .meter-caption b { color: var(--text); }
 /* без пятна подсветки под курсором */
 :root:not([data-theme="summit"]) .item[data-status="available"] .icon-tile, :root:not([data-theme="summit"]) .pick[data-status="available"] .icon-tile { --tone: var(--ok-rgb); }
