@@ -103,6 +103,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'apps.web.themes.themes',   # список тем оформления для меню и для скрипта в <head>
+                'apps.staff.roles.roles',   # роль и права для шаблонов (прятать кнопки операций)
             ],
         },
     },

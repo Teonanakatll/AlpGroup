@@ -19,10 +19,12 @@
       <a class="nav-item tone-violet {% if current == 'journal' %}is-active{% endif %}" href="{% url 'web:journal' %}">
         <svg class="icon" aria-hidden="true"><use href="#i-list"/></svg><span>Журнал</span>
       </a>
-      {# Аналитика появится вместе с отчётами #}
+      {# Аналитика появится вместе с отчётами. «Операции» видят только роли с правом операций (apps/staff/roles.py) #}
+      {% if can_operate %}
       <a class="nav-item tone-orange {% if current == 'add' or current == 'issue' or current == 'receive' or current == 'missing' or current == 'write_off' or current == 'servicing' or current == 'from_servicing' %}is-active{% endif %}" href="{% url 'web:operations' %}">
         <svg class="icon" aria-hidden="true"><use href="#i-swap"/></svg><span>Операции</span>
       </a>
+      {% endif %}
       <span class="nav-item tone-writeoff is-soon" aria-disabled="true">
         <svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg><span>Аналитика</span><span class="nav-tag">скоро</span>
       </span>
@@ -39,7 +41,7 @@
       <span class="avatar">{{ request.user.get_username|slice:":1" }}</span>
       <div class="user-meta">
         <div class="user-name">{{ request.user.get_username }}</div>
-        <div class="user-role">{% if request.user.is_superuser %}Администратор{% else %}Сотрудник{% endif %}</div>
+        <div class="user-role">{{ role_label }}</div>
       </div>
       <form method="post" action="{% url 'web:logout' %}">
         {% csrf_token %}

@@ -25,6 +25,7 @@
           {% for photo in photos %}
             <li class="photo-card{% if photo.is_main %} is-main{% endif %}">
               <a href="{{ photo.image.url }}" target="_blank" rel="noopener"><img src="{{ photo.image.url }}" alt="{{ item.name }}" loading="lazy"></a>
+              {% if can_operate %}
               <div class="photo-actions">
                 {% if photo.is_main %}
                   <span class="tag-main">Главное</span>
@@ -33,17 +34,22 @@
                 {% endif %}
                 <form method="post" action="{% url 'web:photo_delete' photo.pk %}">{% csrf_token %}<button class="btn-cancel" type="submit" data-confirm="Точно удалить?">Удалить</button></form>
               </div>
+              {% elif photo.is_main %}
+              <div class="photo-actions"><span class="tag-main">Главное</span></div>
+              {% endif %}
             </li>
           {% endfor %}
         </ul>
       {% else %}
         <p class="empty">Фото пока нет.</p>
       {% endif %}
+      {% if can_operate %}
       <form method="post" enctype="multipart/form-data" action="{% url 'web:tool_photos' item.pk %}" class="photo-upload">
         {% csrf_token %}
         {{ photo_form.photos }}
         <button class="btn btn-primary" type="submit">Загрузить</button>
       </form>
+      {% endif %}
     </div>
   {% endif %}
 

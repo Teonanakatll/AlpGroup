@@ -7,9 +7,11 @@ from rest_framework import viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from apps.sites.models import Site
+from apps.staff.permissions import CanOperate
 
 from . import selectors, services
 from .models import Category, HandTool, HandToolMovement, Tool, ToolMovement
@@ -113,9 +115,11 @@ class OperationView(APIView):
     - неверный формат (нет объекта, количество 0, такого id нет): {"site": ["..."], ...};
     - правила учёта (инструмент уже выдан, не хватает на складе):
       {"detail": "Операция отклонена.", "errors": ["строка на каждую проблему", ...]}.
+    Без права операций (наблюдатель, ответственное лицо) — 403, до проверки данных.
     Успех: perform() возвращает тело ответа. Для операций над набором это {"batch": "<uuid>"}:
     по нему набор потом можно найти или отменить.
     """
+    permission_classes = [IsAuthenticated, CanOperate]
     serializer_class = None
     success_status = 201
 

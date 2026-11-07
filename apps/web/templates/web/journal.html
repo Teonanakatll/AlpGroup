@@ -8,7 +8,7 @@
       {% if only_batch %}
         <p class="muted"><a class="row-link" href="{% url 'web:journal' %}">← Весь журнал</a> · один набор</p>
       {% else %}
-        <p class="muted">Всё, что происходило с инструментом. Отменить можно только последнюю операцию по позиции; отменённые остаются в журнале.</p>
+        <p class="muted">Всё, что происходило с инструментом. {% if can_operate %}Отменить можно только последнюю операцию по позиции; отменённые остаются в журнале.{% else %}Только просмотр: операции и отмену делает кладовщик.{% endif %}</p>
       {% endif %}
     </div>
   </div>
@@ -31,7 +31,8 @@
                 {% else %}
                   <span class="row-end"><time class="row-time" datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:"d.m.Y H:i" }}</time> · {{ entry.created_by }}</span>
                 {% endif %}
-                {% if entry.can_cancel_batch %}
+                {% if not can_operate %}
+                {% elif entry.can_cancel_batch %}
                   <button class="btn-cancel" type="submit" form="cb-{{ entry.batch }}" data-confirm="Отменить весь набор?">Отменить набор</button>
                 {% elif entry.cancel_batch_hint %}
                   <span class="btn-cancel is-off" title="{{ entry.cancel_batch_hint }}">Отменить набор</span>
@@ -44,7 +45,7 @@
                 {% endfor %}
               </ul>
             </details>
-            {% if entry.can_cancel_batch %}
+            {% if can_operate and entry.can_cancel_batch %}
               <form id="cb-{{ entry.batch }}" method="post" action="{% url 'web:cancel_batch' entry.batch %}">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{{ request.get_full_path }}">

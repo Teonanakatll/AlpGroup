@@ -1,6 +1,7 @@
 """
 Страницы сайта. Вьюхи тонкие: данные берутся из selectors.py, здесь только подготовка
-к показу. Все страницы доступны только вошедшим (login_required).
+к показу. Все страницы доступны только вошедшим (login_required); операции, отмена и фото —
+только ролям с правом операций (operator_required, apps/staff/roles.py).
 """
 import uuid
 
@@ -18,6 +19,7 @@ from apps.inventory.forms import ReceiveFromServicingForm, ReceiveFromSiteForm
 from apps.inventory.models import HandTool, HandToolMovement, Tool, ToolMovement, ToolPhoto
 from apps.sites import services as site_services
 from apps.sites.models import Site
+from apps.staff.roles import operator_required
 
 from .forms import AddForm, IssueForm, MissingForm, PhotosForm, ServicingForm, WriteOffForm
 from .positions import Positions, parse_positions
@@ -197,11 +199,13 @@ def _site_from(value):
 
 
 @login_required
+@operator_required
 def operations(request):
     return redirect("web:issue")
 
 
 @login_required
+@operator_required
 def issue(request):
     """
     Выдача набора на объект: выбрать объект (или ввести новый) и позиции, нажать «Выдать».
@@ -242,6 +246,7 @@ def issue(request):
 
 
 @login_required
+@operator_required
 def add(request):
     """Постановка на баланс: новые штучные позиции, новая или пополнение количественной."""
     errors = []
@@ -282,6 +287,7 @@ def add(request):
 
 
 @login_required
+@operator_required
 def receive(request):
     """
     Приём с объекта. Список позиций зависит от объекта: при выборе объекта HTMX запрашивает
@@ -413,21 +419,25 @@ def _site_operation(request, mode):
 
 
 @login_required
+@operator_required
 def missing(request):
     return _site_operation(request, "missing")
 
 
 @login_required
+@operator_required
 def write_off(request):
     return _site_operation(request, "write_off")
 
 
 @login_required
+@operator_required
 def servicing(request):
     return _site_operation(request, "servicing")
 
 
 @login_required
+@operator_required
 def from_servicing(request):
     return _site_operation(request, "from_servicing")
 
@@ -480,6 +490,7 @@ def tool_detail(request, pk):
 
 
 @login_required
+@operator_required
 @require_POST
 def tool_photos(request, pk):
     """Загрузка фото на странице позиции (несколько файлов сразу)."""
@@ -494,6 +505,7 @@ def tool_photos(request, pk):
 
 
 @login_required
+@operator_required
 @require_POST
 def photo_main(request, pk):
     photo = get_object_or_404(ToolPhoto, pk=pk)
@@ -503,6 +515,7 @@ def photo_main(request, pk):
 
 
 @login_required
+@operator_required
 @require_POST
 def photo_delete(request, pk):
     photo = get_object_or_404(ToolPhoto, pk=pk)
@@ -529,6 +542,7 @@ def _back(request, default="web:journal"):
 
 
 @login_required
+@operator_required
 @require_POST
 def cancel_batch(request, batch):
     try:
@@ -541,6 +555,7 @@ def cancel_batch(request, batch):
 
 
 @login_required
+@operator_required
 @require_POST
 def cancel_movement(request, kind, pk):
     model = {"tool": ToolMovement, "hand": HandToolMovement}.get(kind)
