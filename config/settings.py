@@ -169,6 +169,15 @@ STATIC_URL = 'static/'
 # Сюда `collectstatic` собирает статику для сервера; отдаёт её Caddy (в разработке Django сам)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# На сервере (DEBUG=0) у статики в имени хеш содержимого: app.3f2a1c.css. Изменился файл — изменилось имя,
+# и браузер сразу берёт новый, а не держит старый из кэша (Caddy отдаёт статику с кэшем на час).
+# Имена с хешем пишет collectstatic (deploy/entrypoint.sh) в staticfiles.json, {% static %} читает их оттуда.
+if not DEBUG:
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"},
+    }
+
 # Загружаемые файлы (фото инструмента). Папка media/ в .gitignore
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'

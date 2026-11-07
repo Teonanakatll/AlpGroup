@@ -14,6 +14,15 @@ def no_demo_autologin(settings):
 
 
 @pytest.fixture(autouse=True)
+def plain_static_storage(settings):
+    """В тестах статика без хешей в именах: collectstatic не запускается, манифеста нет."""
+    settings.STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+
+
+@pytest.fixture(autouse=True)
 def no_demo_role_switch(settings):
     """Переключатель ролей (DEMO_ROLE_SWITCH из .env) в тестах выключен: права только по группам."""
     settings.DEMO_ROLE_SWITCH = False
