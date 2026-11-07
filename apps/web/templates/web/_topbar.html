@@ -10,6 +10,19 @@
   </form>
 
   <div class="top-actions">
+    {% if role_switch %}
+      {# Тестовый переключатель ролей (DEMO_ROLE_SWITCH=1): роль в сессии, пользователь не меняется #}
+      <form class="role-switch" method="post" action="{% url 'web:switch_role' %}" aria-label="Роль для проверки прав">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        {% for value, label, short in role_switch %}
+          <button class="role-btn{% if value == role %} is-on{% endif %}" type="submit" name="role" value="{{ value }}"
+                  aria-pressed="{% if value == role %}true{% else %}false{% endif %}" title="{{ label }}">
+            <span class="role-full">{{ label }}</span><span class="role-short" aria-hidden="true">{{ short }}</span>
+          </button>
+        {% endfor %}
+      </form>
+    {% endif %}
     {# Меню тем: список из apps/web/themes.py, выбор и запоминание — app.js #}
     <div class="theme-menu" data-theme-menu>
       <button class="icon-btn theme-toggle" type="button" data-theme-open aria-haspopup="true" aria-expanded="false" aria-controls="theme-list" title="Тема оформления" aria-label="Тема оформления">

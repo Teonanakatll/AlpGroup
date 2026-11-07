@@ -165,3 +165,62 @@ def test_api_operations_allowed_for_storekeeper(client, make_user, stock):
     response = client.post("/api/issue/", {"site": site.pk, "tools": [tool.pk]},
                            content_type="application/json")
     assert response.status_code == 201
+
+
+# ---------------------------------------------------------------------------
+# Тестовый переключатель ролей (DEMO_ROLE_SWITCH)
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def switch_on(settings):  # после no_demo_role_switch из conftest.py
+    settings.DEMO_ROLE_SWITCH = True
+
+
+def test_switch_off_no_panel_and_404(client, make_user):
+    client.force_login(make_user("u", roles.VIEWER))
+    assert "role-switch" not in client.get("/").content.decode()
+    assert client.post("/role/", {"role": roles.ADMIN}).status_code == 404
+    assert "demo_role" not in client.session
+
+
+def test_switch_gives_rights_without_changing_user(client, make_user, stock, switch_on):
+    tool, site = stock
+    viewer = make_user("u", roles.VIEWER)
+    client.force_login(viewer)
+    assert "role-switch" in client.get("/").content.decode()
+    assert client.get("/operations/issue/").status_code == 302          # пока наблюдатель
+
+    response = client.post("/role/", {"role": roles.STOREKEEPER, "next": "/journal/"})
+    assert response["Location"] == "/journal/"
+    assert client.get("/operations/issue/").status_code == 200
+    client.post("/operations/issue/", {"site": site.pk, "tools": [tool.pk]})
+    assert ToolMovement.objects.filter(type="issued").count() == 1      # операция прошла
+
+    assert roles.user_role(viewer) == roles.VIEWER                      # в базе роль та же
+    assert list(viewer.groups.values_list("name", flat=True)) == [roles.GROUPS[roles.VIEWER]]
+
+
+def test_switch_down_takes_rights_away(client, admin_user, stock, switch_on):
+    client.force_login(admin_user)
+    client.post("/role/", {"role": roles.VIEWER})
+    assert client.get("/operations/issue/").status_code == 302
+    tool, site = stock
+    response = client.post("/api/issue/", {"site": site.pk, "tools": [tool.pk]},
+                           content_type="application/json")
+    assert response.status_code == 403                                  # API читает ту же роль
+
+
+def test_switch_ignores_unknown_role_and_flag_off(client, make_user, settings, switch_on):
+    client.force_login(make_user("u", roles.VIEWER))
+    client.post("/role/", {"role": "superboss"})
+    assert "demo_role" not in client.session
+
+    client.post("/role/", {"role": roles.ADMIN})
+    settings.DEMO_ROLE_SWITCH = False                                   # флаг убрали — роль из сессии не действует
+    assert client.get("/operations/issue/").status_code == 302
+
+
+def test_switch_next_only_own_site(client, make_user, switch_on):
+    client.force_login(make_user("u", roles.VIEWER))
+    response = client.post("/role/", {"role": roles.ADMIN, "next": "https://evil.example/"})
+    assert response["Location"] == "/"

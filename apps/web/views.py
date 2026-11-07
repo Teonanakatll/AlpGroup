@@ -5,6 +5,7 @@
 """
 import uuid
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -19,6 +20,7 @@ from apps.inventory.forms import ReceiveFromServicingForm, ReceiveFromSiteForm
 from apps.inventory.models import HandTool, HandToolMovement, Tool, ToolMovement, ToolPhoto
 from apps.sites import services as site_services
 from apps.sites.models import Site
+from apps.staff import roles
 from apps.staff.roles import operator_required
 
 from .forms import AddForm, IssueForm, MissingForm, PhotosForm, ServicingForm, WriteOffForm
@@ -569,3 +571,25 @@ def cancel_movement(request, kind, pk):
     else:
         messages.success(request, "Операция отменена: состояние позиции пересчитано по журналу.")
     return _back(request)
+
+
+# ---------------------------------------------------------------------------
+# Тестовый переключатель ролей (только при DEMO_ROLE_SWITCH=1)
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_POST
+def switch_role(request):
+    """
+    Кнопка в шапке: запомнить роль в сессии и вернуться на ту же страницу.
+    Пользователя в базе не меняет. Без флага адреса как будто нет (404).
+    """
+    if not settings.DEMO_ROLE_SWITCH:
+        raise Http404
+    role = request.POST.get("role")
+    roles.set_switched_role(request, role)
+    if role in roles.GROUPS:
+        messages.success(request, f"Роль для проверки: «{roles.LABELS[role]}».")
+    # Со страницы операции наблюдателя всё равно вернёт на главную (operator_required)
+    return _back(request, default="web:home")
+

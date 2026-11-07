@@ -11,6 +11,7 @@
 from functools import wraps
 
 from django.contrib import messages
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.shortcuts import redirect
 
@@ -52,10 +53,35 @@ def user_role(user):
     return VIEWER
 
 
+# Тестовый переключатель ролей (DEMO_ROLE_SWITCH=1, только стенд): выбранная роль лежит в сессии
+# под этим ключом и подменяет роль из групп. Пользователь в базе не меняется.
+SESSION_KEY = "demo_role"
+
+
+def switched_role(request):
+    """Роль, выбранная переключателем, или None (флаг выключен, не выбрано, не вошёл)."""
+    if not settings.DEMO_ROLE_SWITCH or not request.user.is_authenticated:
+        return None
+    role = request.session.get(SESSION_KEY)
+    return role if role in GROUPS else None
+
+
+def set_switched_role(request, role):
+    """Запомнить роль переключателя в сессии (role=None — вернуться к роли из групп)."""
+    if role in GROUPS:
+        request.session[SESSION_KEY] = role
+    else:
+        request.session.pop(SESSION_KEY, None)
+    request.__dict__.pop("_effective_role", None)
+
+
 def effective_role(request):
-    """Роль, по которой проверяются права в этом запросе. Запоминается на время запроса."""
-    if not hasattr(request, "_effective_role"):
-        request._effective_role = user_role(request.user)
+    """
+    Роль, по которой проверяются права в этом запросе: выбранная переключателем (если он включён),
+    иначе по группам. Запоминается на время запроса.
+    """
+    if "_effective_role" not in request.__dict__:
+        request._effective_role = switched_role(request) or user_role(request.user)
     return request._effective_role
 
 
@@ -93,12 +119,26 @@ def operator_required(view):
     return wrapper
 
 
+# Кнопки переключателя: (роль, полная подпись, короткая для телефона)
+SWITCH_BUTTONS = [
+    (ADMIN, "Админ", "А"),
+    (STOREKEEPER, "Кладовщик", "К"),
+    (RESPONSIBLE, "Отв. лицо", "О"),
+    (VIEWER, "Наблюдатель", "Н"),
+]
+
+
 def roles(request):
-    """Контекст-процессор: роль и права для шаблонов (role, role_label, can_operate, can_manage)."""
+    """
+    Контекст-процессор: роль и права для шаблонов (role, role_label, can_operate, can_manage);
+    при DEMO_ROLE_SWITCH ещё кнопки переключателя (role_switch).
+    """
     role = effective_role(request) if hasattr(request, "user") else None
+    show_switch = settings.DEMO_ROLE_SWITCH and role is not None
     return {
         "role": role,
         "role_label": LABELS.get(role, ""),
         "can_operate": role in OPERATORS,
         "can_manage": role in MANAGERS,
+        "role_switch": SWITCH_BUTTONS if show_switch else None,
     }

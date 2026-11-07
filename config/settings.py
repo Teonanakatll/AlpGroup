@@ -53,6 +53,10 @@ CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") + (
 # Только для показа тестового стенда (apps/web/middleware.py). Пусто: обычный вход по логину.
 DEMO_USER = os.getenv("DEMO_USER", "")
 
+# DEMO_ROLE_SWITCH=1: панель в шапке «Админ / Кладовщик / Ответственное лицо / Наблюдатель» для проверки прав.
+# Роль хранится в сессии, пользователя в базе не меняет (apps/staff/roles.py). Только для тестового стенда.
+DEMO_ROLE_SWITCH = os.getenv("DEMO_ROLE_SWITCH", "") == "1"
+
 if not DEBUG:
     # Перед Django стоит Caddy: он терминирует https и передаёт схему в заголовке.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

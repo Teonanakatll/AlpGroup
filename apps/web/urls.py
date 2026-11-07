@@ -25,6 +25,7 @@ urlpatterns = [
     path("operations/write-off/", views.write_off, name="write_off"),
     path("operations/servicing/", views.servicing, name="servicing"),
     path("operations/from-servicing/", views.from_servicing, name="from_servicing"),
+    path("role/", views.switch_role, name="switch_role"),      # переключатель ролей стенда (DEMO_ROLE_SWITCH)
     path(
         "login/",
         auth_views.LoginView.as_view(template_name="web/login.html", redirect_authenticated_user=True),
