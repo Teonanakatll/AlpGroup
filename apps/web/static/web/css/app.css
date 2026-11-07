@@ -1728,19 +1728,26 @@ body:has(.op-bar) .to-top { bottom: 96px; }                             /* в ф
 
 /* ---------- Заставка: при наведении рамка светится, как у карточек ----------
    Без подъёма (мешал бы параллаксу горы) и без бегущего блика. */
-.hero { transition: border-color .5s var(--ease-soft), box-shadow .6s var(--ease-soft); }
-.hero:hover {
-  border-color: var(--outline-hover);
+/* Свечение нарисовано на отдельном слое (.hero-glow::after) и проявляется прозрачностью:
+   анимировать саму тень большого блока с WebGL-фото браузер не успевает, и она шла «ступеньками» */
+.hero { transition: border-color .5s var(--ease-soft); }
+.hero-glow { position: relative; border-radius: var(--radius-xl); }
+.hero-glow::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
   box-shadow:
     0 0 0 1px rgb(var(--accent-rgb) / .5),
     0 0 12px 1px rgb(var(--accent-rgb) / .55),
-    var(--shadow-lift),
     0 0 36px rgb(var(--accent-rgb) / .16);
+  opacity: 0; transition: opacity .5s var(--ease-soft); will-change: opacity;
 }
+.hero-glow:hover::after { opacity: 1; }
+.hero-glow:hover .hero { border-color: var(--outline-hover); }
+[data-mode="light"] .hero-glow::after { box-shadow: var(--lime-hover); }
 
 /* ---------- Бегущие блики по рамке у блоков и строк ----------
    Два блика в одном кольце: основной (короткая полоса с белой сердцевиной, оборот 4,2 с)
-   и маленький (оборот 6,8 с), поэтому они то сходятся, то расходятся.
+   и маленький (оборот 6,8 с), поэтому они то сходятся, то расходятся. Яркость кольца плавно
+   «дышит» (ring-breathe): мерцание без рывков, анимируется только прозрачность.
    Углы --a и --b анимируются отдельно. У пунктов меню и фильтров блик прежний; в светлых темах бликов нет. */
 @property --b { syntax: "<angle>"; inherits: false; initial-value: 180deg; }
 @keyframes spin-b { from { --b: 180deg; } to { --b: 540deg; } }
@@ -1748,10 +1755,10 @@ body:has(.op-bar) .to-top { bottom: 96px; }                             /* в ф
   padding: 1.5px; inset: -1px;
   background:
     conic-gradient(from var(--a),
-      transparent 0 76%,
-      rgb(var(--accent-rgb) / .75) 85%,
-      rgb(255 255 255 / .85) 89%,
-      rgb(var(--accent-rgb) / .75) 92%,
+      transparent 0 81%,
+      rgb(var(--accent-rgb) / .75) 88%,
+      rgb(255 255 255 / .85) 91%,
+      rgb(var(--accent-rgb) / .75) 93.5%,
       transparent 97%),
     conic-gradient(from var(--b),
       transparent 0 90%,
@@ -1759,6 +1766,7 @@ body:has(.op-bar) .to-top { bottom: 96px; }                             /* в ф
       transparent 98%);
 }
 :is(.card, .row, .pick):hover::before, .card:focus-within::before {
-  animation: spin-a 4.2s linear infinite, spin-b 6.8s linear infinite;
+  animation: spin-a 4.2s linear infinite, spin-b 6.8s linear infinite, ring-breathe 2.6s ease-in-out infinite alternate;
 }
+@keyframes ring-breathe { from { opacity: .55; } to { opacity: 1; } }
 

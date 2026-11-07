@@ -4,6 +4,8 @@
 {% block head_extra %}<script src="{% static 'web/js/hero.js' %}" defer></script><script src="{% static 'web/js/scene-fx.js' %}" defer></script>{% endblock %}
 
 {% block content %}
+  {# Обёртка нужна только для свечения рамки при наведении (слой .hero-glow::after, см. app.css) #}
+  <div class="hero-glow">
   <section class="hero reveal" data-parallax>
     {# Фото горы на заднем плане: двигается за курсором совсем чуть-чуть (hero.js) #}
     <div class="scene" aria-hidden="true">
@@ -26,6 +28,7 @@
       <canvas class="logo3d-canvas" aria-hidden="true"></canvas>
     </div>
   </section>
+  </div>
 
   <section class="stats" aria-label="Сводка по складу">
     <article class="card stat reveal" style="--i:1">
