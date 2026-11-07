@@ -462,12 +462,18 @@ def _style_entry(entry):
     _style_rows(entry["rows"])
     entry["icon"], entry["tone"] = entry["rows"][0]["icon"], entry["rows"][0]["tone"]
     entry["taken_by_label"] = TAKEN_BY_LABEL.get(entry["rows"][0]["type"], "Кто")
+    entry["reason"] = entry["rows"][0]["reason"]
+
+
+# У этих операций комментарий — это причина: показываем её отдельной цветной строкой
+REASON_TYPES = {"written_off", "servicing", "missing"}
 
 
 def _style_rows(rows):
-    """Добавляет к строкам журнала иконку и цвет по типу операции."""
+    """Добавляет к строкам журнала иконку, цвет и признак «комментарий = причина» по типу операции."""
     for row in rows:
         row["icon"], row["tone"] = OPERATION_STYLE[row["type"]]
+        row["reason"] = row["type"] in REASON_TYPES
     return rows
 
 

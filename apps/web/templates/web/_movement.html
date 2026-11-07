@@ -8,7 +8,8 @@
       {% endif %}{% if row.quantity %} × {{ row.quantity }}{% endif %}
       {% if row.is_cancelled %}<span class="tag-cancel">отменена{% if row.cancelled_by %} · {{ row.cancelled_by }}{% endif %}</span>{% endif %}
     </div>
-    <div class="row-sub">{% if row.site %}{{ row.site }}{% else %}Склад{% endif %}{% if row.taken_by and not in_set %} · {{ row.taken_by }}{% endif %}{% if row.note %} · {{ row.note }}{% endif %}</div>
+    <div class="row-sub">{% if row.site %}<span class="site-name">{{ row.site }}</span>{% else %}Склад{% endif %}{% if row.taken_by and not in_set %} · {{ row.taken_by }}{% endif %}{% if row.note and not row.reason %} · {{ row.note }}{% endif %}</div>
+    {% if row.reason and row.note and not in_set %}{% include "web/_note.html" with note=row.note tone=row.tone %}{% endif %}
   </div>
   <span class="row-end"><time class="row-time" datetime="{{ row.created_at|date:'c' }}">{{ row.created_at|date:"d.m.Y H:i" }}</time> · {{ row.created_by }}</span>
   {% if not can_operate %}

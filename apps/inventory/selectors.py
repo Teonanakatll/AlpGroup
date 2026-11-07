@@ -310,7 +310,8 @@ def journal_entries(limit=40, batch=None, row_limit=None, site=None, taken_by=No
             by_batch[row["batch"]]["rows"].append(row)
             continue
         entry = {"batch": row["batch"], "rows": [row], "created_at": row["created_at"],
-                 "site": row["site"], "taken_by": row["taken_by"], "created_by": row["created_by"]}
+                 "site": row["site"], "taken_by": row["taken_by"], "note": row["note"],
+                 "created_by": row["created_by"]}
         entries.append(entry)
         if row["batch"]:
             by_batch[row["batch"]] = entry

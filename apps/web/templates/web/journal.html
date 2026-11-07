@@ -42,8 +42,9 @@
               <summary class="row{% if entry.is_cancelled %} is-cancelled{% endif %}">
                 <span class="icon-tile {{ entry.tone }}"><svg class="icon" aria-hidden="true"><use href="#i-{{ entry.icon }}"/></svg></span>
                 <div class="row-main">
-                  <div class="row-title">{% if entry.day_group %}Поставлено на баланс · {{ entry.day|date:"j E" }}{% else %}{{ entry.type_display }} · {% if entry.site %}{{ entry.site }}{% else %}Склад{% endif %}{% endif %} · {{ entry.count }} поз.{% if entry.is_cancelled %} <span class="tag-cancel">отменён</span>{% endif %}</div>
+                  <div class="row-title">{% if entry.day_group %}Поставлено на баланс · {{ entry.day|date:"j E" }}{% else %}{{ entry.type_display }} · {% if entry.site %}<span class="site-name">{{ entry.site }}</span>{% else %}Склад{% endif %}{% endif %} · {{ entry.count }} поз.{% if entry.is_cancelled %} <span class="tag-cancel">отменён</span>{% endif %}</div>
                   <div class="row-sub">{% for r in entry.rows|slice:":3" %}{{ r.item }}{% if r.quantity %} × {{ r.quantity }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% if entry.count > 3 %}…{% endif %}</div>
+                  {% if entry.reason and entry.note %}{% include "web/_note.html" with note=entry.note tone=entry.tone %}{% endif %}
                 </div>
                 {% if entry.day_group %}
                   <span class="row-end"><time class="row-time" datetime="{{ entry.day|date:'Y-m-d' }}">{{ entry.day|date:"d.m.Y" }}</time></span>

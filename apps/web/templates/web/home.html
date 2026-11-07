@@ -91,7 +91,7 @@
                 <a class="row{% if entry.is_cancelled %} is-cancelled{% endif %}" href="{% url 'web:journal' %}{% if not entry.day_group %}?batch={{ entry.batch }}{% endif %}">
                   <span class="icon-tile {{ entry.tone }}"><svg class="icon" aria-hidden="true"><use href="#i-{{ entry.icon }}"/></svg></span>
                   <div class="row-main">
-                    <div class="row-title">{% if entry.day_group %}Поставлено на баланс · {{ entry.day|date:"j E" }}{% else %}{{ entry.type_display }} · {% if entry.site %}{{ entry.site }}{% else %}Склад{% endif %}{% endif %} · {{ entry.count }} поз.{% if entry.is_cancelled %} <span class="tag-cancel">отменён</span>{% endif %}</div>
+                    <div class="row-title">{% if entry.day_group %}Поставлено на баланс · {{ entry.day|date:"j E" }}{% else %}{{ entry.type_display }} · {% if entry.site %}<span class="site-name">{{ entry.site }}</span>{% else %}Склад{% endif %}{% endif %} · {{ entry.count }} поз.{% if entry.is_cancelled %} <span class="tag-cancel">отменён</span>{% endif %}</div>
                     <div class="row-sub">{% if entry.taken_by %}{{ entry.taken_by }}{% else %}Открыть список{% endif %}</div>
                   </div>
                   <span class="row-end"><time class="row-time" datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|timesince }} назад</time></span>
@@ -104,7 +104,7 @@
                   <span class="icon-tile {{ op.tone }}"><svg class="icon" aria-hidden="true"><use href="#i-{{ op.icon }}"/></svg></span>
                   <div class="row-main">
                     <div class="row-title">{{ op.type_display }} · {{ op.item }}{% if op.quantity %} × {{ op.quantity }}{% endif %}{% if op.is_cancelled %} <span class="tag-cancel">отменена</span>{% endif %}</div>
-                    <div class="row-sub">{% if op.site %}{{ op.site }}{% else %}Склад{% endif %}{% if op.taken_by %} · {{ op.taken_by }}{% endif %}</div>
+                    <div class="row-sub">{% if op.site %}<span class="site-name">{{ op.site }}</span>{% else %}Склад{% endif %}{% if op.taken_by %} · {{ op.taken_by }}{% endif %}</div>
                   </div>
                   <span class="row-end"><time class="row-time" datetime="{{ op.created_at|date:'c' }}">{{ op.created_at|timesince }} назад</time></span>
                 </li>
