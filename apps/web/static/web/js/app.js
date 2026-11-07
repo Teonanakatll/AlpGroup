@@ -420,3 +420,9 @@ document.addEventListener("click", function (e) {
     });
   });
 })();
+
+/* Формы-фильтры (data-autosubmit): выбрал значение — форма уходит сама, кнопка не нужна. */
+document.addEventListener("change", function (e) {
+  var form = e.target.closest && e.target.closest("form[data-autosubmit]");
+  if (form) form.submit();
+});

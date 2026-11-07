@@ -12,7 +12,7 @@ from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.http import url_has_allowed_host_and_scheme, urlencode
 from django.views.decorators.http import require_POST
 
 from apps.inventory import selectors, services
@@ -448,10 +448,20 @@ def from_servicing(request):
 # Журнал, история позиции, отмена
 # ---------------------------------------------------------------------------
 
+# Подпись к «Кто взял / привёз» (taken_by) в раскрытом наборе — по типу операции
+TAKEN_BY_LABEL = {
+    "issued": "Получил",
+    "returned": "Сдал",
+    "servicing": "Передал в ремонт",
+    "missing": "Отвечал",
+}
+
+
 def _style_entry(entry):
     """Иконки у строк записи журнала и у самой записи (иконка набора = иконка его операции)."""
     _style_rows(entry["rows"])
     entry["icon"], entry["tone"] = entry["rows"][0]["icon"], entry["rows"][0]["tone"]
+    entry["taken_by_label"] = TAKEN_BY_LABEL.get(entry["rows"][0]["type"], "Кто")
 
 
 def _style_rows(rows):
@@ -473,12 +483,24 @@ def journal(request):
         only_batch = uuid.UUID(request.GET["batch"]) if "batch" in request.GET else None
     except ValueError:
         pass
-    entries, has_more = selectors.journal_entries(limit=limit, batch=only_batch)
+    # Фильтр: ?site=<id> и/или ?who=<Кто взял>. «Мои» — who = полное имя пользователя,
+    # если оно встречается в журнале (пока ответственное лицо не привязано к объектам, SPEC 7.1).
+    filters = selectors.journal_filters()
+    site = _site_from(request.GET.get("site"))
+    who = request.GET.get("who", "").strip()
+    my_name = request.user.get_full_name().strip()
+    entries, has_more = selectors.journal_entries(
+        limit=limit, batch=only_batch, site=site.pk if site else None, taken_by=who or None,
+    )
     for entry in entries:
         _style_entry(entry)
+    query = {k: v for k, v in (("site", site.pk if site else ""), ("who", who)) if v}
     return render(request, "web/journal.html", {
         "entries": entries, "has_more": has_more and limit < 400, "next_limit": limit + 40,
         "only_batch": only_batch,
+        "filter_sites": filters["sites"], "filter_people": filters["people"],
+        "filter_site": site, "filter_who": who, "filter_query": urlencode(query),
+        "my_name": my_name if my_name in filters["people"] else "",
     })
 
 

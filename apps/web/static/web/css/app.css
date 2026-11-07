@@ -919,6 +919,20 @@ html.lenis, html.lenis body { height: auto; }
 .entry-set[open] > summary .chev { rotate: 180deg; }
 .entry-set[open] > summary { margin-bottom: 8px; }
 .sub-rows { margin: 0 0 4px 22px; padding-left: 14px; border-left: 1px solid rgb(var(--accent-rgb) / .28); }
+/* Раскрытый набор чуть шире остальных карточек, сверху крупно «Получил: Имя» в цветах темы */
+.entry { transition: margin .45s var(--ease-soft), box-shadow .45s var(--ease-soft); }
+.entry:has(> .entry-set[open]) { margin-inline: -10px; box-shadow: var(--card-shadow), 0 0 0 1px rgb(var(--accent-rgb) / .35); }
+.set-person { margin: 0 0 10px 22px; font-size: 17px; line-height: 1.35; }
+.set-person-label { color: var(--text-dim); font-weight: 500; }
+.set-person-name {
+  font-weight: 700; font-size: 19px;
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+/* Фильтр журнала */
+.journal-filter { margin-bottom: 4px; }
+[data-mode="light"] .set-person-name { background: none; color: var(--accent-text); }   /* лайм на белом не читается */
+.journal-filter .dd, .journal-filter select { min-width: 200px; }
 
 /* ---------- Инвентарь ---------- */
 .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -1569,6 +1583,9 @@ label.pick { cursor: pointer; }
   .entry.block { padding: 10px; }
   .btn-cancel { padding: 5px 10px; font-size: 12px; }
   .sub-rows { margin-left: 8px; padding-left: 8px; }
+  .set-person { margin-left: 8px; }
+  .entry:has(> .entry-set[open]) { margin-inline: -6px; }
+  .journal-filter .dd, .journal-filter select { min-width: 0; flex: 1 1 140px; }
 }
 @media (max-width: 420px) {
   /* Статус уходит строкой ниже, под название: само название получает всю ширину */

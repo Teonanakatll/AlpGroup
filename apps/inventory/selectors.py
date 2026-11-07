@@ -267,7 +267,7 @@ def _movement_dicts(tool_rows, hand_rows):
     return items
 
 
-def journal_entries(limit=40, batch=None, row_limit=None):
+def journal_entries(limit=40, batch=None, row_limit=None, site=None, taken_by=None):
     """
     Журнал операций для страницы: (записи, есть_ещё).
 
@@ -278,9 +278,16 @@ def journal_entries(limit=40, batch=None, row_limit=None):
     batch: показать только один набор (страница по ссылке с главной).
     row_limit: сколько строк брать из каждого журнала (по умолчанию limit); главной нужно
     больше строк, чем записей, потому что набор занимает много строк.
+    site, taken_by: фильтр журнала — только операции по этому объекту (id) и/или
+    с этим «Кто взял / привёз» (точное совпадение текста). У строк одного набора объект
+    и taken_by общие, поэтому набор под фильтр попадает целиком.
     """
     tool_qs = ToolMovement.objects.select_related("tool", "site", "created_by", "cancelled_by")
     hand_qs = HandToolMovement.objects.select_related("hand_tool", "site", "created_by", "cancelled_by")
+    if site is not None:
+        tool_qs, hand_qs = tool_qs.filter(site_id=site), hand_qs.filter(site_id=site)
+    if taken_by:
+        tool_qs, hand_qs = tool_qs.filter(taken_by=taken_by), hand_qs.filter(taken_by=taken_by)
     if batch is not None:
         tool_rows = list(tool_qs.filter(batch=batch).order_by("-created_at", "-pk"))
         hand_rows = list(hand_qs.filter(batch=batch).order_by("-created_at", "-pk"))
@@ -340,6 +347,18 @@ def journal_entries(limit=40, batch=None, row_limit=None):
         if entry.get("day_group"):
             entry["cancel_batch_hint"] = ""   # постановку на баланс не отменяют — кнопку не показываем
     return entries[:limit], has_more
+
+
+def journal_filters():
+    """
+    Варианты для фильтра журнала: объекты, по которым были операции, и все «Кто взял / привёз».
+    Возвращает {"sites": [Site, ...], "people": ["Имя Фамилия", ...]} (по алфавиту).
+    """
+    site_ids = set(ToolMovement.objects.filter(site__isnull=False).values_list("site_id", flat=True))
+    site_ids |= set(HandToolMovement.objects.filter(site__isnull=False).values_list("site_id", flat=True))
+    people = set(ToolMovement.objects.exclude(taken_by="").values_list("taken_by", flat=True).distinct())
+    people |= set(HandToolMovement.objects.exclude(taken_by="").values_list("taken_by", flat=True).distinct())
+    return {"sites": list(Site.objects.filter(pk__in=site_ids).order_by("name")), "people": sorted(people)}
 
 
 def recent_entries(limit=6):

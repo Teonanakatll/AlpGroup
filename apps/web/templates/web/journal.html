@@ -13,6 +13,25 @@
     </div>
   </div>
 
+  {% if not only_batch %}
+    {# Фильтр журнала: по объекту и по «Кто взял / привёз». Меняешь — форма уходит сама (data-autosubmit, app.js) #}
+    <form class="toolbar journal-filter reveal" style="--i:1" method="get" data-autosubmit aria-label="Фильтр журнала">
+      {% if my_name %}
+        <a class="chip {% if filter_who == my_name %}is-active{% endif %}" href="?who={{ my_name|urlencode }}">Мои заявки</a>
+      {% endif %}
+      <select name="site" aria-label="Объект" data-dd-keep>
+        <option value="">Все объекты</option>
+        {% for s in filter_sites %}<option value="{{ s.pk }}"{% if filter_site.pk == s.pk %} selected{% endif %}>{{ s.name }}</option>{% endfor %}
+      </select>
+      <select name="who" aria-label="Кто взял" data-dd-keep>
+        <option value="">Все люди</option>
+        {% for p in filter_people %}<option value="{{ p }}"{% if filter_who == p %} selected{% endif %}>{{ p }}</option>{% endfor %}
+      </select>
+      {% if filter_query %}<a class="chip" href="?">Сбросить</a>{% endif %}
+      <noscript><button class="chip" type="submit">Показать</button></noscript>
+    </form>
+  {% endif %}
+
   {% if entries %}
     <div class="journal">
       {% for entry in entries %}
@@ -24,7 +43,7 @@
                 <span class="icon-tile {{ entry.tone }}"><svg class="icon" aria-hidden="true"><use href="#i-{{ entry.icon }}"/></svg></span>
                 <div class="row-main">
                   <div class="row-title">{% if entry.day_group %}Поставлено на баланс · {{ entry.day|date:"j E" }}{% else %}{{ entry.type_display }} · {% if entry.site %}{{ entry.site }}{% else %}Склад{% endif %}{% endif %} · {{ entry.count }} поз.{% if entry.is_cancelled %} <span class="tag-cancel">отменён</span>{% endif %}</div>
-                  <div class="row-sub">{% for r in entry.rows|slice:":3" %}{{ r.item }}{% if r.quantity %} × {{ r.quantity }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% if entry.count > 3 %}…{% endif %}{% if entry.taken_by %} · {{ entry.taken_by }}{% endif %}</div>
+                  <div class="row-sub">{% for r in entry.rows|slice:":3" %}{{ r.item }}{% if r.quantity %} × {{ r.quantity }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}{% if entry.count > 3 %}…{% endif %}</div>
                 </div>
                 {% if entry.day_group %}
                   <span class="row-end"><time class="row-time" datetime="{{ entry.day|date:'Y-m-d' }}">{{ entry.day|date:"d.m.Y" }}</time></span>
@@ -39,9 +58,12 @@
                 {% endif %}
                 <svg class="icon chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>
               </summary>
+              {% if entry.taken_by %}
+                <p class="set-person"><span class="set-person-label">{{ entry.taken_by_label }}:</span> <span class="set-person-name">{{ entry.taken_by }}</span></p>
+              {% endif %}
               <ul class="rows sub-rows">
                 {% for row in entry.rows %}
-                  {% include "web/_movement.html" with show_item=True %}
+                  {% include "web/_movement.html" with show_item=True in_set=True %}
                 {% endfor %}
               </ul>
             </details>
@@ -62,9 +84,9 @@
       {% endfor %}
     </div>
     {% if has_more %}
-      <p class="more"><a class="chip" href="?n={{ next_limit }}">Показать ещё</a></p>
+      <p class="more"><a class="chip" href="?n={{ next_limit }}{% if filter_query %}&amp;{{ filter_query }}{% endif %}">Показать ещё</a></p>
     {% endif %}
   {% else %}
-    <div class="panel empty reveal" style="--i:1">{% if only_batch %}Набор не найден.{% else %}В журнале пока нет операций.{% endif %}</div>
+    <div class="panel empty reveal" style="--i:1">{% if only_batch %}Набор не найден.{% elif filter_query %}По этому фильтру операций нет.{% else %}В журнале пока нет операций.{% endif %}</div>
   {% endif %}
 {% endblock %}
