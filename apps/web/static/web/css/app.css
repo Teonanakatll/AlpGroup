@@ -635,12 +635,13 @@ html.lenis, html.lenis body { height: auto; }
   transition: background-color .35s var(--ease-soft), box-shadow .35s var(--ease-soft);
 }
 .topbar.is-stuck {
-  background: color-mix(in srgb, var(--page-bg) 88%, transparent);
+  /* подложка чуть светлее страницы и прозрачнее: размытие под ней видно, шапка не «чёрная дыра» */
+  background: color-mix(in srgb, color-mix(in srgb, var(--page-bg) 90%, var(--text)) 72%, transparent);
   box-shadow: 0 1px 0 var(--card-border), 0 10px 24px -14px rgb(0 0 0 / .5);
 }
 @media (min-width: 901px) {
   /* на компьютере подложка размыта (на телефоне без размытия: оно ломало бы выезжающее меню тем, см. ниже) */
-  .topbar.is-stuck { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .topbar.is-stuck { -webkit-backdrop-filter: blur(14px) saturate(140%) brightness(1.12); backdrop-filter: blur(14px) saturate(140%) brightness(1.12); }
 }
 .burger { display: none; }
 .search {
@@ -1471,7 +1472,7 @@ label.pick { cursor: pointer; }
 
 /* тёмные яркие темы: сплошные поверхности и полные цвета */
 :root:not([data-theme="summit"])[data-mode="dark"] { --card-bg: var(--card-bg-solid); --card-blur: 0px; }
-:root:not([data-theme="summit"])[data-mode="dark"] :is(.card, .panel, .sidebar, .search, .user-chip) { border: 2px solid color-mix(in srgb, var(--card-border) 75%, var(--accent)); }
+:root:not([data-theme="summit"])[data-mode="dark"] :is(.card, .panel, .sidebar, .search, .user-chip, .hero) { border: 2px solid color-mix(in srgb, var(--card-border) 75%, var(--accent)); }
 :root:not([data-theme="summit"])[data-mode="dark"] :is(.row, .pick) { background: color-mix(in srgb, var(--card-bg-solid) 92%, var(--text)); border: 2px solid var(--card-border); }
 :root:not([data-theme="summit"])[data-mode="dark"] :is(.chip:not(.is-active), .btn-ghost, .icon-btn) { background: var(--card-bg-solid); border: 2px solid var(--card-border); color: var(--text); }
 :root:not([data-theme="summit"])[data-mode="dark"] :is(input[type="text"], input[type="password"], input[type="search"], input[type="number"], select, textarea):not(.search input):not(.qty input),
@@ -1710,3 +1711,18 @@ body:has(.op-bar) .to-top { bottom: 96px; }                             /* в ф
 :root:not([data-theme="summit"]) .stat:has(.tone-orange) .stat-value { color: rgb(var(--orange-rgb)); }
 :root:not([data-theme="summit"]) .stat:has(.ring) .stat-value { color: var(--accent-text); }
 :root:not([data-theme="summit"]) .stat .stat-value small { color: inherit; opacity: .75; }
+
+/* ---------- Заставка: рамка как у остальных блоков главной ---------- */
+.hero { border: 1px solid var(--card-border); }
+[data-mode="light"] .hero { border: 2px solid var(--card-border); }
+
+/* ---------- Тёмные темы: свечение рамки при наведении, как у пунктов меню в Summit ----------
+   Ко всем элементам с рамкой: строки, выбор позиций, фильтры, кнопки, поля, пункты меню.
+   У карточек своё (сильнее) свечение выше. Кнопка «Отменить» светится красным — её не трогаем. */
+:root[data-mode="dark"] :is(.row, .pick, .chip:not(.is-active), .btn-ghost, .icon-btn, .dd-btn, .nav-item:not(.is-active), .user-chip, .search):hover {
+  box-shadow:
+    0 0 0 1px rgb(var(--accent-rgb) / .45),
+    0 0 12px 1px rgb(var(--accent-rgb) / .5),
+    0 0 28px rgb(var(--accent-rgb) / .16);
+}
+
