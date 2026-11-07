@@ -427,46 +427,81 @@ document.addEventListener("change", function (e) {
   if (form) form.submit();
 });
 
-/* Значки меню мигают, как слегка неисправная неоновая вывеска (только тёмные темы).
-   У каждого значка свой таймер: раз в 1–2 минуты в случайный момент он коротко гаснет,
-   иногда 2–4 раза подряд, будто барахлит контакт. Значки мигают независимо друг от друга.
-   Пока вкладка скрыта, ничего не происходит; при «меньше движения» (data-motion="reduced") выключено. */
+/* ---------- «Неон»: значки меню и подсветка рамок мигают, как неоновая вывеска (только тёмные темы) ----------
+   Анимации запускаются через Element.animate (Web Animations): они идут поверх стилей и не сбивают
+   CSS-анимации элемента (например, появление карточек .reveal). При «меньше движения» (data-motion="reduced")
+   и в светлых темах ничего не мигает. Проверить сразу, не дожидаясь таймеров: в консоли браузера neonTest(). */
 (function () {
   var root = document.documentElement;
   if (root.dataset.motion === "reduced" || !Element.prototype.animate) return;
-  var MIN_WAIT = 60000, MAX_WAIT = 120000;
 
   function rand(a, b) { return a + Math.random() * (b - a); }
+  function dark() { return root.dataset.mode === "dark" && !document.hidden; }
 
-  // Узор мигания: 1 раз чаще всего, иногда серия из 2–4 «провалов» разной длины
-  function pattern() {
-    var blinks = Math.random() < 0.55 ? 1 : 2 + Math.floor(Math.random() * 3);
-    var frames = [{ opacity: 1, offset: 0 }], t = 0, steps = [];
+  /* Узор «барахлящего контакта»: серия из 1–4 провалов разной длины. Возвращает кадры для animate().
+     dim — до какого значения проваливается свойство (для прозрачности), make(v) — кадр для значения v. */
+  function flickerFrames(make, minDim, maxDim, maxBlinks) {
+    var blinks = Math.random() < 0.5 ? 1 : 2 + Math.floor(Math.random() * (maxBlinks - 1));
+    var parts = [], t = 0;
     for (var i = 0; i < blinks; i++) {
-      var off = rand(40, 110), on = rand(40, 160);
-      steps.push([t, off, on]); t += off + on;
+      var off = rand(50, 150), on = rand(50, 180), dim = rand(minDim, maxDim);
+      parts.push({ start: t, off: off, dim: dim }); t += off + on;
     }
-    steps.forEach(function (s) {
-      var dim = rand(0.08, 0.35);                     // гаснет не всегда до конца
-      frames.push({ opacity: 1, offset: s[0] / t });
-      frames.push({ opacity: dim, offset: (s[0] + 8) / t });
-      frames.push({ opacity: dim, offset: (s[0] + s[1]) / t });
-      frames.push({ opacity: 1, offset: Math.min((s[0] + s[1] + 10) / t, 1) });
+    var frames = [make(1, 0)];
+    parts.forEach(function (p) {
+      frames.push(make(1, p.start / t), make(p.dim, (p.start + 1) / t),
+                  make(p.dim, (p.start + p.off) / t), make(1, (p.start + p.off + 1) / t));
     });
-    frames.push({ opacity: 1, offset: 1 });
-    frames.sort(function (a, b) { return a.offset - b.offset; });
+    frames.push(make(1, 1));
     return { frames: frames, duration: t };
   }
 
-  function schedule(icon) {
-    setTimeout(function () {
-      if (!document.hidden && root.dataset.mode === "dark" && !icon.closest(".nav-item:hover")) {
-        var p = pattern();
-        icon.animate(p.frames, { duration: p.duration, easing: "steps(1, end)" });
-      }
-      schedule(icon);
-    }, rand(MIN_WAIT, MAX_WAIT));
+  /* 1. Значки меню: у каждого свой таймер. После входа на страницу первые 2–3 раза мигают
+        через 15–60 с, потом реже — раз в 1–2 минуты, чтобы не мозолили глаза. */
+  function blinkIcon(icon) {
+    var f = flickerFrames(function (v, o) { return { opacity: v, offset: o }; }, 0.05, 0.3, 4);
+    icon.animate(f.frames, { duration: f.duration });
   }
+  function scheduleIcon(icon, fired, early) {
+    var wait = fired < early ? rand(15000, 60000) : rand(60000, 120000);
+    setTimeout(function () {
+      if (dark() && !icon.closest(".nav-item:hover")) blinkIcon(icon);
+      scheduleIcon(icon, fired + 1, early);
+    }, wait);
+  }
+  var icons = document.querySelectorAll(".sidebar .nav-item .icon");
+  icons.forEach(function (icon) { scheduleIcon(icon, 0, 2 + Math.floor(Math.random() * 2)); });
 
-  document.querySelectorAll(".sidebar .nav-item .icon").forEach(schedule);
+  /* 2. Подсветка рамки при наведении: пока курсор на блоке, свечение изредка «проседает»,
+        как неон от скачка напряжения (раз в 1,5–5 с, серия 1–3 провала). Мигает именно свечение
+        рамки (box-shadow), а не бегущий блик. У заставки свечение на слое ::after — мигает его прозрачность. */
+  var GLOW = ".card, .row, .pick, .chip:not(.is-active), .btn-ghost, .icon-btn, .dd-btn, .nav-item:not(.is-active), .user-chip, .search";
+  var hovered = null, timer = 0;
+
+  function flickerGlow(el) {
+    if (el.classList.contains("hero-glow")) {
+      var g = flickerFrames(function (v, o) { return { opacity: v, offset: o }; }, 0.15, 0.5, 3);
+      el.animate(g.frames, { duration: g.duration, pseudoElement: "::after" });
+      return;
+    }
+    var shadow = getComputedStyle(el).boxShadow;
+    if (!shadow || shadow === "none") return;
+    var f = flickerFrames(function (v, o) { return { boxShadow: v === 1 ? shadow : "none", offset: o }; }, 0, 0, 3);
+    el.animate(f.frames, { duration: f.duration });
+  }
+  function loop() {
+    timer = setTimeout(function () {
+      if (hovered && dark()) { flickerGlow(hovered); loop(); }
+    }, rand(1500, 5000));
+  }
+  document.addEventListener("mouseover", function (e) {
+    var el = e.target.closest && (e.target.closest(".hero-glow") || e.target.closest(GLOW));
+    if (el === hovered) return;
+    hovered = el; clearTimeout(timer);
+    if (el) setTimeout(loop, 400);                    // сначала свечение разгорается (переход в CSS)
+  });
+
+  // Проверка вручную из консоли: все значки мигнут сейчас
+  window.neonTest = function () { icons.forEach(blinkIcon); return icons.length + " значков"; };
 })();
+

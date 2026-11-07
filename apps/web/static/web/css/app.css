@@ -1750,8 +1750,8 @@ body:has(.op-bar) .to-top { bottom: 96px; }                             /* в ф
 
 /* ---------- Бегущие блики по рамке у блоков и строк ----------
    Два блика в одном кольце: основной (короткая полоса с белой сердцевиной, оборот 4,2 с)
-   и маленький (оборот 6,8 с), поэтому они то сходятся, то расходятся. Кольцо мерцает как неон
-   (ring-breathe): ровный свет и редкие короткие вспышки ярче; анимируются только прозрачность и яркость.
+   и маленький (оборот 6,8 с), поэтому они то сходятся, то расходятся. Неоновое мигание самой
+   подсветки рамки делает app.js (раздел «Неон»).
    Углы --a и --b анимируются отдельно. У пунктов меню и фильтров блик прежний; в светлых темах бликов нет. */
 @property --b { syntax: "<angle>"; inherits: false; initial-value: 180deg; }
 @keyframes spin-b { from { --b: 180deg; } to { --b: 540deg; } }
@@ -1770,22 +1770,8 @@ body:has(.op-bar) .to-top { bottom: 96px; }                             /* в ф
       transparent 98%);
 }
 :is(.card, .row, .pick):hover::before, .card:focus-within::before {
-  animation: spin-a 4.2s linear infinite, spin-b 6.8s linear infinite, ring-breathe 4.6s linear infinite;
+  animation: spin-a 4.2s linear infinite, spin-b 6.8s linear infinite;
 }
-/* Как неоновая трубка: ровный свет чуть приглушён, иногда короткие неровные вспышки ярче */
-@keyframes ring-breathe {
-  0%, 100% { opacity: .6; filter: none; }
-  10%  { opacity: .65; }
-  11%  { opacity: 1; filter: brightness(2) drop-shadow(0 0 4px rgb(var(--accent-rgb))); }
-  12.5%{ opacity: .55; filter: none; }
-  14%  { opacity: 1; filter: brightness(1.8) drop-shadow(0 0 4px rgb(var(--accent-rgb))); }
-  16%  { opacity: .6; filter: none; }
-  47%  { opacity: .68; }
-  48.5%{ opacity: 1; filter: brightness(1.9) drop-shadow(0 0 5px rgb(var(--accent-rgb))); }
-  50.5%{ opacity: .6; filter: none; }
-  78%  { opacity: .65; }
-  79%  { opacity: .95; filter: brightness(1.6) drop-shadow(0 0 3px rgb(var(--accent-rgb))); }
-  81%  { opacity: .6; filter: none; }
 }
 }
 
