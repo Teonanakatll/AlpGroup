@@ -33,7 +33,7 @@ def test_set_is_grouped_and_can_be_cancelled_whole(user, tool, stocked_hand_tool
     services.issue_to_site(user=user, site=site, tools=[tool], hand_tools=[(stocked_hand_tool, 3)])
 
     entries, _ = selectors.journal_entries()
-    issued = [e for e in entries if e["is_set"]]
+    issued = [e for e in entries if e["is_set"] and not e.get("day_group")]   # кроме день-группы постановок
 
     assert len(issued) == 1 and len(issued[0]["rows"]) == 2        # перфоратор и молотки в одном наборе
     assert issued[0]["can_cancel_batch"] is True
@@ -91,7 +91,9 @@ def test_journal_set_is_one_accordion_row(admin_client, user, tool, stocked_hand
 
     html = page(admin_client, "/journal/")
 
-    assert html.count("<details") == 1                      # набор свёрнут в одну строку
+    # два аккордеона: набор выдачи и день-группа постановок на баланс (её создают фикстуры tool/stocked_hand_tool)
+    assert html.count("<details") == 2
+    assert "Поставлено на баланс" in html                    # день-группа постановок одной строкой
     assert "2 поз." in html and site.name in html            # объект и число позиций
     assert "Перфоратор" in html and "Молоток × 3" in html     # позиции внутри и в превью строки
 
