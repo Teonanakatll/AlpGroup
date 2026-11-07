@@ -1,5 +1,6 @@
 """
-Загрузка тестовых данных: 25 электроинструментов и 20 единиц высотного снаряжения (штучно), 25 ручных и 10 видов снаряжения (количеством) и 5 объектов.
+Загрузка тестовых данных: 41 электроинструмент и 28 единиц высотного снаряжения (штучно), 40 ручных и 16 видов
+снаряжения (количеством), 5 объектов с ответственными лицами.
 
 Запуск:
     python manage.py seed_demo               # от имени первого суперпользователя
@@ -21,6 +22,7 @@
 """
 import random
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -29,6 +31,7 @@ from apps.inventory import selectors, services
 from apps.inventory.models import Category, HandTool, Tool
 from apps.sites import services as site_services
 from apps.sites.models import Site
+from apps.staff import roles
 
 ELECTRO_CATEGORY = "Электроинструмент"
 HAND_CATEGORY = "Ручной инструмент"
@@ -60,6 +63,23 @@ ELECTRO_TOOLS = [
     "Краскопульт электрический",
     "Плиткорез электрический",
     "Лазерный дальномер",
+    # Добавлены 07.11.2026 (склад опустел после «живого журнала»): повторный запуск дозаведёт только их
+    "Перфоратор аккумуляторный",
+    "Болгарка аккумуляторная 125 мм",
+    "Шуруповёрт ударный",
+    "Дрель алмазного бурения",
+    "Сварочный инвертор",
+    "Генератор бензиновый 3 кВт",
+    "Компрессор 50 л",
+    "Тепловая пушка",
+    "Прожектор светодиодный",
+    "Удлинитель на катушке 50 м",
+    "Пила-аллигатор",
+    "Миксер двухшпиндельный",
+    "Ротационный нивелир",
+    "Реноватор (мультитул)",
+    "Пистолет для герметика аккумуляторный",
+    "Мойка аккумуляторная",
 ]
 
 HAND_TOOLS = [
@@ -88,6 +108,22 @@ HAND_TOOLS = [
     "Топор",
     "Угольник",
     "Киянка резиновая",
+    # Добавлены 07.11.2026
+    "Мастерок",
+    "Правило 2 м",
+    "Штангенциркуль",
+    "Ножницы по металлу",
+    "Заклёпочник",
+    "Степлер строительный",
+    "Клещи переставные",
+    "Набор шестигранников",
+    "Отвес строительный",
+    "Валик малярный",
+    "Кисть малярная 50 мм",
+    "Пистолет для монтажной пены",
+    "Шпатель зубчатый",
+    "Тиски слесарные",
+    "Уровень строительный 2 м",
 ]
 
 # Высотное снаряжение: дорогое и с учётом по номеру (штучно) и расходное количеством.
@@ -99,6 +135,10 @@ GEAR_TOOLS = (
     + [f"Верёвка страховочная 50 м №{n}" for n in range(1, 3)]
     + [f"Блок-ролик №{n}" for n in range(1, 3)]
     + ["Рабочая платформа (люлька) №1", "Анкерная линия временная №1"]
+    # Добавлены 07.11.2026
+    + [f"Обвязка страховочная №{n}" for n in range(6, 9)]
+    + [f"Верёвка рабочая 50 м №{n}" for n in range(4, 6)]
+    + ["Спусковое устройство «Рига» №4", "Подъёмное устройство (жумар) №4", "Лебёдка ручная №1"]
 )
 
 GEAR_HAND_TOOLS = [
@@ -112,9 +152,28 @@ GEAR_HAND_TOOLS = [
     "Лента текстильная (петля) 120 см",
     "Соединительное звено (маллон)",
     "Мешок для снаряжения",
+    # Добавлены 07.11.2026
+    "Протектор для верёвки",
+    "Ролик-блок малый",
+    "Очки защитные",
+    "Наколенники",
+    "Сумка-ведро для инструмента",
+    "Страховочный шнур для инструмента",
 ]
 
 SITES = ["Лемон Гарден", "Центрополис", "Такаишвили", "Зелёный дом", "Шартава 7"]
+
+# Ответственные лица объектов (роль «Ответственное лицо», без пароля: пароль задаёт админ).
+# Объект → (логин, имя, фамилия). Если задан DEMO_USER, два последних объекта получает гость,
+# чтобы на стенде переключатель «Отв. лицо» показывал свои объекты.
+RESPONSIBLE = {
+    "Лемон Гарден": ("beridze", "Гиорги", "Беридзе"),
+    "Центрополис": ("tsulaia", "Леван", "Цулая"),
+    "Такаишвили": ("abashidze", "Нино", "Абашидзе"),
+    "Зелёный дом": ("katsitadze", "Давит", "Кацитадзе"),
+    "Шартава 7": ("orlov", "Сергей", "Орлов"),
+}
+GUEST_SITES = ["Зелёный дом", "Шартава 7"]
 
 MIN_QUANTITY, MAX_QUANTITY = 5, 15
 
@@ -129,7 +188,7 @@ SERVICING_NOTES = ["Не держит обороты", "Искрит щётка�
 
 
 class Command(BaseCommand):
-    help = "Загрузить тестовые данные: 45 штучных (25 электро и 20 снаряжения), 35 ручных (5-15 шт.) и 5 объектов."
+    help = "Загрузить тестовые данные: 69 штучных (41 электро и 28 снаряжения), 56 ручных (5-15 шт.), 5 объектов с ответственными."
 
     def add_arguments(self, parser):
         parser.add_argument("--user", help="логин того, кто «вносит» данные (по умолчанию первый суперпользователь)")
@@ -169,6 +228,7 @@ class Command(BaseCommand):
                 new_hand += 1
 
             new_sites = sum(site_services.get_or_create_site(name)[1] for name in SITES)
+            assigned = self._assign_responsible()
 
             journal = JournalSimulator(author, rng, self.stdout).run() if options["journal"] else None
 
@@ -177,9 +237,38 @@ class Command(BaseCommand):
             f"ручных добавлено {new_hand} из {len(hand_tools)}, "
             f"объектов добавлено {new_sites} из {len(SITES)} (остальные уже были)."
         ))
+        if assigned:
+            self.stdout.write(f"Ответственные назначены: {', '.join(assigned)}.")
         if journal is not None:
             done = ", ".join(f"{JOURNAL_LABELS[kind]} {count}" for kind, count in journal.items())
             self.stdout.write(self.style.SUCCESS(f"Журнал: {done}."))
+
+    def _assign_responsible(self):
+        """Ответственный у объектов, где его ещё нет (уже назначенных не трогаем). Возвращает «объект — кто»."""
+        users = get_user_model().objects
+        guest = None
+        if settings.DEMO_USER:
+            guest, created = users.get_or_create(username=settings.DEMO_USER)
+            if created:
+                guest.set_unusable_password()
+                guest.save(update_fields=["password"])
+        done = []
+        for site in Site.objects.filter(name__in=RESPONSIBLE, responsible__isnull=True):
+            if guest and site.name in GUEST_SITES:
+                person = guest
+            else:
+                username, first, last = RESPONSIBLE[site.name]
+                person, created = users.get_or_create(
+                    username=username, defaults={"first_name": first, "last_name": last},
+                )
+                if created:
+                    person.set_unusable_password()
+                    person.save(update_fields=["password"])
+                    roles.assign_role(person, roles.RESPONSIBLE)
+            site.responsible = person
+            site.save(update_fields=["responsible"])
+            done.append(f"{site.name} — {person.get_full_name() or person.get_username()}")
+        return done
 
     def _author(self, username):
         users = get_user_model().objects
@@ -212,7 +301,7 @@ class JournalSimulator:
 
     def __init__(self, author, rng, stdout):
         self.author, self.rng, self.stdout = author, rng, stdout
-        self.sites = list(Site.objects.order_by("name"))
+        self.sites = list(Site.objects.select_related("responsible").order_by("name"))
         self.free_sites = []          # объекты для выдач: по очереди, чтобы 5 выдач ушли на разные
 
     def run(self):
@@ -258,9 +347,11 @@ class JournalSimulator:
             return False
         picked_tools = self.rng.sample(tools, n_tools)
         picked_hands = [(h, self.rng.randint(1, min(h.available, 4))) for h in self.rng.sample(hands, n_hands)]
+        # Получает обычно ответственный объекта (так в журнале видно, кто за набор отвечает)
+        responsible = site.responsible.get_full_name() if site.responsible_id else ""
         services.issue_to_site(
             user=self.author, site=site, tools=picked_tools, hand_tools=picked_hands,
-            taken_by=self.rng.choice(PEOPLE),
+            taken_by=responsible or self.rng.choice(PEOPLE),
         )
         return True
 
