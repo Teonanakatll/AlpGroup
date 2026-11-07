@@ -1,0 +1,30 @@
+{% extends "web/base.html" %}
+{% block title %}Аналитика · AlpGroup{% endblock %}
+
+{% block content %}
+  <div class="page-head reveal">
+    <div>
+      <h1>Аналитика</h1>
+      <p class="muted">Раздел в разработке.</p>
+    </div>
+  </div>
+
+  <div class="card block reveal" style="--i:1">
+    <div class="block-head"><h2>Что здесь будет</h2></div>
+    <ul class="rows">
+      <li class="row">
+        <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></span>
+        <div class="row-main"><div class="row-title">Выдано за период</div><div class="row-sub">по объектам и по людям, с выгрузкой</div></div>
+      </li>
+      <li class="row">
+        <span class="icon-tile tone-violet"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></span>
+        <div class="row-main"><div class="row-title">Что числится на объектах</div><div class="row-sub">сводка по каждому объекту и ответственному</div></div>
+      </li>
+      <li class="row">
+        <span class="icon-tile tone-orange"><svg class="icon" aria-hidden="true"><use href="#i-wrench"/></svg></span>
+        <div class="row-main"><div class="row-title">Ремонты, потери и списания</div><div class="row-sub">сколько, что чаще ломается и теряется</div></div>
+      </li>
+    </ul>
+    <p class="muted" style="margin-top:12px">Пока эти данные видны в <a class="row-link" href="{% url 'web:journal' %}">журнале</a> (фильтр по объекту и человеку).</p>
+  </div>
+{% endblock %}

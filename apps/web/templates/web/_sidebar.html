@@ -25,9 +25,9 @@
         <svg class="icon" aria-hidden="true"><use href="#i-swap"/></svg><span>Операции</span>
       </a>
       {% endif %}
-      <span class="nav-item tone-writeoff is-soon" aria-disabled="true">
+      <a class="nav-item tone-writeoff {% if current == 'analytics' %}is-active{% endif %}" href="{% url 'web:analytics' %}">
         <svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg><span>Аналитика</span><span class="nav-tag">скоро</span>
-      </span>
+      </a>
       {% if request.user.is_staff %}
         <a class="nav-item tone-red" href="{% url 'admin:index' %}">
           <svg class="icon" aria-hidden="true"><use href="#i-gear"/></svg><span>Настройки</span>

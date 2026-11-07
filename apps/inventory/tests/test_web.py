@@ -299,3 +299,10 @@ def test_search_inventory_without_filters_returns_everything(tool, stocked_hand_
     tools, hand_tools = selectors.search_inventory()
 
     assert len(tools) == 1 and len(hand_tools) == 1
+
+
+def test_analytics_stub_page(admin_client, client):
+    assert client.get("/analytics/").status_code == 302                 # нужен вход
+    html = admin_client.get("/analytics/").content.decode()
+    assert "Аналитика" in html and "Раздел в разработке" in html
+    assert 'href="/analytics/"' in admin_client.get("/").content.decode()  # пункт меню — ссылка

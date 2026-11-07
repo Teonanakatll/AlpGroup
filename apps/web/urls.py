@@ -10,6 +10,7 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("inventory/", views.inventory, name="inventory"),
     path("journal/", views.journal, name="journal"),
+    path("analytics/", views.analytics, name="analytics"),
     path("journal/cancel-batch/<uuid:batch>/", views.cancel_batch, name="cancel_batch"),
     path("journal/cancel/<str:kind>/<int:pk>/", views.cancel_movement, name="cancel_movement"),
     path("inventory/tool/<int:pk>/", views.tool_detail, name="tool_detail"),

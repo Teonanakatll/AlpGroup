@@ -511,6 +511,12 @@ def journal(request):
 
 
 @login_required
+def analytics(request):
+    """Заглушка «Аналитика»: страница есть, отчёты появятся позже (SPEC, отчёты на паузе)."""
+    return render(request, "web/analytics.html")
+
+
+@login_required
 def tool_detail(request, pk):
     tool = get_object_or_404(Tool.objects.select_related("category", "current_site"), pk=pk)
     return render(request, "web/position.html", {
